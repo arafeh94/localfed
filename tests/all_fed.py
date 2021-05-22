@@ -5,6 +5,7 @@ from applications.gafed import GAFedAVG
 from libs.model.linear.lr import LogisticRegression
 from src.data_generator import DataGenerator
 from src.data_provider import LocalMnistDataProvider
+from src.federated import Events
 from src.plugins import FederatedLogger, FederatedTimer
 
 logging.basicConfig(level=logging.DEBUG)
@@ -34,8 +35,8 @@ if test_ga_fed:
     logger.debug("start federated genetic")
     logger.debug("----------------------")
     federated = GAFedAVG(**federated_config)
-    federated.plug(FederatedLogger([FedAVG.ET_ROUND_FINISHED, FedAVG.ET_TRAINER_SELECTED], detailed_selection=True))
-    federated.plug(FederatedTimer([FedAVG.ET_ROUND_START, FedAVG.ET_TRAIN_END]))
+    federated.plug(FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_TRAINER_SELECTED], detailed_selection=True))
+    federated.plug(FederatedTimer([Events.ET_ROUND_START, Events.ET_TRAIN_END]))
     federated.start()
 
 if test_fed_avg:
@@ -43,6 +44,6 @@ if test_fed_avg:
     logger.debug("start normal federated")
     logger.debug("----------------------")
     federated = FedAVG(**federated_config)
-    federated.plug(FederatedLogger([FedAVG.ET_ROUND_FINISHED, FedAVG.ET_TRAINER_SELECTED], detailed_selection=True))
-    federated.plug(FederatedTimer([FedAVG.ET_ROUND_START, FedAVG.ET_TRAIN_END]))
+    federated.plug(FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_TRAINER_SELECTED], detailed_selection=True))
+    federated.plug(FederatedTimer([Events.ET_ROUND_START, Events.ET_TRAIN_END]))
     federated.start()

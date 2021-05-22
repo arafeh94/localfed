@@ -78,22 +78,16 @@ class DataGenerator:
         xs = self.data.x.tolist()
         ys = self.data.y.tolist()
         group = {}
-        print("samira1")
-        for index, x in enumerate(xs):
+        for index in range(len(xs)):
             if ys[index] not in group:
                 group[ys[index]] = []
-            group[ys[index]].append(xs)
-        print("samira2")
+            group[ys[index]].append(xs[index])
         for i in range(num_clients):
-            print("asd1")
             client_data_size = random.randint(min_size, max_size)
-            print("asd2")
-            client_x = group[i]
-            print("asd3")
+            client_x = group[i][0:client_data_size]
             client_y = [i for _ in range(len(client_x))]
-            print("asd4")
             clients_data[i] = DataContainer(client_x, client_y).as_tensor()
-            print("asd5")
+        self.distributed = clients_data
         return clients_data
 
     def describe(self, selection=None):

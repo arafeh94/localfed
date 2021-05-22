@@ -5,6 +5,7 @@ setproctitle
 networkx
 psutil
 mysql-connector-python
+matplotlib
 -f https://download.pytorch.org/whl/torch_stable.html
 torch
 -f https://download.pytorch.org/whl/torch_stable.html

@@ -1,9 +1,11 @@
 import time
-
 import logging
 
+import numpy as np
+
 from src import tools
-from src.federated import FederatedEventPlug, AbstractFederated
+from src.federated import FederatedEventPlug, Events
+import matplotlib.pyplot as plt
 
 
 class FederatedTimer(FederatedEventPlug):
@@ -85,9 +87,51 @@ class FederatedLogger(FederatedEventPlug):
         self.logger.debug(f"round started {params}")
 
     def force(self) -> []:
-        return [AbstractFederated.ET_FED_START]
+        return [Events.ET_FED_START]
 
     def on_trainers_selected(self, params):
         self.logger.debug(f"selected trainers {params}")
         if self.detailed_selection:
             tools.detail(self.trainers_data_dict, params['trainers_ids'])
+
+
+class FedPlot(FederatedEventPlug):
+    def __init__(self):
+        super().__init__()
+        self.round_accuracy = []
+        self.round_loss = []
+
+    def on_federated_started(self, params):
+        pass
+
+    def on_federated_ended(self, params):
+        pass
+
+    def on_init(self, params):
+        pass
+
+    def on_training_start(self, params):
+        pass
+
+    def on_training_end(self, params):
+        pass
+
+    def on_aggregation_end(self, params):
+        pass
+
+    def on_round_end(self, params):
+        self.round_accuracy.append(params['accuracy'])
+        self.round_loss.append(params['loss'])
+        round_id = params['round']
+        if round_id >= 2:
+            fig, axs = plt.subplots(2)
+            fig.suptitle(f'Accuracy & Loss Round({round_id})')
+            axs[0].plot(np.linspace(0, round_id, round_id+1), self.round_accuracy)
+            axs[1].plot(np.linspace(0, round_id, round_id+1), self.round_loss)
+            plt.show()
+
+    def on_round_start(self, params):
+        pass
+
+    def on_trainers_selected(self, params):
+        pass

@@ -6,6 +6,18 @@ from src import tools
 from src.data_container import DataContainer
 
 
+class Events:
+    ET_FED_START = 'federated_learning_start'
+    ET_INIT = 'init'
+    ET_ROUND_START = 'round_start'
+    ET_TRAINER_SELECTED = 'trainers_selected'
+    ET_TRAIN_START = 'training_started'
+    ET_TRAIN_END = 'training_finished'
+    ET_AGGREGATION_END = 'aggregation_finished'
+    ET_ROUND_FINISHED = 'round_finished'
+    ET_FED_END = 'federated_learning_end'
+
+
 class FederatedEventPlug:
     def __init__(self, only: None or [] = None):
         self.only = only
@@ -51,28 +63,19 @@ class FederatedEventPlug:
 
     def as_events(self):
         return {
-            'federated_learning_start': self.on_federated_started,
-            'init': self.on_init,
-            'round_start': self.on_round_start,
-            'trainers_selected': self.on_trainers_selected,
-            'training_started': self.on_training_start,
-            'training_finished': self.on_training_end,
-            'aggregation_finished': self.on_aggregation_end,
-            'round_finished': self.on_round_end,
-            'federated_learning_end': self.on_federated_ended,
+            Events.ET_FED_START: self.on_federated_started,
+            Events.ET_INIT: self.on_init,
+            Events.ET_ROUND_START: self.on_round_start,
+            Events.ET_TRAINER_SELECTED: self.on_trainers_selected,
+            Events.ET_TRAIN_START: self.on_training_start,
+            Events.ET_TRAIN_END: self.on_training_end,
+            Events.ET_AGGREGATION_END: self.on_aggregation_end,
+            Events.ET_ROUND_FINISHED: self.on_round_end,
+            Events.ET_FED_END: self.on_federated_ended,
         }
 
 
 class AbstractFederated:
-    ET_FED_START = 'federated_learning_start'
-    ET_INIT = 'init'
-    ET_ROUND_START = 'round_start'
-    ET_TRAINER_SELECTED = 'trainers_selected'
-    ET_TRAIN_START = 'training_started'
-    ET_TRAIN_END = 'training_finished'
-    ET_AGGREGATION_END = 'aggregation_finished'
-    ET_ROUND_FINISHED = 'round_finished'
-    ET_FED_END = 'federated_learning_end'
 
     def __init__(self, trainers_data_dict: {int: DataContainer}, create_model: callable, test_data: DataContainer,
                  num_rounds=10, desired_accuracy=0.9, trainer_per_round=4, batch_size=8):
@@ -87,26 +90,26 @@ class AbstractFederated:
         self.events = {}
 
     def start(self):
-        self.broadcast('federated_learning_start', **self.configs())
+        self.broadcast(Events.ET_FED_START, **self.configs())
         global_weights = self.init()
-        self.broadcast('init', global_weights=global_weights)
+        self.broadcast(Events.ET_INIT, global_weights=global_weights)
         num_round = 0
         while True:
-            self.broadcast('round_start', round=num_round)
+            self.broadcast(Events.ET_ROUND_START, round=num_round)
             trainers_ids = self.select(list(self.trainers_data_dict.keys()), num_round)
-            self.broadcast('trainers_selected', trainers_ids=trainers_ids)
+            self.broadcast(Events.ET_TRAINER_SELECTED, trainers_ids=trainers_ids)
             selected_trainers = tools.dict_select(trainers_ids, self.trainers_data_dict)
-            self.broadcast('training_started', trainers_data=selected_trainers)
+            self.broadcast(Events.ET_TRAIN_START, trainers_data=selected_trainers)
             trainers_weights, sample_size = self.train(global_weights, selected_trainers, num_round)
-            self.broadcast('training_finished', trainers_weights=trainers_weights, sample_size=sample_size)
+            self.broadcast(Events.ET_TRAIN_END, trainers_weights=trainers_weights, sample_size=sample_size)
             global_weights = self.aggregate(trainers_weights, sample_size, num_round)
-            self.broadcast('aggregation_finished', global_weights=global_weights)
+            self.broadcast(Events.ET_AGGREGATION_END, global_weights=global_weights)
             tools.load(self.aggregated_model, global_weights)
             accuracy, loss = self.infer(self.aggregated_model)
-            self.broadcast('round_finished', round=num_round, accuracy=accuracy, loss=loss)
+            self.broadcast(Events.ET_ROUND_FINISHED, round=num_round, accuracy=accuracy, loss=loss)
             num_round += 1
-            if num_round >= self.num_rounds or accuracy >= self.desired_accuracy:
-                self.broadcast('federated_learning_end', aggregated_model=self.aggregated_model)
+            if (num_round > 0 and num_round >= self.num_rounds) or accuracy >= self.desired_accuracy:
+                self.broadcast(Events.ET_FED_END, aggregated_model=self.aggregated_model)
                 break
         return self.aggregated_model
 
