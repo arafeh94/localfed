@@ -1,0 +1,13 @@
+scikit-learn
+numpy
+h5py
+setproctitle
+networkx
+psutil
+mysql-connector-python
+-f https://download.pytorch.org/whl/torch_stable.html
+torch
+-f https://download.pytorch.org/whl/torch_stable.html
+torchvision
+-f https://download.pytorch.org/whl/torch_stable.html
+torchaudio
