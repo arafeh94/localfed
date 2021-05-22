@@ -7,7 +7,7 @@ from src.context import Context
 
 class GAFedAVG(FedAVG):
     def init(self) -> nn.Module:
-        context = Context(self.trainers_data_dict, self.test_data, self.create_model)
+        context = Context(self.trainers_data_dict, self.create_model)
         context.build()
         clustered = tools.Clustered(context.cluster(10))
         best, all_solutions = genetic.ga(fitness=context.fitness, genes=clustered, desired=0, max_iter=10,

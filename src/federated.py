@@ -77,16 +77,16 @@ class FederatedEventPlug:
 
 class AbstractFederated:
 
-    def __init__(self, trainers_data_dict: {int: DataContainer}, create_model: callable, test_data: DataContainer,
-                 num_rounds=10, desired_accuracy=0.9, trainer_per_round=4, batch_size=8):
+    def __init__(self, trainers_data_dict: {int: DataContainer}, create_model: callable,
+                 num_rounds=10, desired_accuracy=0.9, trainer_per_round=4, batch_size=8, train_ratio=0.8):
         self.trainer_per_round = trainer_per_round
         self.create_model = create_model
         self.trainers_data_dict = trainers_data_dict
-        self.test_data = test_data
         self.aggregated_model = create_model()
         self.num_rounds = num_rounds
         self.desired_accuracy = desired_accuracy
         self.batch_size = batch_size
+        self.train_ratio = train_ratio
         self.events = {}
 
     def start(self):
@@ -99,14 +99,16 @@ class AbstractFederated:
             trainers_ids = self.select(list(self.trainers_data_dict.keys()), num_round)
             self.broadcast(Events.ET_TRAINER_SELECTED, trainers_ids=trainers_ids)
             selected_trainers = tools.dict_select(trainers_ids, self.trainers_data_dict)
-            self.broadcast(Events.ET_TRAIN_START, trainers_data=selected_trainers)
-            trainers_weights, sample_size = self.train(global_weights, selected_trainers, num_round)
+            trainers_train_data, trainers_test_data = self.split(selected_trainers)
+            self.broadcast(Events.ET_TRAIN_START, trainers_data=trainers_train_data)
+            trainers_weights, sample_size = self.train(global_weights, trainers_train_data, num_round)
             self.broadcast(Events.ET_TRAIN_END, trainers_weights=trainers_weights, sample_size=sample_size)
             global_weights = self.aggregate(trainers_weights, sample_size, num_round)
             self.broadcast(Events.ET_AGGREGATION_END, global_weights=global_weights)
             tools.load(self.aggregated_model, global_weights)
-            accuracy, loss = self.infer(self.aggregated_model)
-            self.broadcast(Events.ET_ROUND_FINISHED, round=num_round, accuracy=accuracy, loss=loss)
+            accuracy, loss, local_acc, local_loss = self.infer(self.aggregated_model, trainers_test_data)
+            self.broadcast(Events.ET_ROUND_FINISHED, round=num_round, accuracy=accuracy, loss=loss, local_acc=local_acc,
+                           local_loss=local_loss)
             num_round += 1
             if (num_round > 0 and num_round >= self.num_rounds) or accuracy >= self.desired_accuracy:
                 self.broadcast(Events.ET_FED_END, aggregated_model=self.aggregated_model)
@@ -118,14 +120,31 @@ class AbstractFederated:
             "trainer_per_round": self.trainer_per_round,
             "create_model": self.create_model,
             "trainers_data_dict": self.trainers_data_dict,
-            "test_data": self.test_data,
             "num_rounds": self.num_rounds,
             "desired_accuracy": self.desired_accuracy,
             "batch_size": self.batch_size,
+            "train_ratio": self.train_ratio,
         }
 
-    def infer(self, model: nn.ModuleDict):
-        return tools.infer(model, self.test_data.batch(self.batch_size))
+    def infer(self, model, trainers_data):
+        local_accuracy = {}
+        local_loss = {}
+        for trainer_id, data in trainers_data.items():
+            acc, loss = tools.infer(model, data.batch(self.batch_size))
+            local_accuracy[trainer_id] = acc
+            local_loss[trainer_id] = loss
+        total_accuracy = sum(local_accuracy.values()) / len(local_accuracy)
+        total_loss = sum(local_loss.values()) / len(local_loss)
+        return total_accuracy, total_loss, local_accuracy, local_loss
+
+    def split(self, trainers_data: {int: DataContainer}):
+        train_trainers_data = {}
+        test_trainers_data = {}
+        for trainer_id, data in trainers_data.items():
+            train_data, test_data = data.split(self.train_ratio)
+            train_trainers_data[trainer_id] = train_data
+            test_trainers_data[trainer_id] = test_data
+        return train_trainers_data, test_trainers_data
 
     @abstractmethod
     def init(self) -> nn.Module:

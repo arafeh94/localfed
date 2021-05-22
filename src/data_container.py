@@ -47,3 +47,12 @@ class DataContainer:
         if self.is_numpy():
             return self
         return DataContainer(np.asarray(self.x), np.asarray(self.y))
+
+    def split(self, train_freq):
+        total_size = len(self)
+        train_size = int(total_size * train_freq)
+        x_train = self.x[0:train_size]
+        y_train = self.y[0:train_size]
+        x_test = self.x[train_size:total_size]
+        y_test = self.y[train_size:total_size]
+        return DataContainer(x_train, y_train), DataContainer(x_test, y_test)

@@ -16,10 +16,9 @@ class args:
 
 
 class Context:
-    def __init__(self, clients_data: {int: DataContainer}, test_data: DataContainer, create_model: callable):
+    def __init__(self, clients_data: {int: DataContainer}, create_model: callable):
         self.args = args()
         self.clients_data: {int: DataContainer} = clients_data
-        self.test_data = test_data
         self.model_stats = {}
         self.models = {}
         self.sample_dict = {}
@@ -28,7 +27,7 @@ class Context:
         self.logging = logging.getLogger('context')
 
     def build(self):
-        self.logging.debug("Building Models --Started")
+        self.logging.info("Building Models --Started")
         all_threads = []
         for client_idx, data in self.clients_data.items():
             thread = threading.Thread(target=self._train_models, args=(client_idx, data))
@@ -36,7 +35,7 @@ class Context:
             all_threads.append(thread)
         for thread in all_threads:
             thread.join()
-        self.logging.debug("Building Models --Finished")
+        self.logging.info("Building Models --Finished")
 
     def _train_models(self, client_idx, data):
         model = copy.deepcopy(self.init_model)
@@ -46,7 +45,7 @@ class Context:
         self.sample_dict[client_idx] = len(data)
 
     def cluster(self, cluster_size=10):
-        self.logging.debug("Clustering Models --Started")
+        self.logging.info("Clustering Models --Started")
         weights = []
         client_ids = []
         clustered = {}
@@ -56,7 +55,7 @@ class Context:
         kmeans = KMeans(n_clusters=cluster_size).fit(weights)
         for i, label in enumerate(kmeans.labels_):
             clustered[client_ids[i]] = label
-        self.logging.debug("Clustering Models --Finished")
+        self.logging.info("Clustering Models --Finished")
         return clustered
 
     def cosine(self, client_idx):
@@ -88,13 +87,13 @@ class Context:
         tools.load(global_model, global_model_stats)
         return global_model
 
-    def test_selection_accuracy(self, client_idx, title='test accuracy', output=True):
-        self.logging.debug('-----------------' + title + '-----------------')
+    def test_selection_accuracy(self, client_idx, test_data: DataContainer, title='test accuracy', output=True):
+        self.logging.info('-----------------' + title + '-----------------')
         global_model = self.aggregate_clients(client_idx)
-        acc_loss = tools.infer(global_model, self.test_data.batch(8))
+        acc_loss = tools.infer(global_model, test_data.batch(8))
         if output:
-            self.logging.debug(f"test case:{client_idx}")
-            self.logging.debug(f"global model accuracy: {acc_loss[0]}, loss: {acc_loss[1]}")
+            self.logging.info(f"test case:{client_idx}")
+            self.logging.info(f"global model accuracy: {acc_loss[0]}, loss: {acc_loss[1]}")
         return acc_loss
 
     def ecl(self, client_idx):

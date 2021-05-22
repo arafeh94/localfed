@@ -217,13 +217,13 @@ def client_training(train_model, client_data: {int: DataContainer}, batch_size) 
 
 
 def detail(client_data: {int: DataContainer}, selection=None):
-    logger.debug("<--clients_labels-->")
+    logger.info("<--clients_labels-->")
     for client_id, data in client_data.items():
         if selection is not None:
             if client_id not in selection:
                 continue
         uniques = np.unique(data.y)
-        logger.debug(f"client_id: {client_id} --size: {len(data.y)} --num_labels: {len(uniques)} --unique_labels:{uniques}")
+        logger.info(f"client_id: {client_id} --size: {len(data.y)} --num_labels: {len(uniques)} --unique_labels:{uniques}")
         for unique in uniques:
             unique_count = 0
             for item in data.y:
@@ -231,7 +231,7 @@ def detail(client_data: {int: DataContainer}, selection=None):
                     unique_count += 1
             unique_count = unique_count / len(data.y) * 100
             unique_count = int(unique_count)
-            logger.debug(f"labels_{unique}= {unique_count}%")
+            logger.info(f"labels_{unique}= {unique_count}%")
 
 
 def threaded_train(train_model, client_data: {int: DataContainer}, batch_size) -> ({int: nn.ModuleDict}, {int: int}):
