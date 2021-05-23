@@ -1,8 +1,9 @@
 from torch import nn
 
 from applications.fedavg import FedAVG
-from src import tools, genetic
-from src.context import Context
+from src import tools
+from src.apis import genetic
+from src.apis.context import Context
 
 
 class GAFedAVG(FedAVG):

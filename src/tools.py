@@ -6,8 +6,9 @@ import numpy
 import numpy as np
 import torch
 from torch import nn
-from src.data_container import DataContainer
 import logging
+
+from src.data.data_container import DataContainer
 
 logger = logging.getLogger('tools')
 

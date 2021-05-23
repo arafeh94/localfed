@@ -1,10 +1,8 @@
-import random
 from torch import nn
 
 from applications.fedavg import FedAVG
 from src import tools
-from src.data_container import DataContainer
-from src.federated import AbstractFederated
+from src.data.data_container import DataContainer
 
 
 class FedContinuous(FedAVG):
