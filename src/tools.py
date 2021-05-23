@@ -25,10 +25,10 @@ def transform_tensor_to_list(model_params):
     return model_params
 
 
-def train(model, train_data, epochs=100):
+def train(model, train_data, epochs=10, lr=0.1):
     # change to train mode
     model.train()
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+    optimizer = torch.optim.SGD(model.parameters(), lr=lr)
     criterion = nn.CrossEntropyLoss()
 
     epoch_loss = []
@@ -45,7 +45,6 @@ def train(model, train_data, epochs=100):
             epoch_loss.append(sum(batch_loss) / len(batch_loss))
 
     weights = model.cpu().state_dict()
-    # transform Tensor to list
     return weights
 
 
@@ -206,32 +205,15 @@ class Clustered:
         return len(self.id_label_dict.keys())
 
 
-def client_training(train_model, client_data: {int: DataContainer}, batch_size) -> ({int: nn.ModuleDict}, {int: int}):
+def client_training(train_model, client_data: {int: DataContainer}, batch_size, epochs, lr) -> (
+        {int: nn.ModuleDict}, {int: int}):
     trained_models_dict = {}
     sample_size_dict = {}
     for trainer_id, trainer_data in client_data.items():
         sample_size_dict[trainer_id] = len(trainer_data)
         model_copy = copy.deepcopy(train_model)
-        _inner_train(model_copy, trainer_id, trainer_data, trained_models_dict, batch_size)
+        _inner_train(model_copy, trainer_id, trainer_data, trained_models_dict, batch_size, epochs, lr)
     return trained_models_dict, sample_size_dict
-
-
-def detail(client_data: {int: DataContainer}, selection=None):
-    logger.info("<--clients_labels-->")
-    for client_id, data in client_data.items():
-        if selection is not None:
-            if client_id not in selection:
-                continue
-        uniques = np.unique(data.y)
-        logger.info(f"client_id: {client_id} --size: {len(data.y)} --num_labels: {len(uniques)} --unique_labels:{uniques}")
-        for unique in uniques:
-            unique_count = 0
-            for item in data.y:
-                if item == unique:
-                    unique_count += 1
-            unique_count = unique_count / len(data.y) * 100
-            unique_count = int(unique_count)
-            logger.info(f"labels_{unique}= {unique_count}%")
 
 
 def threaded_train(train_model, client_data: {int: DataContainer}, batch_size) -> ({int: nn.ModuleDict}, {int: int}):
@@ -250,6 +232,26 @@ def threaded_train(train_model, client_data: {int: DataContainer}, batch_size) -
     return trained_models_dict, sample_size_dict
 
 
-def _inner_train(model, trainer_id: int, trainer_data: DataContainer, cache: {int: [nn.ModuleDict, int]}, batch_size):
-    trained = train(model, trainer_data.batch(batch_size))
+def _inner_train(model, trainer_id: int, trainer_data: DataContainer, cache: {int: [nn.ModuleDict, int]}, batch_size,
+                 epochs, lr):
+    trained = train(model, trainer_data.batch(batch_size), epochs, lr)
     cache[trainer_id] = trained
+
+
+def detail(client_data: {int: DataContainer}, selection=None):
+    logger.info("<--clients_labels-->")
+    for client_id, data in client_data.items():
+        if selection is not None:
+            if client_id not in selection:
+                continue
+        uniques = np.unique(data.y)
+        logger.info(
+            f"client_id: {client_id} --size: {len(data.y)} --num_labels: {len(uniques)} --unique_labels:{uniques}")
+        for unique in uniques:
+            unique_count = 0
+            for item in data.y:
+                if item == unique:
+                    unique_count += 1
+            unique_count = unique_count / len(data.y) * 100
+            unique_count = int(unique_count)
+            logger.info(f"labels_{unique}= {unique_count}%")

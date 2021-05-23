@@ -1,4 +1,5 @@
 import copy
+import logging
 import random
 import numpy as np
 import pickle
@@ -105,6 +106,7 @@ class DataGenerator:
 
 
 def load(path) -> DataGenerator:
+    logging.getLogger('DataGenerator').debug('loaded data_generator has only @var.distributed available')
     file = open(path, 'rb')
     dg = pickle.load(file)
     return dg

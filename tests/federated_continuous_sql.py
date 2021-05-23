@@ -23,7 +23,9 @@ federated = FedContinuous(
     trainers_data_dict=client_data,
     create_model=lambda: LogisticRegression(28 * 28, 10),
     num_rounds=5,
-    desired_accuracy=0.9
+    desired_accuracy=0.9,
+    epochs=10,
+    lr=0.1
 )
 federated.plug(plugs.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_TRAINER_SELECTED], detailed_selection=False))
 federated.plug(plugs.FederatedTimer([Events.ET_ROUND_START, Events.ET_TRAIN_END]))

@@ -5,6 +5,7 @@ from collections import defaultdict
 import numpy as np
 
 from src import tools
+from src.data_container import DataContainer
 from src.federated import FederatedEventPlug, Events
 import matplotlib.pyplot as plt
 
@@ -31,23 +32,11 @@ class FederatedTimer(FederatedEventPlug):
         dif = time.process_time() - self.first_tick
         self.logger.info(f"federated total time: {dif}s")
 
-    def on_init(self, params):
-        pass
-
-    def on_training_start(self, params):
-        pass
-
     def on_training_end(self, params):
         self.tick('training')
 
     def on_aggregation_end(self, params):
         self.tick('aggregation')
-
-    def on_round_end(self, params):
-        pass
-
-    def on_round_start(self, params):
-        pass
 
     def on_trainers_selected(self, params):
         self.tick('trainer selection')
@@ -97,48 +86,44 @@ class FederatedLogger(FederatedEventPlug):
 
 
 class FedPlot(FederatedEventPlug):
-    def __init__(self):
+    def __init__(self, per_rounds=False, per_federated_local=False, per_federated_total=True):
         super().__init__()
         self.rounds_accuracy = []
         self.rounds_loss = []
         self.local_accuracies = defaultdict(lambda: [])
         self.local_losses = defaultdict(lambda: [])
-
-    def on_federated_started(self, params):
-        pass
+        plt.interactive(False)
+        self.per_rounds = per_rounds
+        self.per_federated_local = per_federated_local
+        self.per_federated_total = per_federated_total
 
     def on_federated_ended(self, params):
-        fig, axs = plt.subplots(2)
-        axs[0].plot(self.rounds_accuracy)
-        axs[0].set_title('Total Accuracy')
-        axs[1].plot(self.rounds_loss)
-        axs[1].set_title('Total Loss')
-        fig.tight_layout()
-        plt.show()
+        if self.per_federated_total:
+            fig, axs = plt.subplots(2)
+            axs[0].plot(self.rounds_accuracy)
+            axs[0].set_title('Total Accuracy')
+            axs[1].set_xticks(range(len(self.rounds_accuracy)))
+            axs[1].plot(self.rounds_loss)
+            axs[1].set_title('Total Loss')
+            axs[1].set_xticks(range(len(self.rounds_loss)))
+            fig.suptitle('Total Accuracy & Loss')
+            fig.tight_layout()
+            plt.show()
 
-        fig, axs = plt.subplots(2)
-        for trainer_id, trainer_accuracies in self.local_accuracies.items():
-            axs[0].plot(range(len(trainer_accuracies)), trainer_accuracies, label=f'Trainer-{trainer_id}')
-            axs[0].set_title('All Trainers Local Accuracy')
-            axs[0].legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        for trainer_id, trainer_losses in self.local_losses.items():
-            axs[1].plot(range(len(trainer_losses)), trainer_losses, label=f'Trainer-{trainer_id}')
-            axs[1].set_title('All Trainers Local Loss')
-            axs[1].legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        fig.tight_layout()
-        plt.show()
-
-    def on_init(self, params):
-        pass
-
-    def on_training_start(self, params):
-        pass
-
-    def on_training_end(self, params):
-        pass
-
-    def on_aggregation_end(self, params):
-        pass
+        if self.per_federated_local:
+            fig, axs = plt.subplots(2)
+            for trainer_id, trainer_accuracies in self.local_accuracies.items():
+                axs[0].plot(range(len(trainer_accuracies)), trainer_accuracies, label=f'Trainer-{trainer_id}')
+                axs[0].set_title('All Trainers Local Accuracy')
+                axs[0].legend(loc='center left', bbox_to_anchor=(1, 0.5))
+                axs[0].set_xticks(range(len(trainer_accuracies)))
+            for trainer_id, trainer_losses in self.local_losses.items():
+                axs[1].plot(range(len(trainer_losses)), trainer_losses, label=f'Trainer-{trainer_id}')
+                axs[1].set_title('All Trainers Local Loss')
+                axs[1].legend(loc='center left', bbox_to_anchor=(1, 0.5))
+                axs[1].set_xticks(range(len(trainer_losses)))
+            fig.tight_layout()
+            plt.show()
 
     def on_round_end(self, params):
         self.rounds_accuracy.append(params['accuracy'])
@@ -149,16 +134,45 @@ class FedPlot(FederatedEventPlug):
             self.local_accuracies[trainer_id].append(accuracy)
         for trainer_id, loss in local_loss.items():
             self.local_losses[trainer_id].append(loss)
+        if self.per_rounds:
+            fig, axs = plt.subplots(2)
+            axs[0].bar(local_accuracy.keys(), local_accuracy.values())
+            axs[0].set_title('Local Round Accuracy')
+            axs[1].set_xticks(range(len(self.local_accuracies)))
+            axs[1].bar(local_loss.keys(), local_loss.values())
+            axs[1].set_title('Local Round Loss')
+            axs[1].set_xticks(range(len(self.local_losses)))
+            fig.tight_layout()
+            plt.show()
+
+
+class CustomModelTestPlug(FederatedEventPlug):
+    def __init__(self, test_data: DataContainer, show_plot=True):
+        super().__init__()
+        self.test_data = test_data
+        self.batch_size = 10
+        self.history_acc = []
+        self.history_loss = []
+        self.show_plot = show_plot
+
+    def on_federated_started(self, params):
+        self.batch_size = params['batch_size']
+
+    def on_aggregation_end(self, params):
+        model = params['global_model']
+        acc, loss = tools.infer(model, test_data=self.test_data.batch(self.batch_size))
+        self.history_acc.append(acc)
+        self.history_loss.append(loss)
+        logging.getLogger('custom_test').info(f'accuracy: {acc}, loss: {loss}')
+
+    def on_federated_ended(self, params):
         fig, axs = plt.subplots(2)
-        axs[0].bar(local_accuracy.keys(), local_accuracy.values())
-        axs[0].set_title('Local Round Accuracy')
-        axs[1].bar(local_loss.keys(), local_loss.values())
-        axs[1].set_title('Local Round Loss')
+        axs[0].plot(self.history_acc)
+        axs[0].set_title('Total Accuracy')
+        axs[0].set_xticks(range(len(self.history_acc)))
+        axs[1].plot(self.history_loss)
+        axs[1].set_title('Total Loss')
+        axs[1].set_xticks(range(len(self.history_loss)))
+        fig.suptitle('Custom Set Accuracy & Loss')
         fig.tight_layout()
         plt.show()
-
-    def on_round_start(self, params):
-        pass
-
-    def on_trainers_selected(self, params):
-        pass

@@ -17,7 +17,7 @@ class FedAVG(AbstractFederated):
     def train(self, global_model_weights: nn.ModuleDict, trainers_data: {int: DataContainer}, round_id: int) -> (
             {int: nn.ModuleDict}, {int: int}):
         trained_client_model, sample_size_dict = \
-            tools.threaded_train(self.get_global_model(), trainers_data, self.batch_size)
+            tools.client_training(self.get_global_model(), trainers_data, self.batch_size, self.epochs, self.lr)
         return trained_client_model, sample_size_dict
 
     def aggregate(self, trainers_models_weight_dict: {int: nn.ModuleDict}, sample_size: {int: int},

@@ -1,5 +1,8 @@
 import copy
-from abc import abstractmethod
+from abc import abstractmethod, ABC
+from functools import reduce
+from itertools import chain
+
 from torch import nn
 
 from src import tools
@@ -18,43 +21,34 @@ class Events:
     ET_FED_END = 'federated_learning_end'
 
 
-class FederatedEventPlug:
+class FederatedEventPlug(ABC):
     def __init__(self, only: None or [] = None):
         self.only = only
 
-    @abstractmethod
     def on_federated_started(self, params):
         pass
 
-    @abstractmethod
     def on_federated_ended(self, params):
         pass
 
-    @abstractmethod
     def on_init(self, params):
         pass
 
-    @abstractmethod
     def on_training_start(self, params):
         pass
 
-    @abstractmethod
     def on_training_end(self, params):
         pass
 
-    @abstractmethod
     def on_aggregation_end(self, params):
         pass
 
-    @abstractmethod
     def on_round_end(self, params):
         pass
 
-    @abstractmethod
     def on_round_start(self, params):
         pass
 
-    @abstractmethod
     def on_trainers_selected(self, params):
         pass
 
@@ -78,7 +72,9 @@ class FederatedEventPlug:
 class AbstractFederated:
 
     def __init__(self, trainers_data_dict: {int: DataContainer}, create_model: callable,
-                 num_rounds=10, desired_accuracy=0.9, trainer_per_round=4, batch_size=8, train_ratio=0.8):
+                 num_rounds=10, desired_accuracy=0.9, trainer_per_round=4, batch_size=8, train_ratio=0.8,
+                 epochs=10, lr=0.1, ignore_acc_decrease=False, **kwargs):
+        self.ignore_acc_decrease = ignore_acc_decrease
         self.trainer_per_round = trainer_per_round
         self.create_model = create_model
         self.trainers_data_dict = trainers_data_dict
@@ -87,6 +83,9 @@ class AbstractFederated:
         self.desired_accuracy = desired_accuracy
         self.batch_size = batch_size
         self.train_ratio = train_ratio
+        self.epochs = epochs
+        self.lr = lr
+        self.args = kwargs
         self.events = {}
 
     def start(self):
@@ -104,8 +103,8 @@ class AbstractFederated:
             trainers_weights, sample_size = self.train(global_weights, trainers_train_data, num_round)
             self.broadcast(Events.ET_TRAIN_END, trainers_weights=trainers_weights, sample_size=sample_size)
             global_weights = self.aggregate(trainers_weights, sample_size, num_round)
-            self.broadcast(Events.ET_AGGREGATION_END, global_weights=global_weights)
             tools.load(self.aggregated_model, global_weights)
+            self.broadcast(Events.ET_AGGREGATION_END, global_weights=global_weights, global_model=self.aggregated_model)
             accuracy, loss, local_acc, local_loss = self.infer(self.aggregated_model, trainers_test_data)
             self.broadcast(Events.ET_ROUND_FINISHED, round=num_round, accuracy=accuracy, loss=loss, local_acc=local_acc,
                            local_loss=local_loss)
@@ -116,7 +115,8 @@ class AbstractFederated:
         return self.aggregated_model
 
     def configs(self):
-        return {
+        named = {
+            "ignore_acc_decrease": self.ignore_acc_decrease,
             "trainer_per_round": self.trainer_per_round,
             "create_model": self.create_model,
             "trainers_data_dict": self.trainers_data_dict,
@@ -124,7 +124,10 @@ class AbstractFederated:
             "desired_accuracy": self.desired_accuracy,
             "batch_size": self.batch_size,
             "train_ratio": self.train_ratio,
+            "epochs": self.epochs,
+            "lr": self.lr,
         }
+        return reduce(lambda x, y: dict(x, **y), (named, self.args))
 
     def infer(self, model, trainers_data):
         local_accuracy = {}
