@@ -1,11 +1,5 @@
-import logging
 from src.data_generator import DataGenerator
 from src.data_provider import LocalMnistDataProvider
-import argparse
-
-parser = argparse.ArgumentParser()
-parser.add_argument("-f", "--format", help='data output, select one [cu,cb]')
-args = parser.parse_args()
 
 if True:
     print("create first")

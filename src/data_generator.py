@@ -99,11 +99,12 @@ class DataGenerator:
 
     def save(self, path):
         obj = copy.deepcopy(self)
-        obj.data = None
+        obj.data = []
         file = open(path, 'wb')
-        pickle.dump(obj, file)
+        pickle.dump(self, file)
 
 
 def load(path) -> DataGenerator:
     file = open(path, 'rb')
-    return pickle.load(file)
+    dg = pickle.load(file)
+    return dg
