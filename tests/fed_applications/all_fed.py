@@ -1,7 +1,7 @@
 import logging
 
-from applications.fedavg import FedAVG
-from applications.gafed import GAFedAVG
+from components.fedavg import FedAVG
+from components._need_update_ga import GAFedAVG
 from libs.model.linear.lr import LogisticRegression
 from src.data.data_generator import DataGenerator
 from src.data.data_provider import LocalMnistDataProvider

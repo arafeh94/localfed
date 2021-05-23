@@ -79,7 +79,7 @@ class FederatedLogger(FederatedEventPlug):
         return [Events.ET_FED_START]
 
     def on_trainers_selected(self, params):
-        self.logger.info(f"selected trainers {params}")
+        self.logger.info(f"selected components {params}")
         if self.detailed_selection:
             tools.detail(self.trainers_data_dict, params['trainers_ids'])
 
@@ -146,16 +146,13 @@ class FedPlot(FederatedEventPlug):
 
 
 class CustomModelTestPlug(FederatedEventPlug):
-    def __init__(self, test_data: DataContainer, show_plot=True):
+    def __init__(self, test_data: DataContainer, batch_size, show_plot=True):
         super().__init__()
         self.test_data = test_data
         self.batch_size = 10
         self.history_acc = []
         self.history_loss = []
         self.show_plot = show_plot
-
-    def on_federated_started(self, params):
-        self.batch_size = params['batch_size']
 
     def on_aggregation_end(self, params):
         model = params['global_model']

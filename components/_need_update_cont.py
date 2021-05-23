@@ -1,14 +1,14 @@
 from torch import nn
 
-from applications.fedavg import FedAVG
-from src import tools
+from components.fedavg import FedAVG
+from components.components import trainers
 from src.data.data_container import DataContainer
 
 
 class FedContinuous(FedAVG):
     """
     special implementation for continuous federated learning that have 2 modification on fedavg
-    1- in each round all trainers are selected
+    1- in each round all components are selected
     2- control the data of each round in while training (refer to method @self.train)
     """
 
@@ -34,6 +34,6 @@ class FedContinuous(FedAVG):
             y = data.y[int(round_id * round_data_size):int((round_id * round_data_size) + round_data_size)]
             trainers_data_round[trainer_id] = DataContainer(x, y)
 
-        trained_client_model, sample_size_dict = tools.client_training(self.get_global_model(), trainers_data,
-                                                                       self.batch_size)
+        trained_client_model, sample_size_dict = trainers.MultiTrainerTrain(
+            self.batch_size, self.epochs, self.criterion, self.optimizer).train(self.get_global_model(), trainers_data)
         return trained_client_model, sample_size_dict
