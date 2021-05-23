@@ -1,3 +1,4 @@
+import copy
 import random
 import numpy as np
 import pickle
@@ -97,8 +98,10 @@ class DataGenerator:
         tools.detail(self.distributed, selection)
 
     def save(self, path):
+        obj = copy.deepcopy(self)
+        obj.data = None
         file = open(path, 'wb')
-        pickle.dump(self, file)
+        pickle.dump(obj, file)
 
 
 def load(path) -> DataGenerator:
