@@ -10,6 +10,7 @@ from src.federated import plugins
 from src.data.data_generator import DataGenerator
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
+from src.federated.trainer_manager import TrainerManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
@@ -23,13 +24,16 @@ client_data = dg.distributed
 dg.describe()
 logger.info('Generating Data --Ended')
 
+trainer_manager = TrainerManager(trainers.CPUTrainer, batch_size=8, epochs=10, criterion=nn.CrossEntropyLoss(),
+                                 optimizer=optims.sgd(0.1))
+
 federated = FederatedLearning(
-    trainer=trainers.CPUTrainer(batch_size=8, epochs=10, criterion=nn.CrossEntropyLoss(), optimizer=optims.sgd(0.1)),
+    trainer_manager=trainer_manager,
     aggregator=aggregators.AVGAggregator(),
     tester=testers.Normal(batch_size=8, criterion=nn.CrossEntropyLoss()),
     client_selector=client_selectors.Random(10),
     trainers_data_dict=client_data,
-    create_model=lambda: LogisticRegression(28 * 28, 10),
+    initial_model=lambda: LogisticRegression(28 * 28, 10),
     num_rounds=10,
     desired_accuracy=0.99
 )

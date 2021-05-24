@@ -1,4 +1,3 @@
-import torch
 from torch import nn
 
 from src.data.data_container import DataContainer
@@ -7,6 +6,9 @@ from src.federated.protocols import Trainer
 
 
 class CPUTrainer(Trainer):
+    def __init__(self):
+        super().__init__()
+
     def train(self, model: nn.Module, train_data: DataContainer, context: FederatedLearning.Context):
         model.train()
         optimizer = self.optimizer(model)
@@ -26,7 +28,7 @@ class CPUTrainer(Trainer):
                 epoch_loss.append(sum(batch_loss) / len(batch_loss))
 
         weights = model.cpu().state_dict()
-        return weights
+        return weights, len(train_data)
 
 
 class CPUChunkTrainer(CPUTrainer):

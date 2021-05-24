@@ -3,22 +3,23 @@ from functools import reduce
 from src import tools
 from src.data.data_container import DataContainer
 from src.federated.events import Events, FederatedEventPlug
-from src.federated.protocols import Trainer, Aggregator, ClientSelector, ModelInfer
+from src.federated.protocols import Aggregator, ClientSelector, ModelInfer, Trainer
+from src.federated.trainer_manager import TrainerManager
 
 
 class FederatedLearning:
 
-    def __init__(self, trainer: Trainer, aggregator: Aggregator, client_selector: ClientSelector,
-                 tester: ModelInfer, trainers_data_dict: {int: DataContainer}, create_model: callable, num_rounds=10,
+    def __init__(self, trainer_manager: TrainerManager, aggregator: Aggregator, client_selector: ClientSelector,
+                 tester: ModelInfer, trainers_data_dict: {int: DataContainer}, initial_model: callable, num_rounds=10,
                  desired_accuracy=0.9, train_ratio=0.8, ignore_acc_decrease=False, **kwargs):
-        self.trainer = trainer
+        self.trainer_manager = trainer_manager
         self.aggregator = aggregator
         self.client_selector = client_selector
         self.tester = tester
         self.ignore_acc_decrease = ignore_acc_decrease
         self.trainers_data_dict = trainers_data_dict
         self.desired_accuracy = desired_accuracy
-        self.create_model = create_model
+        self.initial_model = initial_model
         self.train_ratio = train_ratio
         self.num_rounds = num_rounds
         self.args = kwargs
@@ -28,7 +29,7 @@ class FederatedLearning:
 
     def start(self):
         self.broadcast(Events.ET_FED_START, **self.configs())
-        self.context.reset()
+        self.context.build()
         self.broadcast(Events.ET_INIT, global_model=self.context.model)
         while True:
             self.broadcast(Events.ET_ROUND_START, round=self.context.round_id)
@@ -56,8 +57,8 @@ class FederatedLearning:
         clients_sample_size = {}
         for trainer_id, train_data in trainers_train_data.items():
             model_copy = copy.deepcopy(self.context.model)
-            trained_model = self.trainer.train(model_copy, train_data, self.context)
-            sample_size = len(train_data)
+            trained_model, sample_size = \
+                self.trainer_manager.trainer(trainer_id).train(model_copy, train_data, self.context)
             trained_clients_model[trainer_id] = trained_model
             clients_sample_size[trainer_id] = sample_size
         return trained_clients_model, clients_sample_size
@@ -87,13 +88,13 @@ class FederatedLearning:
 
     def configs(self):
         named = {
-            "trainer": self.trainer,
+            "trainer": self.trainer_manager,
             "aggregator": self.aggregator,
             "client_selector": self.client_selector,
             "ignore_acc_decrease": self.ignore_acc_decrease,
             "trainers_data_dict": self.trainers_data_dict,
             "desired_accuracy": self.desired_accuracy,
-            "create_model": self.create_model,
+            "create_model": self.initial_model,
             "train_ratio": self.train_ratio,
             "num_rounds": self.num_rounds
         }
@@ -130,6 +131,12 @@ class FederatedLearning:
             fl = self.federated
             return (0 < fl.num_rounds <= self.round_id) or acc >= fl.desired_accuracy
 
+        def build(self):
+            self.reset()
+            self.init_model()
+
         def reset(self):
             self.round_id = 0
-            self.model = self.federated.create_model()
+
+        def init_model(self):
+            self.model = self.federated.initial_model()
