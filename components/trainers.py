@@ -1,3 +1,5 @@
+from abc import ABC
+
 from torch import nn
 
 from src.data.data_container import DataContainer
@@ -34,10 +36,14 @@ class CPUTrainer(Trainer):
 class CPUChunkTrainer(CPUTrainer):
     def train(self, model: nn.Module, train_data: DataContainer, context: FederatedLearning.Context):
         round_id = context.round_id
-        num_rounds = context.federated.num_rounds
+        num_rounds = context.num_rounds
         total_size = len(train_data)
         round_data_size = total_size / num_rounds
         x = train_data.x[int(round_id * round_data_size):int((round_id * round_data_size) + round_data_size)]
         y = train_data.y[int(round_id * round_data_size):int((round_id * round_data_size) + round_data_size)]
         chunk = DataContainer(x, y)
         return super(CPUChunkTrainer, self).train(model, chunk, round_id)
+
+
+
+

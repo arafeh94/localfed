@@ -24,7 +24,7 @@ class ModelInfer(ABC):
 
 
 class Trainer:
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.optimizer = None
         self.criterion = None
         self.epochs = None

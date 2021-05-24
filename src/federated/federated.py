@@ -25,11 +25,11 @@ class FederatedLearning:
         self.args = kwargs
         self.events = {}
         self.check_params()
-        self.context = FederatedLearning.Context(self)
+        self.context = FederatedLearning.Context()
 
     def start(self):
         self.broadcast(Events.ET_FED_START, **self.configs())
-        self.context.build()
+        self.context.build(self)
         self.broadcast(Events.ET_INIT, global_model=self.context.model)
         while True:
             self.broadcast(Events.ET_ROUND_START, round=self.context.round_id)
@@ -119,24 +119,23 @@ class FederatedLearning:
             self.register_event(event_name, call)
 
     class Context:
-        def __init__(self, federated):
+        def __init__(self):
             self.round_id = 0
             self.model = None
-            self.federated: FederatedLearning = federated
+            self.num_rounds = None
+            self.desired_accuracy = None
 
         def new_round(self):
             self.round_id += 1
 
         def stop(self, acc):
-            fl = self.federated
-            return (0 < fl.num_rounds <= self.round_id) or acc >= fl.desired_accuracy
+            return (0 < self.num_rounds <= self.round_id) or acc >= self.desired_accuracy
 
-        def build(self):
+        def build(self, federated):
             self.reset()
-            self.init_model()
+            self.model = federated.initial_model()
+            self.num_rounds = federated.num_rounds
+            self.desired_accuracy = federated.desired_accuracy
 
         def reset(self):
             self.round_id = 0
-
-        def init_model(self):
-            self.model = self.federated.initial_model()

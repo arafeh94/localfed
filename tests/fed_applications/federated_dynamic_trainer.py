@@ -25,14 +25,11 @@ client_data = dg.distributed
 dg.describe()
 logger.info('Generating Data --Ended')
 
-trainer_manager = TrainerManager(trainers.CPUTrainer, batch_size=8, epochs=10, criterion=nn.CrossEntropyLoss(),
-                                 optimizer=optims.sgd(0.1))
-
 adv_trainer_manager = TrainerManager(ADVTrainer, t_class=CPUTrainer, batch_size=8, epochs=10,
                                      criterion=nn.CrossEntropyLoss(), optimizer=optims.sgd(0.1))
 
 federated = FederatedLearning(
-    trainer_manager=trainer_manager,
+    trainer_manager=adv_trainer_manager,
     aggregator=aggregators.AVGAggregator(),
     tester=testers.Normal(batch_size=8, criterion=nn.CrossEntropyLoss()),
     client_selector=client_selectors.Random(10),
