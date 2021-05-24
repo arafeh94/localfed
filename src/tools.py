@@ -170,6 +170,32 @@ class Clusters:
         return len(numpy.unique(self.get_clusters(points)))
 
 
+class Dict:
+    @staticmethod
+    def select(idx, dict_ref):
+        new_dict = {}
+        for i in idx:
+            new_dict[i] = dict_ref[i]
+        return new_dict
+
+    @staticmethod
+    def but(keys, dict_ref):
+        new_dict = {}
+        for item, val in dict_ref.items():
+            if item not in keys:
+                new_dict[item] = val
+        return new_dict
+
+    @staticmethod
+    def concat(first, second):
+        new_dict = {}
+        for item, val in first.items():
+            new_dict[item] = val
+        for item, val in second.items():
+            new_dict[item] = val
+        return new_dict
+
+
 class Clustered:
     def __init__(self, id_label_dict: dict):
         """

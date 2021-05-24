@@ -2,9 +2,16 @@ from src.data.data_generator import DataGenerator
 from src.data.data_provider import LocalMnistDataProvider, PickleDataProvider
 
 if True:
-    print("2-shards distributed big dataset")
+    print("2-shards distributed large dataset")
+    dg = DataGenerator(LocalMnistDataProvider())
+    dg.distribute_shards(num_clients=50, min_size=100, max_size=1000, shards_per_client=2)
+    dg.save('./pickles/2_50_100;1000_large_shards.pkl')
+    print("finished")
+
+if True:
+    print("2-shards distributed medium dataset")
     dg = DataGenerator(LocalMnistDataProvider(limit=30000))
-    client_data = dg.distribute_shards(num_clients=50, min_size=20, max_size=150, shards_per_client=2)
+    dg.distribute_shards(num_clients=50, min_size=20, max_size=150, shards_per_client=2)
     dg.save('./pickles/2_50_medium_shards.pkl')
     print("finished")
 

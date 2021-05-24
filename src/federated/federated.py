@@ -1,4 +1,6 @@
 import copy
+import math
+from collections import defaultdict
 from functools import reduce
 from src import tools
 from src.data.data_container import DataContainer
@@ -46,6 +48,7 @@ class FederatedLearning:
             accuracy, loss, local_acc, local_loss = self.infer(self.context.model, trainers_test_data)
             self.broadcast(Events.ET_ROUND_FINISHED, round=self.context.round_id, accuracy=accuracy, loss=loss,
                            local_acc=local_acc, local_loss=local_loss)
+            self.context.store(acc=accuracy, loss=loss, lacc=local_acc, lloss=local_loss)
             self.context.new_round()
             if self.context.stop(accuracy):
                 self.broadcast(Events.ET_FED_END, aggregated_model=self.context.model)
@@ -83,6 +86,23 @@ class FederatedLearning:
             test_trainers_data[trainer_id] = test_data
         return train_trainers_data, test_trainers_data
 
+    def compare(self, other, verbose=1):
+        local_history = self.context.history
+        other_history = other.context.history
+        performance_history = defaultdict(lambda: [])
+        diff = {}
+        for round_id, first_data in local_history.items():
+            second_data = other_history[round_id]
+            for item in first_data:
+                if type(first_data[item]) in [int, float, str]:
+                    performance_history[item].append(first_data[item] - second_data[item])
+        for item, val in performance_history.items():
+            diff[item] = math.fsum(val) / len(val)
+        if verbose == 1:
+            return diff
+        else:
+            return diff, performance_history
+
     def check_params(self):
         pass
 
@@ -101,9 +121,10 @@ class FederatedLearning:
         return reduce(lambda x, y: dict(x, **y), (named, self.args))
 
     def broadcast(self, event_name, **kwargs):
+        args = reduce(lambda x, y: dict(x, **y), ({'context': self.context}, kwargs))
         if event_name in self.events:
             for item in self.events[event_name]:
-                item(kwargs)
+                item(args)
 
     def register_event(self, event_name, action):
         if event_name not in self.events:
@@ -124,6 +145,7 @@ class FederatedLearning:
             self.model = None
             self.num_rounds = None
             self.desired_accuracy = None
+            self.history = {}
 
         def new_round(self):
             self.round_id += 1
@@ -139,3 +161,9 @@ class FederatedLearning:
 
         def reset(self):
             self.round_id = 0
+            self.history.clear()
+
+        def store(self, **kwargs):
+            if self.round_id not in self.history:
+                self.history[self.round_id] = {}
+            self.history[self.round_id] = tools.Dict.concat(self.history[self.round_id], kwargs)

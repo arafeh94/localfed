@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 
 from src.data.data_container import DataContainer
 from src.federated.events import FederatedEventPlug, Events
+from src.federated.federated import FederatedLearning
 
 
 class FederatedTimer(FederatedEventPlug):
@@ -49,36 +50,45 @@ class FederatedLogger(FederatedEventPlug):
         self.logger = logging.getLogger('federated')
 
     def on_federated_started(self, params):
+        params = tools.Dict.but(['context'], params)
         if self.detailed_selection:
             self.trainers_data_dict = params['trainers_data_dict']
         self.logger.info('federated learning started')
 
     def on_federated_ended(self, params):
+        params = tools.Dict.but(['context'], params)
         self.logger.info(f'federated learning ended {params}')
 
     def on_init(self, params):
+        params = tools.Dict.but(['context'], params)
         self.logger.info(f'federated learning initialized with initial model {params}')
 
     def on_training_start(self, params):
+        params = tools.Dict.but(['context'], params)
         self.logger.info(f"training started {params}")
 
     def on_training_end(self, params):
+        params = tools.Dict.but(['context'], params)
         self.logger.info(f"training ended {params}")
 
     def on_aggregation_end(self, params):
+        params = tools.Dict.but(['context'], params)
         self.logger.info(f"aggregation ended {params}")
 
     def on_round_end(self, params):
+        params = tools.Dict.but(['context'], params)
         self.logger.info(f"round ended {params}")
         self.logger.info("----------------------------------------")
 
     def on_round_start(self, params):
+        params = tools.Dict.but(['context'], params)
         self.logger.info(f"round started {params}")
 
     def force(self) -> []:
         return [Events.ET_FED_START]
 
     def on_trainers_selected(self, params):
+        params = tools.Dict.but(['context'], params)
         self.logger.info(f"selected components {params}")
         if self.detailed_selection:
             tools.detail(self.trainers_data_dict, params['trainers_ids'])
@@ -159,6 +169,9 @@ class CustomModelTestPlug(FederatedEventPlug):
         acc, loss = tools.infer(model, test_data=self.test_data.batch(self.batch_size))
         self.history_acc.append(acc)
         self.history_loss.append(loss)
+        if 'context' in params:
+            context: FederatedLearning.Context = params['context']
+            context.store(custom_accuracy=acc, custom_loss=loss)
         logging.getLogger('custom_test').info(f'accuracy: {acc}, loss: {loss}')
 
     def on_federated_ended(self, params):

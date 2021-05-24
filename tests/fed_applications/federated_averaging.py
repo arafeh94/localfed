@@ -28,9 +28,6 @@ logger.info('Generating Data --Ended')
 trainer_manager = TrainerManager(trainers.CPUTrainer, batch_size=8, epochs=10, criterion=nn.CrossEntropyLoss(),
                                  optimizer=optims.sgd(0.1))
 
-adv_trainer_manager = TrainerManager(ADVTrainer, t_class=CPUTrainer, batch_size=8, epochs=10,
-                                     criterion=nn.CrossEntropyLoss(), optimizer=optims.sgd(0.1))
-
 federated = FederatedLearning(
     trainer_manager=trainer_manager,
     aggregator=aggregators.AVGAggregator(),
@@ -38,7 +35,7 @@ federated = FederatedLearning(
     client_selector=client_selectors.Random(10),
     trainers_data_dict=client_data,
     initial_model=lambda: LogisticRegression(28 * 28, 10),
-    num_rounds=10,
+    num_rounds=3,
     desired_accuracy=0.99
 )
 
@@ -48,6 +45,6 @@ federated.plug(plugins.FedPlot())
 federated.plug(plugins.CustomModelTestPlug(PickleDataProvider(test_file).collect().as_tensor(), 8))
 
 logger.info("----------------------")
-logger.info("start federated")
+logger.info("start federated 1")
 logger.info("----------------------")
 federated.start()
