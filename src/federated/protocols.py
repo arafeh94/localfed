@@ -1,25 +1,26 @@
 from abc import abstractmethod, ABC
 from functools import reduce
+from typing import Dict, Tuple, List
 
-from torch import nn
+from torch import nn, Tensor
 
 from src.data.data_container import DataContainer
 
 
 class Aggregator(ABC):
     @abstractmethod
-    def aggregate(self, trainers_models_weight_dict: {int: nn.ModuleDict}, sample_size: {int: int},
+    def aggregate(self, trainers_models_weight_dict: Dict[int, nn.ModuleDict], sample_size: Dict[int, int],
                   round_id: int) -> nn.ModuleDict:
         pass
 
 
 class ModelInfer(ABC):
-    def __init__(self, batch_size, criterion):
+    def __init__(self, batch_size: int, criterion):
         self.batch_size = batch_size
         self.criterion = criterion
 
     @abstractmethod
-    def infer(self, model, test_data):
+    def infer(self, model: nn.Module, test_data: DataContainer):
         pass
 
 
@@ -39,11 +40,11 @@ class Trainer:
         pass
 
     @abstractmethod
-    def train(self, model: nn.Module, train_data: DataContainer, context) -> (nn.ModuleDict, int):
+    def train(self, model: nn.Module, train_data: DataContainer, context) -> Tuple[Dict[str, Tensor], int]:
         pass
 
 
 class ClientSelector:
     @abstractmethod
-    def select(self, trainer_ids: [int], round_id: int) -> [int]:
+    def select(self, trainer_ids: List[int], round_id: int) -> List[int]:
         pass

@@ -2,6 +2,8 @@ import copy
 import math
 from collections import defaultdict
 from functools import reduce
+from typing import Dict
+
 from src import tools
 from src.data.data_container import DataContainer
 from src.federated.events import Events, FederatedEventPlug
@@ -12,8 +14,8 @@ from src.federated.trainer_manager import TrainerManager
 class FederatedLearning:
 
     def __init__(self, trainer_manager: TrainerManager, aggregator: Aggregator, client_selector: ClientSelector,
-                 tester: ModelInfer, trainers_data_dict: {int: DataContainer}, initial_model: callable, num_rounds=10,
-                 desired_accuracy=0.9, train_ratio=0.8, ignore_acc_decrease=False, **kwargs):
+                 tester: ModelInfer, trainers_data_dict: Dict[int, DataContainer], initial_model: callable,
+                 num_rounds=10, desired_accuracy=0.9, train_ratio=0.8, ignore_acc_decrease=False, **kwargs):
         self.trainer_manager = trainer_manager
         self.aggregator = aggregator
         self.client_selector = client_selector
@@ -55,7 +57,7 @@ class FederatedLearning:
                 break
         return self.context.model
 
-    def train(self, trainers_train_data):
+    def train(self, trainers_train_data: Dict[int, DataContainer]):
         trained_clients_model = {}
         clients_sample_size = {}
         for trainer_id, train_data in trainers_train_data.items():
@@ -66,7 +68,7 @@ class FederatedLearning:
             clients_sample_size[trainer_id] = sample_size
         return trained_clients_model, clients_sample_size
 
-    def infer(self, model, trainers_data):
+    def infer(self, model, trainers_data: Dict[int, DataContainer]):
         local_accuracy = {}
         local_loss = {}
         for trainer_id, test_data in trainers_data.items():
@@ -77,7 +79,7 @@ class FederatedLearning:
         total_loss = sum(local_loss.values()) / len(local_loss)
         return total_accuracy, total_loss, local_accuracy, local_loss
 
-    def split(self, trainers_data: {int: DataContainer}):
+    def split(self, trainers_data: Dict[int, DataContainer]):
         train_trainers_data = {}
         test_trainers_data = {}
         for trainer_id, data in trainers_data.items():
@@ -92,6 +94,8 @@ class FederatedLearning:
         performance_history = defaultdict(lambda: [])
         diff = {}
         for round_id, first_data in local_history.items():
+            if round_id not in other_history:
+                continue
             second_data = other_history[round_id]
             for item in first_data:
                 if type(first_data[item]) in [int, float, str]:
@@ -120,13 +124,13 @@ class FederatedLearning:
         }
         return reduce(lambda x, y: dict(x, **y), (named, self.args))
 
-    def broadcast(self, event_name, **kwargs):
+    def broadcast(self, event_name: str, **kwargs):
         args = reduce(lambda x, y: dict(x, **y), ({'context': self.context}, kwargs))
         if event_name in self.events:
             for item in self.events[event_name]:
                 item(args)
 
-    def register_event(self, event_name, action):
+    def register_event(self, event_name: str, action: callable):
         if event_name not in self.events:
             self.events[event_name] = []
         self.events[event_name].append(action)
@@ -150,7 +154,7 @@ class FederatedLearning:
         def new_round(self):
             self.round_id += 1
 
-        def stop(self, acc):
+        def stop(self, acc: float):
             return (0 < self.num_rounds <= self.round_id) or acc >= self.desired_accuracy
 
         def build(self, federated):

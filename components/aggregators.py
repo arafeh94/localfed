@@ -1,13 +1,13 @@
 import copy
-
-import torch
+from typing import Dict
 from torch import nn
 
 from src.federated.protocols import Trainer, Aggregator
 
 
+# noinspection PyTypeChecker
 class AVGAggregator(Aggregator):
-    def aggregate(self, models_dict: {int: nn.ModuleDict}, sample_dict: {int: int},
+    def aggregate(self, models_dict: Dict[int, nn.ModuleDict], sample_dict: Dict[int, int],
                   round_id: int) -> nn.ModuleDict:
         model_list = []
         training_num = 0

@@ -1,6 +1,7 @@
 from abc import ABC
+from typing import Tuple, Dict
 
-from torch import nn
+from torch import nn, Tensor
 
 from src.data.data_container import DataContainer
 from src.federated.federated import FederatedLearning
@@ -11,7 +12,8 @@ class CPUTrainer(Trainer):
     def __init__(self):
         super().__init__()
 
-    def train(self, model: nn.Module, train_data: DataContainer, context: FederatedLearning.Context):
+    def train(self, model: nn.Module, train_data: DataContainer, context: FederatedLearning.Context) \
+            -> Tuple[any, int]:
         model.train()
         optimizer = self.optimizer(model)
         criterion = self.criterion
@@ -43,7 +45,3 @@ class CPUChunkTrainer(CPUTrainer):
         y = train_data.y[int(round_id * round_data_size):int((round_id * round_data_size) + round_data_size)]
         chunk = DataContainer(x, y)
         return super(CPUChunkTrainer, self).train(model, chunk, round_id)
-
-
-
-

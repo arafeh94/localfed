@@ -7,10 +7,11 @@ from components import client_selectors, aggregators, trainers, testers, optims
 from components.trainers import CPUTrainer
 from libs.model.linear.lr import LogisticRegression
 from src.data.data_provider import PickleDataProvider
-from src.federated import plugins
+from src.federated import plugins, fedruns
 from src.data.data_generator import DataGenerator
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
+from src.federated.fedruns import FedRuns
 from src.federated.trainer_manager import TrainerManager, ADVTrainer
 
 logging.basicConfig(level=logging.INFO)
@@ -54,7 +55,7 @@ federated_configs = {
         'criterion': nn.CrossEntropyLoss(),
         'optimizer': optims.sgd(0.1),
         'num_clients': 10,
-        'num_rounds': 3,
+        'num_rounds': 10,
         'desired_accuracy': 0.99,
         'model_init': lambda: LogisticRegression(28 * 28, 10),
         'clients_data': client_data,
@@ -93,7 +94,6 @@ for name, federated_params in federated_configs.items():
     federated.start()
     federated_runs[name] = federated
 
-for i, first in enumerate(federated_runs):
-    for j, second in enumerate(federated_runs):
-        if i > j:
-            logger.info(f'comparing {first} to {second}: {federated_runs[first].compare(federated_runs[second])}')
+runs = FedRuns(federated_runs)
+runs.compare()
+runs.plot()

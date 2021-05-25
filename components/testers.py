@@ -1,10 +1,12 @@
 import torch
+from torch import nn
 
+from src.data.data_container import DataContainer
 from src.federated.protocols import Trainer, ModelInfer
 
 
 class Normal(ModelInfer):
-    def infer(self, model, test_data):
+    def infer(self, model: nn.Module, test_data: DataContainer):
         model.eval()
         test_loss = test_acc = test_total = 0.
         criterion = self.criterion
