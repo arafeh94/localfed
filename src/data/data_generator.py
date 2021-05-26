@@ -92,6 +92,20 @@ class DataGenerator:
         self.distributed = clients_data
         return clients_data
 
+    def distribute_size(self, num_clients, min_size, max_size):
+        clients_data = {}
+        xs = self.data.x.tolist()
+        ys = self.data.y.tolist()
+        data_pos = 0
+        for i in range(num_clients):
+            client_data_size = random.randint(min_size, max_size)
+            client_x = xs[data_pos:data_pos + client_data_size]
+            client_y = ys[data_pos:data_pos + client_data_size]
+            data_pos += len(client_x)
+            clients_data[i] = DataContainer(client_x, client_y).as_tensor()
+        self.distributed = clients_data
+        return clients_data
+
     def describe(self, selection=None):
         if self.distributed is None:
             print("distribute first")

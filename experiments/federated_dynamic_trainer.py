@@ -16,8 +16,8 @@ from src.federated.trainer_manager import TrainerManager, ADVTrainer
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-data_file = '../../datasets/pickles/2_50_medium_shards.pkl'
-test_file = '../../datasets/pickles/test_data.pkl'
+data_file = '../datasets/pickles/2_50_medium_shards.pkl'
+test_file = '../datasets/pickles/test_data.pkl'
 
 logger.info('Generating Data --Started')
 dg = src.data.data_generator.load(data_file)
@@ -25,17 +25,17 @@ client_data = dg.distributed
 dg.describe()
 logger.info('Generating Data --Ended')
 
-trainer_manager = TrainerManager(trainers.CPUTrainer, batch_size=8, epochs=10, criterion=nn.CrossEntropyLoss(),
-                                 optimizer=optims.sgd(0.1))
+adv_trainer_manager = TrainerManager(ADVTrainer, t_class=CPUTrainer, batch_size=8, epochs=10,
+                                     criterion=nn.CrossEntropyLoss(), optimizer=optims.sgd(0.1))
 
 federated = FederatedLearning(
-    trainer_manager=trainer_manager,
+    trainer_manager=adv_trainer_manager,
     aggregator=aggregators.AVGAggregator(),
     tester=testers.Normal(batch_size=8, criterion=nn.CrossEntropyLoss()),
     client_selector=client_selectors.Random(10),
     trainers_data_dict=client_data,
     initial_model=lambda: LogisticRegression(28 * 28, 10),
-    num_rounds=3,
+    num_rounds=10,
     desired_accuracy=0.99
 )
 
@@ -45,6 +45,6 @@ federated.plug(plugins.FedPlot())
 federated.plug(plugins.CustomModelTestPlug(PickleDataProvider(test_file).collect().as_tensor(), 8))
 
 logger.info("----------------------")
-logger.info("start federated 1")
+logger.info("start federated")
 logger.info("----------------------")
 federated.start()

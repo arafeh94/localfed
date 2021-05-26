@@ -3,6 +3,7 @@ import pickle
 from abc import abstractmethod
 import mysql.connector
 from src.data.data_container import DataContainer
+import libs.language_tools as lt
 
 
 class DataProvider:
@@ -56,9 +57,34 @@ class LocalMnistDataProvider(SQLDataProvider):
             user='root',
             database='mnist',
             query=query,
-            fetch_x_y=lambda row: (json.loads(row[0]), row[1])
+            fetch_x_y=lambda row: (row[0], row[1])
         )
         if query is None:
             self.query = 'select data,label from sample'
         if limit > 0:
             self.query += ' limit ' + str(limit)
+
+
+class LocalShakespeareDataProvider(SQLDataProvider):
+    def __init__(self, query=None, limit=0):
+        super().__init__(
+            host='localhost',
+            password='root',
+            user='root',
+            database='shakespeare',
+            query=query,
+            fetch_x_y=lambda row: (row[0], row[1])
+        )
+        if query is None:
+            self.query = 'select data,label from sample'
+        if limit > 0:
+            self.query += ' limit ' + str(limit)
+
+    def collect(self) -> DataContainer:
+        collected = super().collect()
+        new_x = []
+        new_y = []
+        for index in range(len(collected.x)):
+            new_x.append(lt.word_to_indices(collected.x[index]))
+            new_y.append(lt.letter_to_index(collected.y[index]))
+        return DataContainer(new_x, new_y)

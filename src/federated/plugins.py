@@ -11,35 +11,68 @@ from src.federated.federated import FederatedLearning
 
 
 class FederatedTimer(FederatedEventPlug):
-    def __init__(self, only=None):
-        super().__init__(only)
+    def __init__(self, show_only=None):
+        super().__init__(None)
         self.last_tick = 0
+        self.last_tick_cpu = 0
         self.first_tick = 0
+        self.show_only = show_only
         self.logger = logging.getLogger("fed_timer")
 
     def tick(self, name):
-        now = time.process_time()
+        now = time.time()
+        now_cpu = time.process_time()
         dif = now - self.last_tick
+        dif_cpu = now_cpu - self.last_tick_cpu
         self.last_tick = now
-        self.logger.info(f'{name}, elapsed: {dif}s')
+        self.last_tick_cpu = now_cpu
+        if self.show_only is not None and name not in self.show_only:
+            return
+        self.logger.info(f'{name}, elapsed: {round(dif, 3)}s')
+        self.logger.info(f'{name}, elapsed: {round(dif_cpu, 3)}s of cpu time')
 
     def on_federated_started(self, params):
-        self.last_tick = time.process_time()
-        self.first_tick = time.process_time()
+        self.first_tick = time.time()
+        self.last_tick = time.time()
+        self.last_tick_cpu = time.process_time()
+        self.tick(Events.ET_FED_START)
 
     def on_federated_ended(self, params):
-        self.tick('fed end')
-        dif = time.process_time() - self.first_tick
+        self.tick(Events.ET_FED_END)
+        dif = time.time() - self.first_tick
         self.logger.info(f"federated total time: {dif}s")
 
+    def on_training_start(self, params):
+        self.tick(Events.ET_TRAIN_START)
+
     def on_training_end(self, params):
-        self.tick('training')
+        self.tick(Events.ET_TRAIN_END)
+
+    def on_round_start(self, params):
+        self.tick(Events.ET_ROUND_START)
+
+    def on_round_end(self, params):
+        self.tick(Events.ET_ROUND_FINISHED)
 
     def on_aggregation_end(self, params):
-        self.tick('aggregation')
+        self.tick(Events.ET_AGGREGATION_END)
 
     def on_trainers_selected(self, params):
-        self.tick('trainer selection')
+        self.tick(Events.ET_TRAINER_SELECTED)
+
+    def on_trainer_start(self, params):
+        self.tick(Events.ET_TRAINER_STARTED)
+
+    def on_trainer_end(self, params):
+        self.tick(Events.ET_TRAINER_ENDED)
+
+    def on_init(self, params):
+        self.tick(Events.ET_INIT)
+
+    def force(self) -> []:
+        return [Events.ET_FED_START, Events.ET_TRAINER_ENDED, Events.ET_TRAINER_STARTED, Events.ET_TRAIN_START,
+                Events.ET_TRAIN_END, Events.ET_AGGREGATION_END, Events.ET_INIT, Events.ET_ROUND_START,
+                Events.ET_ROUND_FINISHED]
 
 
 class FederatedLogger(FederatedEventPlug):
@@ -83,6 +116,14 @@ class FederatedLogger(FederatedEventPlug):
     def on_round_start(self, params):
         params = tools.Dict.but(['context'], params)
         self.logger.info(f"round started {params}")
+
+    def on_trainer_start(self, params):
+        params = tools.Dict.but(['context', 'train_data'], params)
+        self.logger.info(f"trainer started {params}")
+
+    def on_trainer_end(self, params):
+        params = tools.Dict.but(['context', 'trained_model'], params)
+        self.logger.info(f"trainer ended {params}")
 
     def force(self) -> []:
         return [Events.ET_FED_START]

@@ -17,8 +17,8 @@ from src.federated.trainer_manager import TrainerManager, ADVTrainer
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-data_file = '../../datasets/pickles/2_50_medium_shards.pkl'
-test_file = '../../datasets/pickles/test_data.pkl'
+data_file = '../datasets/pickles/2_50_medium_shards.pkl'
+test_file = '../datasets/pickles/test_data.pkl'
 
 logger.info('Generating Data --Started')
 dg = src.data.data_generator.load(data_file)

@@ -14,8 +14,8 @@ from src.federated.trainer_manager import TrainerManager
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-data_file = "../../datasets/pickles/continuous_balanced.pkl"
-test_file = '../../datasets/pickles/test_data.pkl'
+data_file = "../datasets/pickles/continuous_balanced.pkl"
+test_file = '../datasets/pickles/test_data.pkl'
 
 logger.info('generating data --Started')
 

@@ -36,3 +36,4 @@ cifar-10-batches-py
 #big pkl files
 *_big*.pkl
 
+./datasets/preprocess/data
