@@ -1,4 +1,5 @@
 import logging
+import pickle
 
 from torch import nn
 
@@ -41,8 +42,9 @@ federated = FederatedLearning(
 
 federated.plug(plugins.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_TRAINER_SELECTED]))
 federated.plug(plugins.FederatedTimer([Events.ET_ROUND_START, Events.ET_TRAIN_END]))
-federated.plug(plugins.FedPlot())
-federated.plug(plugins.CustomModelTestPlug(PickleDataProvider(test_file).collect().as_tensor(), 8))
+# federated.plug(plugins.FedPlot())
+# federated.plug(plugins.CustomModelTestPlug(PickleDataProvider(test_file).collect().as_tensor(), 8))
+federated.plug(plugins.FedSave())
 
 logger.info("----------------------")
 logger.info("start federated 1")

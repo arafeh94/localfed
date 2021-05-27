@@ -77,7 +77,7 @@ def infer(model, test_data):
     criterion = nn.CrossEntropyLoss()
     with torch.no_grad():
         for batch_idx, (x, target) in enumerate(test_data):
-            pred = model(x)
+            pred = model(x.float())
             loss = criterion(pred, target)
             _, predicted = torch.max(pred, -1)
             correct = predicted.eq(target).sum()

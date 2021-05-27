@@ -1,10 +1,11 @@
+import os
 import time
 import logging
 from collections import defaultdict
 
 from src import tools
 import matplotlib.pyplot as plt
-
+import pickle
 from src.data.data_container import DataContainer
 from src.federated.events import FederatedEventPlug, Events
 from src.federated.federated import FederatedLearning
@@ -226,3 +227,33 @@ class CustomModelTestPlug(FederatedEventPlug):
         fig.suptitle('Custom Set Accuracy & Loss')
         fig.tight_layout()
         plt.show()
+
+
+class FedSave(FederatedEventPlug):
+    def __init__(self, folder_name="./logs/"):
+        super().__init__()
+        self.folder_name = folder_name
+        self.file_name = "fedruns.pkl"
+
+    def force(self) -> []:
+        return [Events.ET_FED_END]
+
+    def on_federated_ended(self, params):
+        context = params['context']
+        all = self.old_runs()
+        all.append(context)
+        with open(self.path(), 'wb') as file:
+            pickle.dump(all, file)
+
+    def is_old_exists(self):
+        return os.path.exists(path=self.path())
+
+    def old_runs(self):
+        runs = []
+        if self.is_old_exists():
+            with open(self.path(), 'rb') as file:
+                runs = pickle.load(file)
+        return runs
+
+    def path(self):
+        return self.folder_name + self.file_name
