@@ -66,13 +66,13 @@ class FederatedTimer(FederatedEventPlug):
         self.tick(Events.ET_TRAINER_STARTED)
 
     def on_trainer_end(self, params):
-        self.tick(Events.ET_TRAINER_ENDED)
+        self.tick(Events.ET_TRAINER_FINISHED)
 
     def on_init(self, params):
         self.tick(Events.ET_INIT)
 
     def force(self) -> []:
-        return [Events.ET_FED_START, Events.ET_TRAINER_ENDED, Events.ET_TRAINER_STARTED, Events.ET_TRAIN_START,
+        return [Events.ET_FED_START, Events.ET_TRAINER_FINISHED, Events.ET_TRAINER_STARTED, Events.ET_TRAIN_START,
                 Events.ET_TRAIN_END, Events.ET_AGGREGATION_END, Events.ET_INIT, Events.ET_ROUND_START,
                 Events.ET_ROUND_FINISHED]
 
@@ -190,7 +190,7 @@ class FedPlot(FederatedEventPlug):
             fig, axs = plt.subplots(2)
             axs[0].bar(local_accuracy.keys(), local_accuracy.values())
             axs[0].set_title('Local Round Accuracy')
-            axs[1].set_xticks(range(len(self.local_accuracies)))
+            axs[0].set_xticks(range(len(self.local_accuracies)))
             axs[1].bar(local_loss.keys(), local_loss.values())
             axs[1].set_title('Local Round Loss')
             axs[1].set_xticks(range(len(self.local_losses)))

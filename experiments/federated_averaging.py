@@ -45,7 +45,7 @@ federated.plug(plugins.FederatedTimer([Events.ET_ROUND_START, Events.ET_TRAIN_EN
 # federated.plug(plugins.FedPlot())
 # federated.plug(plugins.CustomModelTestPlug(PickleDataProvider(test_file).collect().as_tensor(), 8))
 # federated.plug(plugins.FedSave())
-federated.plug(plugins.WandbLogger(config={'num_rounds': 10}))
+# federated.plug(plugins.WandbLogger(config={'num_rounds': 10}))
 
 logger.info("----------------------")
 logger.info("start federated 1")

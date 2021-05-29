@@ -38,8 +38,8 @@ class DataContainer:
         if self.is_tensor():
             return self
         if self.is_numpy():
-            return DataContainer(torch.from_numpy(self.x).long(), torch.from_numpy(self.y).long())
-        return DataContainer(torch.from_numpy(np.asarray(self.x)).long(), torch.from_numpy(np.asarray(self.y)).long())
+            return DataContainer(torch.from_numpy(self.x).float(), torch.from_numpy(self.y).long())
+        return DataContainer(torch.from_numpy(np.asarray(self.x)).float(), torch.from_numpy(np.asarray(self.y)).long())
 
     def as_numpy(self):
         if self.is_tensor():

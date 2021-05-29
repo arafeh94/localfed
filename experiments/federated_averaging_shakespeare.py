@@ -41,8 +41,8 @@ federated = FederatedLearning(
 )
 
 federated.plug(plugins.FederatedLogger([
-    et.ET_ROUND_FINISHED, et.ET_TRAINER_SELECTED, et.ET_TRAINER_STARTED, et.ET_TRAINER_ENDED]))
-federated.plug(plugins.FederatedTimer([et.ET_TRAINER_ENDED, et.ET_TRAIN_END]))
+    et.ET_ROUND_FINISHED, et.ET_TRAINER_SELECTED, et.ET_TRAINER_STARTED, et.ET_TRAINER_FINISHED]))
+federated.plug(plugins.FederatedTimer([et.ET_TRAINER_FINISHED, et.ET_TRAIN_END]))
 federated.plug(plugins.FedPlot())
 # federated.plug(plugins.CustomModelTestPlug(PickleDataProvider(test_file).collect().as_tensor(), 8))
 

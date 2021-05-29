@@ -12,7 +12,7 @@ class Events:
     ET_ROUND_FINISHED = 'round_finished'
     ET_FED_END = 'federated_learning_end'
     ET_TRAINER_STARTED = 'trainer_started'
-    ET_TRAINER_ENDED = 'trainer_ended'
+    ET_TRAINER_FINISHED = 'trainer_ended'
 
 
 class FederatedEventPlug(ABC):
@@ -67,5 +67,5 @@ class FederatedEventPlug(ABC):
             Events.ET_ROUND_FINISHED: self.on_round_end,
             Events.ET_FED_END: self.on_federated_ended,
             Events.ET_TRAINER_STARTED: self.on_trainer_start,
-            Events.ET_TRAINER_ENDED: self.on_trainer_end,
+            Events.ET_TRAINER_FINISHED: self.on_trainer_end,
         }
