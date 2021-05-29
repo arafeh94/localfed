@@ -36,7 +36,7 @@ federated = FederatedLearning(
     client_selector=client_selectors.Random(10),
     trainers_data_dict=client_data,
     initial_model=lambda: LogisticRegression(28 * 28, 10),
-    num_rounds=3,
+    num_rounds=10,
     desired_accuracy=0.99
 )
 
@@ -44,7 +44,8 @@ federated.plug(plugins.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_TRAI
 federated.plug(plugins.FederatedTimer([Events.ET_ROUND_START, Events.ET_TRAIN_END]))
 # federated.plug(plugins.FedPlot())
 # federated.plug(plugins.CustomModelTestPlug(PickleDataProvider(test_file).collect().as_tensor(), 8))
-federated.plug(plugins.FedSave())
+# federated.plug(plugins.FedSave())
+federated.plug(plugins.WandbLogger(config={'num_rounds': 10}))
 
 logger.info("----------------------")
 logger.info("start federated 1")

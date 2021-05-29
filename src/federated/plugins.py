@@ -1,11 +1,12 @@
-import os
-import time
 import logging
+import os
+import pickle
+import time
 from collections import defaultdict
 
-from src import tools
 import matplotlib.pyplot as plt
-import pickle
+
+from src import tools
 from src.data.data_container import DataContainer
 from src.federated.events import FederatedEventPlug, Events
 from src.federated.federated import FederatedLearning
@@ -257,3 +258,18 @@ class FedSave(FederatedEventPlug):
 
     def path(self):
         return self.folder_name + self.file_name
+
+
+class WandbLogger(FederatedEventPlug):
+    def __init__(self, config=None):
+        super().__init__()
+        import wandb
+        wandb.login(key='18de3183a3487d875345d2ee7948376df2a31c39')
+        wandb.init(project='fedavg', entity='arafeh', config=config)
+        self.wandb = wandb
+
+    def on_round_end(self, params):
+        self.wandb.log({'acc': params['accuracy'], 'loss': params['loss']})
+
+    def on_federated_ended(self, params):
+        self.wandb.finish()
