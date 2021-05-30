@@ -37,7 +37,7 @@ class TrainerManager:
         return self.trainers[trainer_id]
 
 
-class ADVTrainer(Trainer):
+class AdvanceTrainer(Trainer):
     def __init__(self, t_class):
         super().__init__()
         self.trainer_class = t_class

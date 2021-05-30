@@ -2,11 +2,10 @@ import logging
 
 from torch import nn
 
-from components import trainers, aggregators, testers, client_selectors, optims
+from src.federated.components import testers, client_selectors, aggregators, optims, trainers
 from libs.model.linear.lr import LogisticRegression
 from src.data import data_generator
-from src.data.data_generator import DataGenerator
-from src.data.data_provider import LocalMnistDataProvider, PickleDataProvider
+from src.data.data_provider import PickleDataProvider
 from src.federated import plugins
 from src.federated.federated import Events, FederatedLearning
 from src.federated.trainer_manager import TrainerManager

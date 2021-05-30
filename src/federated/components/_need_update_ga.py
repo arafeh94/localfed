@@ -1,6 +1,6 @@
 from torch import nn
 
-from components.fedavg import FedAVG
+from src.federated.components import FedAVG
 from src import tools
 from src.apis import genetic
 from src.apis.context import Context

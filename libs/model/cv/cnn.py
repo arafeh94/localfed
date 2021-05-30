@@ -57,6 +57,7 @@ class CNN_OriginalFedAvg(torch.nn.Module):
         self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
+        x = x.view(-1, 28, 28)
         x = torch.unsqueeze(x, 1)
         x = self.conv2d_1(x)
         x = self.max_pooling(x)

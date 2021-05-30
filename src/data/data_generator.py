@@ -61,7 +61,7 @@ class DataGenerator:
         self.distributed = clients_data
         return clients_data
 
-    def distribute_shards(self, num_clients, shards_per_client, min_size, max_size):
+    def distribute_shards(self, num_clients, shards_per_client, min_size, max_size, verbose=0):
         clients_data = {}
         xs = self.data.x.tolist()
         ys = self.data.y.tolist()
@@ -79,6 +79,8 @@ class DataGenerator:
                             client_y.append(ys.pop(inner_index))
                             break
             clients_data[i] = DataContainer(client_x, client_y).as_tensor(self.xtt, self.ytt)
+            if verbose > 0:
+                print(f"client_{i} finished")
         self.distributed = clients_data
         return clients_data
 

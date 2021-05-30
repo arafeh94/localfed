@@ -3,16 +3,15 @@ import logging
 from torch import nn
 
 import src
-from components import client_selectors, aggregators, trainers, testers, optims
-from components.trainers import CPUTrainer
+from src.federated.components import testers, client_selectors, aggregators, optims, trainers
 from libs.model.linear.lr import LogisticRegression
 from src.data.data_provider import PickleDataProvider
-from src.federated import plugins, fedruns
+from src.federated import plugins
 from src.data.data_generator import DataGenerator
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.fedruns import FedRuns
-from src.federated.trainer_manager import TrainerManager, ADVTrainer
+from src.federated.trainer_manager import TrainerManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
