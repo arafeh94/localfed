@@ -57,7 +57,23 @@ class LocalMnistDataProvider(SQLDataProvider):
             user='root',
             database='mnist',
             query=query,
-            fetch_x_y=lambda row: (row[0], row[1])
+            fetch_x_y=lambda row: (json.loads(row[0]), row[1])
+        )
+        if query is None:
+            self.query = 'select data,label from sample'
+        if limit > 0:
+            self.query += ' limit ' + str(limit)
+
+
+class LocalKDDDataProvider(SQLDataProvider):
+    def __init__(self, query=None, limit=0):
+        super().__init__(
+            host='localhost',
+            password='root',
+            user='root',
+            database='kdd',
+            query=query,
+            fetch_x_y=lambda row: (json.loads(row[0]), int(row[1]))
         )
         if query is None:
             self.query = 'select data,label from sample'

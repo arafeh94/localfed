@@ -21,8 +21,8 @@ data_file = '../datasets/pickles/2_50_medium_shards.pkl'
 test_file = '../datasets/pickles/test_data.pkl'
 
 logger.info('Generating Data --Started')
-dg = DataGenerator(LocalShakespeareDataProvider(limit=1000))
-client_data = dg.distribute_size(10, 10, 100)
+dg = DataGenerator(LocalShakespeareDataProvider(limit=1000), xtt=lambda x: x.long())
+client_data = dg.distribute_size(10, 100, 100)
 dg.describe()
 logger.info('Generating Data --Ended')
 
@@ -41,8 +41,8 @@ federated = FederatedLearning(
 )
 
 federated.plug(plugins.FederatedLogger([
-    et.ET_ROUND_FINISHED, et.ET_TRAINER_SELECTED, et.ET_TRAINER_STARTED, et.ET_TRAINER_ENDED]))
-federated.plug(plugins.FederatedTimer([et.ET_TRAINER_ENDED, et.ET_TRAIN_END]))
+    et.ET_ROUND_FINISHED, et.ET_TRAINER_SELECTED, et.ET_TRAINER_STARTED, et.ET_TRAINER_FINISHED]))
+federated.plug(plugins.FederatedTimer([et.ET_TRAINER_FINISHED, et.ET_TRAIN_END]))
 federated.plug(plugins.FedPlot())
 # federated.plug(plugins.CustomModelTestPlug(PickleDataProvider(test_file).collect().as_tensor(), 8))
 

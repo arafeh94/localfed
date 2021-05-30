@@ -92,8 +92,8 @@ for name, federated_params in federated_configs.items():
     logger.info("start federated " + name)
     logger.info("----------------------")
     federated.start()
-    federated_runs[name] = federated
+    federated_runs[name] = federated.context
 
 runs = FedRuns(federated_runs)
-runs.compare()
+runs.compare_all()
 runs.plot()

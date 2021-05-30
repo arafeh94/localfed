@@ -65,7 +65,7 @@ class FederatedLearning:
             model_copy = copy.deepcopy(self.context.model)
             trained_model, sample_size = \
                 self.trainer_manager.trainer(trainer_id).train(model_copy, train_data, self.context)
-            self.broadcast(Events.ET_TRAINER_ENDED, trainer_id=trainer_id, trained_model=trained_model,
+            self.broadcast(Events.ET_TRAINER_FINISHED, trainer_id=trainer_id, trained_model=trained_model,
                            sample_size=sample_size)
             trained_clients_model[trainer_id] = trained_model
             clients_sample_size[trainer_id] = sample_size

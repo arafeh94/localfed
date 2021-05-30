@@ -1,10 +1,12 @@
-import time
 import logging
+import os
+import pickle
+import time
 from collections import defaultdict
 
-from src import tools
 import matplotlib.pyplot as plt
 
+from src import tools
 from src.data.data_container import DataContainer
 from src.federated.events import FederatedEventPlug, Events
 from src.federated.federated import FederatedLearning
@@ -64,13 +66,13 @@ class FederatedTimer(FederatedEventPlug):
         self.tick(Events.ET_TRAINER_STARTED)
 
     def on_trainer_end(self, params):
-        self.tick(Events.ET_TRAINER_ENDED)
+        self.tick(Events.ET_TRAINER_FINISHED)
 
     def on_init(self, params):
         self.tick(Events.ET_INIT)
 
     def force(self) -> []:
-        return [Events.ET_FED_START, Events.ET_TRAINER_ENDED, Events.ET_TRAINER_STARTED, Events.ET_TRAIN_START,
+        return [Events.ET_FED_START, Events.ET_TRAINER_FINISHED, Events.ET_TRAINER_STARTED, Events.ET_TRAIN_START,
                 Events.ET_TRAIN_END, Events.ET_AGGREGATION_END, Events.ET_INIT, Events.ET_ROUND_START,
                 Events.ET_ROUND_FINISHED]
 
@@ -188,7 +190,7 @@ class FedPlot(FederatedEventPlug):
             fig, axs = plt.subplots(2)
             axs[0].bar(local_accuracy.keys(), local_accuracy.values())
             axs[0].set_title('Local Round Accuracy')
-            axs[1].set_xticks(range(len(self.local_accuracies)))
+            axs[0].set_xticks(range(len(self.local_accuracies)))
             axs[1].bar(local_loss.keys(), local_loss.values())
             axs[1].set_title('Local Round Loss')
             axs[1].set_xticks(range(len(self.local_losses)))
@@ -226,3 +228,48 @@ class CustomModelTestPlug(FederatedEventPlug):
         fig.suptitle('Custom Set Accuracy & Loss')
         fig.tight_layout()
         plt.show()
+
+
+class FedSave(FederatedEventPlug):
+    def __init__(self, folder_name="./logs/"):
+        super().__init__()
+        self.folder_name = folder_name
+        self.file_name = "fedruns.pkl"
+
+    def force(self) -> []:
+        return [Events.ET_FED_END]
+
+    def on_federated_ended(self, params):
+        context = params['context']
+        all = self.old_runs()
+        all.append(context)
+        with open(self.path(), 'wb') as file:
+            pickle.dump(all, file)
+
+    def is_old_exists(self):
+        return os.path.exists(path=self.path())
+
+    def old_runs(self):
+        runs = []
+        if self.is_old_exists():
+            with open(self.path(), 'rb') as file:
+                runs = pickle.load(file)
+        return runs
+
+    def path(self):
+        return self.folder_name + self.file_name
+
+
+class WandbLogger(FederatedEventPlug):
+    def __init__(self, config=None):
+        super().__init__()
+        import wandb
+        wandb.login(key='18de3183a3487d875345d2ee7948376df2a31c39')
+        wandb.init(project='fedavg', entity='arafeh', config=config)
+        self.wandb = wandb
+
+    def on_round_end(self, params):
+        self.wandb.log({'acc': params['accuracy'], 'loss': params['loss']})
+
+    def on_federated_ended(self, params):
+        self.wandb.finish()

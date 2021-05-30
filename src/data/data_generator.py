@@ -11,9 +11,16 @@ from src.data.data_provider import DataProvider
 
 
 class DataGenerator:
-    def __init__(self, data_provider: DataProvider):
+    def __init__(self, data_provider: DataProvider, xtt=None, ytt=None):
+        """
+        :param data_provider: instance of data provider
+        :param xtt: x tensor type, callable to transform the current type to the desired type, by default float
+        :param ytt: y tensor type, callable to transform the current type to the desired type, by default long
+        """
         self.data = data_provider.collect().as_numpy()
         self.distributed = None
+        self.xtt = xtt
+        self.ytt = ytt
 
     def distribute_dirichlet(self, num_clients, num_labels, skewness=0.5) -> {int: DataContainer}:
         client_rows = non_iid_partition_with_dirichlet_distribution(self.data.y, num_clients, num_labels, skewness)
@@ -24,7 +31,7 @@ class DataGenerator:
             for pos in client_rows[client]:
                 client_x.append(self.data.x[pos])
                 client_y.append(self.data.y[pos])
-            clients_data[client] = DataContainer(client_x, client_y).as_tensor()
+            clients_data[client] = DataContainer(client_x, client_y).as_tensor(self.xtt, self.ytt)
         self.distributed = clients_data
         return clients_data
 
@@ -50,7 +57,7 @@ class DataGenerator:
                         client_x.append(xs.pop(index))
                         client_y.append(ys.pop(index))
                         break
-            clients_data[i] = DataContainer(client_x, client_y).as_tensor()
+            clients_data[i] = DataContainer(client_x, client_y).as_tensor(self.xtt, self.ytt)
         self.distributed = clients_data
         return clients_data
 
@@ -71,7 +78,7 @@ class DataGenerator:
                             client_x.append(xs.pop(inner_index))
                             client_y.append(ys.pop(inner_index))
                             break
-            clients_data[i] = DataContainer(client_x, client_y).as_tensor()
+            clients_data[i] = DataContainer(client_x, client_y).as_tensor(self.xtt, self.ytt)
         self.distributed = clients_data
         return clients_data
 
@@ -88,7 +95,7 @@ class DataGenerator:
             client_data_size = random.randint(min_size, max_size)
             client_x = group[i][0:client_data_size]
             client_y = [i for _ in range(len(client_x))]
-            clients_data[i] = DataContainer(client_x, client_y).as_tensor()
+            clients_data[i] = DataContainer(client_x, client_y).as_tensor(self.xtt, self.ytt)
         self.distributed = clients_data
         return clients_data
 
@@ -102,7 +109,7 @@ class DataGenerator:
             client_x = xs[data_pos:data_pos + client_data_size]
             client_y = ys[data_pos:data_pos + client_data_size]
             data_pos += len(client_x)
-            clients_data[i] = DataContainer(client_x, client_y).as_tensor()
+            clients_data[i] = DataContainer(client_x, client_y).as_tensor(self.xtt, self.ytt)
         self.distributed = clients_data
         return clients_data
 
