@@ -21,7 +21,7 @@ data_file = '../datasets/pickles/2_50_medium_shards.pkl'
 test_file = '../datasets/pickles/test_data.pkl'
 
 logger.info('Generating Data --Started')
-dg = DataGenerator(LocalShakespeareDataProvider(limit=1000))
+dg = DataGenerator(LocalShakespeareDataProvider(limit=1000), xtt=lambda x: x.long())
 client_data = dg.distribute_size(10, 100, 100)
 dg.describe()
 logger.info('Generating Data --Ended')

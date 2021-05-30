@@ -7,7 +7,7 @@ import src
 from components import client_selectors, aggregators, trainers, testers, optims
 from components.trainers import CPUTrainer
 from libs.model.linear.lr import LogisticRegression
-from src.data.data_provider import PickleDataProvider
+from src.data.data_provider import PickleDataProvider, LocalMnistDataProvider
 from src.federated import plugins
 from src.data.data_generator import DataGenerator
 from src.federated.federated import Events
@@ -21,8 +21,10 @@ data_file = '../datasets/pickles/2_50_medium_shards.pkl'
 test_file = '../datasets/pickles/test_data.pkl'
 
 logger.info('Generating Data --Started')
-dg = src.data.data_generator.load(data_file)
-client_data = dg.distributed
+# dg = src.data.data_generator.load(data_file)
+# client_data = dg.distributed
+dg = DataGenerator(LocalMnistDataProvider(limit=10000))
+client_data = dg.distribute_size(10, 100, 100)
 dg.describe()
 logger.info('Generating Data --Ended')
 

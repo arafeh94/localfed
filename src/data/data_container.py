@@ -1,3 +1,5 @@
+import typing
+
 import numpy as np
 import torch
 from torch import Tensor
@@ -34,12 +36,20 @@ class DataContainer:
     def is_numpy(self):
         return type(self.x) == np.ndarray
 
-    def as_tensor(self) -> (Tensor, Tensor):
+    def as_tensor(self, convert_x: typing.Callable[[torch.Tensor], torch.Tensor] = None,
+                  convert_y: typing.Callable[[torch.Tensor], torch.Tensor] = None) -> (Tensor, Tensor):
+        if convert_x is None:
+            convert_x = lambda d: d.float()
+        if convert_y is None:
+            convert_y = lambda d: d.long()
         if self.is_tensor():
             return self
         if self.is_numpy():
-            return DataContainer(torch.from_numpy(self.x).float(), torch.from_numpy(self.y).long())
-        return DataContainer(torch.from_numpy(np.asarray(self.x)).float(), torch.from_numpy(np.asarray(self.y)).long())
+            return DataContainer(convert_x(torch.from_numpy(self.x)), convert_y(torch.from_numpy(self.y)))
+        return DataContainer(
+            convert_x(torch.from_numpy(np.asarray(self.x))),
+            convert_y(torch.from_numpy(np.asarray(self.y)))
+        )
 
     def as_numpy(self):
         if self.is_tensor():
