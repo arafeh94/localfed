@@ -21,33 +21,40 @@ data_file = '../datasets/pickles/2_50_medium_shards.pkl'
 test_file = '../datasets/pickles/test_data.pkl'
 
 logger.info('Generating Data --Started')
-# dg = src.data.data_generator.load(data_file)
-# client_data = dg.distributed
-dg = DataGenerator(LocalMnistDataProvider(limit=10000))
-client_data = dg.distribute_size(10, 100, 100)
+dg = src.data.data_generator.load(data_file)
+client_data = dg.distributed
+# dg = DataGenerator(LocalMnistDataProvider(limit=10000))
+# client_data = dg.distribute_size(10, 100, 100)
 dg.describe()
 logger.info('Generating Data --Ended')
 
 trainer_manager = TrainerManager(trainers.CPUTrainer, batch_size=8, epochs=10, criterion=nn.CrossEntropyLoss(),
                                  optimizer=optims.sgd(0.1))
 
+
+def create_model():
+    return LogisticRegression(28 * 28, 10)
+
+
 federated = FederatedLearning(
     trainer_manager=trainer_manager,
     aggregator=aggregators.AVGAggregator(),
     tester=testers.Normal(batch_size=8, criterion=nn.CrossEntropyLoss()),
-    client_selector=client_selectors.Random(10),
+    # client_selector=client_selectors.Random(10),
+    client_selector=client_selectors.All(),
     trainers_data_dict=client_data,
-    initial_model=lambda: LogisticRegression(28 * 28, 10),
+    initial_model=create_model,
     num_rounds=10,
     desired_accuracy=0.99
 )
 
 federated.plug(plugins.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_TRAINER_SELECTED]))
 federated.plug(plugins.FederatedTimer([Events.ET_ROUND_START, Events.ET_TRAIN_END]))
+federated.plug(plugins.FL_CA())
 # federated.plug(plugins.FedPlot())
 # federated.plug(plugins.CustomModelTestPlug(PickleDataProvider(test_file).collect().as_tensor(), 8))
 # federated.plug(plugins.FedSave())
-# federated.plug(plugins.WandbLogger(config={'num_rounds': 10}))
+federated.plug(plugins.WandbLogger(config={'num_rounds': 10}))
 
 logger.info("----------------------")
 logger.info("start federated 1")

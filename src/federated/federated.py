@@ -63,8 +63,8 @@ class FederatedLearning:
         for trainer_id, train_data in trainers_train_data.items():
             self.broadcast(Events.ET_TRAINER_STARTED, trainer_id=trainer_id, train_data=train_data)
             model_copy = copy.deepcopy(self.context.model)
-            trained_model, sample_size = \
-                self.trainer_manager.trainer(trainer_id).train(model_copy, train_data, self.context)
+            trained_model, sample_size = self.trainer_manager.trainer(trainer_id).train(model_copy, train_data,
+                                                                                        self.context)
             self.broadcast(Events.ET_TRAINER_FINISHED, trainer_id=trainer_id, trained_model=trained_model,
                            sample_size=sample_size)
             trained_clients_model[trainer_id] = trained_model
@@ -89,6 +89,7 @@ class FederatedLearning:
             train_data, test_data = data.split(self.train_ratio)
             train_trainers_data[trainer_id] = train_data
             test_trainers_data[trainer_id] = test_data
+
         return train_trainers_data, test_trainers_data
 
     def compare(self, other, verbose=1):
