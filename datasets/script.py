@@ -2,6 +2,14 @@ from src.data.data_generator import DataGenerator
 from src.data.data_provider import LocalMnistDataProvider, PickleDataProvider
 
 if True:
+    print("Creating a pickle file for continuous authentication dataset")
+    dg = DataGenerator(LocalMnistDataProvider('select data, label from mnist_60k'))
+    dg.distribute_continuous(num_clients=10, min_size=1000, max_size=1000)
+    dg.save('./pickles/10_1000_big_ca.pkl')
+    print("finished")
+    exit(0)
+
+if True:
     print("2-shards distributed large dataset")
     dg = DataGenerator(LocalMnistDataProvider())
     dg.distribute_shards(num_clients=50, min_size=100, max_size=1000, shards_per_client=2)
@@ -43,3 +51,5 @@ if True:
     dg.distribute_shards(10, 2, 10, 50)
     dg.save('./pickles/2_10_small_shards.pkl')
     print("finished")
+
+
