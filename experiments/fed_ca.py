@@ -28,12 +28,8 @@ client_data = dg.distributed
 dg.describe()
 
 # # setting hyper parameters
-# batch_size = 10
-# epochs = 5
-# num_rounds = 120
 criterion = nn.CrossEntropyLoss()
-# learn_rate = 0.1
-# optimizer = optims.sgd(learn_rate)
+
 
 # Dictionary to change the two hyper parameters we are focusing on here.
 hyper_params = {
