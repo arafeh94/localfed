@@ -1,23 +1,18 @@
 import copy
 import statistics
 import threading
+
+import numpy
+import numpy as np
+import torch
 from sklearn.cluster import KMeans
 import logging
 from src import tools
 from src.data.data_container import DataContainer
 
 
-class args:
-    def __init__(self):
-        self.sql_host = "localhost"
-        self.sql_user = "root"
-        self.sql_password = "root"
-        self.sql_database = "mnist"
-
-
 class Context:
     def __init__(self, clients_data: {int: DataContainer}, create_model: callable):
-        self.args = args()
         self.clients_data: {int: DataContainer} = clients_data
         self.model_stats = {}
         self.models = {}
@@ -26,23 +21,22 @@ class Context:
         self.init_model = self.create_model()
         self.logging = logging.getLogger('context')
 
-    def build(self):
+    def build(self, ratio=0):
         self.logging.info("Building Models --Started")
-        all_threads = []
-        for client_idx, data in self.clients_data.items():
-            thread = threading.Thread(target=self._train_models, args=(client_idx, data))
-            thread.start()
-            all_threads.append(thread)
-        for thread in all_threads:
-            thread.join()
-        self.logging.info("Building Models --Finished")
 
-    def _train_models(self, client_idx, data):
-        model = copy.deepcopy(self.init_model)
-        trained = tools.train(model, data.batch(8))
-        self.model_stats[client_idx] = trained
-        self.models[client_idx] = model
-        self.sample_dict[client_idx] = len(data)
+        for client_idx, data in self.clients_data.items():
+            if ratio > 0:
+                shuffled = data.shuffle().as_tensor()
+                new_x = shuffled.x[0:int(len(data.x) * ratio)]
+                new_y = shuffled.y[0:int(len(data.y) * ratio)]
+                data = DataContainer(new_x, new_y)
+            self.logging.info(f"Building Models --ClientID{client_idx}")
+            model = copy.deepcopy(self.init_model)
+            trained = tools.train(model, data.batch(8))
+            self.model_stats[client_idx] = trained
+            self.models[client_idx] = model
+            self.sample_dict[client_idx] = len(data)
+        self.logging.info("Building Models --Finished")
 
     def cluster(self, cluster_size=10):
         self.logging.info("Clustering Models --Started")
@@ -51,7 +45,10 @@ class Context:
         clustered = {}
         for client_id, stats in self.model_stats.items():
             client_ids.append(client_id)
-            weights.append(stats['linear.weight'].numpy().flatten())
+            total_weights = np.array([])
+            for key, local_weights in stats.items():
+                total_weights = np.concatenate((total_weights, local_weights.numpy().flatten()))
+            weights.append(total_weights)
         kmeans = KMeans(n_clusters=cluster_size).fit(weights)
         for i, label in enumerate(kmeans.labels_):
             clustered[client_ids[i]] = label

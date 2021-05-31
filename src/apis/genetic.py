@@ -1,3 +1,4 @@
+import logging
 import math
 import statistics
 
@@ -6,6 +7,8 @@ import random
 import numpy as np
 
 from src import tools
+
+logger = logging.getLogger('ga')
 
 
 def select_random(genes: tools.Clustered, size):
@@ -97,7 +100,6 @@ def clean(population):
     for i in temp:
         if duplicate(i):
             clean(population)
-            print("sa")
     return temp
 
 
@@ -108,14 +110,14 @@ def ga(fitness, genes: tools.Clustered, desired, max_iter, r_cross=0.1, r_mut=0.
     minimize = 99999999999
     n_iter = 0
     while n_iter < max_iter and minimize > desired:
-        print("Iteration Nb: ", n_iter + 1)
+        logging.info(f"Iteration Nb: {n_iter + 1}")
         scores = [fitness(chromosome) for chromosome in population]
         for index, ch in enumerate(population):
             if scores[index] < minimize:
                 minimize = scores[index]
                 solution = ch
                 all_solutions.append(ch)
-                print("Solution Found: ", solution, "Fitness: ", minimize)
+                logger.info(f"Solution Found: {solution} Fitness: {minimize}")
         population = selection(population, scores, ratio=0.5)
         population = populate(population, int(p_size * 3 / 4))
         population += build_population(genes, p_size - len(population), c_size)
