@@ -43,13 +43,13 @@ hyper_params = {
     "num_rounds": [None]
 }
 
-batch_sizes_min, batch_size_max = 8, 512
-epochs_min, epochs_max = 1, 100
-num_rounds_min, num_rounds_max = 2, 100
-learning_rate_min, learning_rate_max = .001, .2
+batch_sizes_min, batch_size_max = 100, 512
+epochs_min, epochs_max = 20, 100
+num_rounds_min, num_rounds_max = 10, 30
+learning_rate_min, learning_rate_max = .1, 0.2
 
 # How many parameters should we generate form the ranges above
-no_parameters = 3
+no_parameters = 10
 
 print(f"Number of runs for GridSearch will be:            {no_parameters ** 4}")
 
