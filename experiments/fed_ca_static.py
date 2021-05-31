@@ -28,95 +28,41 @@ client_data = dg.distributed
 dg.describe()
 
 # # setting hyper parameters
-# batch_size = 10
-# epochs = 5
-# num_rounds = 120
+batch_size = 10
+epochs = 5
+num_rounds = 120
 criterion = nn.CrossEntropyLoss()
-# learn_rate = 0.1
-# optimizer = optims.sgd(learn_rate)
+learn_rate = 0.1
+optimizer = optims.sgd(learn_rate)
 
-# Dictionary to change the two hyper parameters we are focusing on here.
-hyper_params = {
-    "learning_rate": [.1],
-    "batch_size": [None],
-    "epochs": [None],
-    "num_rounds": [None]
-}
+print(
+    f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds} ')
+trainer_manager = TrainerManager(trainers.CPUChunkTrainer, batch_size=batch_size, epochs=epochs,
+                                 criterion=criterion,
+                                 optimizer=optims.sgd(learn_rate))
 
-batch_sizes_min, batch_size_max = 100, 512
-epochs_min, epochs_max = 20, 100
-num_rounds_min, num_rounds_max = 10, 30
-learning_rate_min, learning_rate_max = .1, 0.2
+federated = FederatedLearning(
+    trainer_manager=trainer_manager,
+    aggregator=aggregators.AVGAggregator(),
+    tester=testers.Normal(batch_size=batch_size, criterion=criterion),
+    client_selector=client_selectors.All(),
+    trainers_data_dict=client_data,
+    initial_model=lambda: LogisticRegression(28 * 28, 10),
+    num_rounds=num_rounds,
+    desired_accuracy=0.99
+)
 
-# How many parameters should we generate form the ranges above
-no_parameters = 10
+# federated.plug(plugins.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_TRAINER_SELECTED]))
+# federated.plug(plugins.FederatedTimer([Events.ET_ROUND_START, Events.ET_TRAIN_END]))
+# federated.plug(plugins.CustomModelTestPlug(PickleDataProvider(custom_test_file).collect().as_tensor(), 8))
+# federated.plug(plugins.FedPlot())
 
-print(f"Number of runs for GridSearch will be:            {no_parameters ** 4}")
+# federated.plug(plugins.FL_CA())
+federated.plug(plugins.WandbLogger(config={'lr': learn_rate, 'batch_size': batch_size, 'epochs': epochs,
+                                           'num_rounds': num_rounds, 'data_file': data_file,
+                                           'model': 'logisticsRegression'}))
 
-# Grid Search
-
-hyper_params["learning_rate"] = np.linspace(learning_rate_min, learning_rate_max, no_parameters)
-hyper_params["batch_size"] = [int(n) for n in np.linspace(batch_sizes_min, batch_size_max, no_parameters)]
-hyper_params["epochs"] = [int(n) for n in np.linspace(epochs_min, epochs_max, no_parameters)]
-hyper_params["num_rounds"] = [int(n) for n in np.linspace(num_rounds_min, num_rounds_max, no_parameters)]
-
-for k, hp_value in hyper_params.items():
-    print(f"{k}\n{hp_value}")
-    hyper_params[k] = hp_value
-    for i in range(no_parameters):
-        # j is the length of the hyper parameters in the dictionar and it will be used to loop through all the values of the parameters
-        for j in range(len(hp_value)):
-            if k == 'learning_rate':
-                learn_rate = hp_value[i]
-                batch_size = hyper_params["batch_size"][j]
-                epochs = hyper_params["epochs"][j]
-                num_rounds = hyper_params["num_rounds"][j]
-            else:
-                if k == 'batch_size':
-                    learn_rate = hyper_params["learning_rate"][j]
-                    batch_size = hp_value[i]
-                    epochs = hyper_params["epochs"][j]
-                    num_rounds = hyper_params["num_rounds"][j]
-                else:
-                    if k == 'epochs':
-                        learn_rate = hyper_params["learning_rate"][j]
-                        batch_size = hyper_params["batch_size"][j]
-                        epochs = hp_value[i]
-                        num_rounds = hyper_params["num_rounds"][j]
-                    else:
-                        learn_rate = hyper_params["learning_rate"][j]
-                        batch_size = hyper_params["batch_size"][j]
-                        epochs = hyper_params["epochs"][j]
-                        num_rounds = hp_value[i]
-
-            print(
-                f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds} ')
-            trainer_manager = TrainerManager(trainers.CPUChunkTrainer, batch_size=batch_size, epochs=epochs,
-                                             criterion=criterion,
-                                             optimizer=optims.sgd(learn_rate))
-
-            federated = FederatedLearning(
-                trainer_manager=trainer_manager,
-                aggregator=aggregators.AVGAggregator(),
-                tester=testers.Normal(batch_size=batch_size, criterion=criterion),
-                client_selector=client_selectors.All(),
-                trainers_data_dict=client_data,
-                initial_model=lambda: LogisticRegression(28 * 28, 10),
-                num_rounds=num_rounds,
-                desired_accuracy=0.99
-            )
-
-            # federated.plug(plugins.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_TRAINER_SELECTED]))
-            # federated.plug(plugins.FederatedTimer([Events.ET_ROUND_START, Events.ET_TRAIN_END]))
-            # federated.plug(plugins.CustomModelTestPlug(PickleDataProvider(custom_test_file).collect().as_tensor(), 8))
-            # federated.plug(plugins.FedPlot())
-
-            # federated.plug(plugins.FL_CA())
-            federated.plug(plugins.WandbLogger(config={'lr': learn_rate, 'batch_size': batch_size, 'epochs': epochs,
-                                                       'num_rounds': num_rounds, 'data_file': data_file,
-                                                       'model': 'logisticsRegression', 'name':'test1'   }))
-
-            logger.info("----------------------")
-            logger.info("start federated")
-            logger.info("----------------------")
-            federated.start()
+logger.info("----------------------")
+logger.info("start federated")
+logger.info("----------------------")
+federated.start()
