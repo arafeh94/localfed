@@ -11,7 +11,7 @@ from src.federated import plugins
 from src.data.data_generator import DataGenerator
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
-from src.federated.trainer_manager import TrainerManager
+from src.federated.trainer_manager import TrainerManager, SeqTrainerManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
@@ -27,8 +27,8 @@ client_data = dg.distributed
 dg.describe()
 logger.info('Generating Data --Ended')
 
-trainer_manager = TrainerManager(trainers.CPUTrainer, batch_size=50, epochs=20, criterion=nn.CrossEntropyLoss(),
-                                 optimizer=optims.sgd(0.1))
+trainer_manager = SeqTrainerManager(trainers.CPUTrainer, batch_size=50, epochs=20, criterion=nn.CrossEntropyLoss(),
+                                    optimizer=optims.sgd(0.1))
 
 federated = FederatedLearning(
     trainer_manager=trainer_manager,
@@ -36,8 +36,8 @@ federated = FederatedLearning(
     tester=testers.Normal(batch_size=50, criterion=nn.CrossEntropyLoss()),
     client_selector=client_selectors.Random(3),
     trainers_data_dict=client_data,
-    # initial_model=lambda: LogisticRegression(28 * 28, 10),
-    initial_model=lambda: CNN_OriginalFedAvg(),
+    initial_model=lambda: LogisticRegression(28 * 28, 10),
+    # initial_model=lambda: CNN_OriginalFedAvg(),
     num_rounds=0,
     desired_accuracy=0.99
 )

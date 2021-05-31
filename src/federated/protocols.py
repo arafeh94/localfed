@@ -25,13 +25,13 @@ class ModelInfer(ABC):
 
 
 class Trainer:
-    def __init__(self, **kwargs):
-        self.optimizer = None
-        self.criterion = None
-        self.epochs = None
-        self.batch_size = None
+    def __init__(self, optimizer=None, criterion=None, epochs=None, batch_size=None):
+        self.optimizer = optimizer
+        self.criterion = criterion
+        self.epochs = epochs
+        self.batch_size = batch_size
 
-    def __init(self, **kwargs):
+    def init(self, **kwargs):
         for item, value in kwargs.items():
             self.__setattr__(item, value)
         self.on_create()

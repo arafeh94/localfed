@@ -8,7 +8,7 @@ from src.data import data_generator
 from src.data.data_provider import PickleDataProvider
 from src.federated import plugins
 from src.federated.federated import Events, FederatedLearning
-from src.federated.trainer_manager import TrainerManager
+from src.federated.trainer_manager import TrainerManager, SeqTrainerManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
@@ -22,8 +22,8 @@ dg = data_generator.load(data_file)
 client_data = dg.distributed
 dg.describe()
 
-trainer_manager = TrainerManager(trainers.CPUChunkTrainer, batch_size=8, epochs=10, criterion=nn.CrossEntropyLoss(),
-                                 optimizer=optims.sgd(0.1))
+trainer_manager = SeqTrainerManager(trainers.CPUChunkTrainer, batch_size=8, epochs=10, criterion=nn.CrossEntropyLoss(),
+                                    optimizer=optims.sgd(0.1))
 
 federated = FederatedLearning(
     trainer_manager=trainer_manager,
@@ -32,7 +32,7 @@ federated = FederatedLearning(
     client_selector=client_selectors.All(),
     trainers_data_dict=client_data,
     initial_model=lambda: LogisticRegression(28 * 28, 10),
-    num_rounds=10,
+    num_rounds=0,
     desired_accuracy=0.99
 )
 

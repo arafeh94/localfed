@@ -7,6 +7,7 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 
 from src import tools
+from src.apis.mpi import Comm
 from src.data.data_container import DataContainer
 from src.federated.events import FederatedEventPlug, Events
 from src.federated.federated import FederatedLearning
@@ -273,3 +274,9 @@ class WandbLogger(FederatedEventPlug):
 
     def on_federated_ended(self, params):
         self.wandb.finish()
+
+
+class MPIStopPlug(FederatedEventPlug):
+
+    def on_federated_ended(self, params):
+        Comm().stop()
