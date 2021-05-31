@@ -9,7 +9,7 @@ from src.federated import plugins
 from src.data.data_generator import DataGenerator
 from src.federated.federated import Events as et
 from src.federated.federated import FederatedLearning
-from src.federated.trainer_manager import TrainerManager
+from src.federated.trainer_manager import TrainerManager, SeqTrainerManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
@@ -23,7 +23,7 @@ client_data = dg.distribute_size(10, 100, 100)
 dg.describe()
 logger.info('Generating Data --Ended')
 
-trainer_manager = TrainerManager(trainers.CPUTrainer, batch_size=8, epochs=10, criterion=nn.CrossEntropyLoss(),
+trainer_manager = SeqTrainerManager(trainers.CPUTrainer, batch_size=8, epochs=10, criterion=nn.CrossEntropyLoss(),
                                  optimizer=optims.sgd(0.1))
 
 federated = FederatedLearning(

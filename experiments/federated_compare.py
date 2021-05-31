@@ -11,7 +11,7 @@ from src.data.data_generator import DataGenerator
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.fedruns import FedRuns
-from src.federated.trainer_manager import TrainerManager
+from src.federated.trainer_manager import TrainerManager, SeqTrainerManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
@@ -64,7 +64,7 @@ federated_configs = {
 federated_runs = {}
 
 for name, federated_params in federated_configs.items():
-    trainer_manager = TrainerManager(
+    trainer_manager = SeqTrainerManager(
         trainers.CPUTrainer,
         batch_size=federated_params['batch_size'],
         epochs=federated_params['epochs'],

@@ -16,17 +16,14 @@ from src.federated.trainer_manager import TrainerManager, SeqTrainerManager
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-data_file = '../datasets/pickles/10_100_big_ca.pkl'
-# test_file = '../datasets/pickles/test_data.pkl'
+data_file = '../datasets/pickles/70_2_600_big_mnist.pkl'
+test_file = '../datasets/pickles/test_data.pkl'
 
 logger.info('Generating Data --Started')
 dg = src.data.data_generator.load(data_file)
 client_data = dg.distributed
-# dg = DataGenerator(LocalMnistDataProvider(limit=10000))
-# client_data = dg.distribute_size(10, 100, 100)
 dg.describe()
 logger.info('Generating Data --Ended')
-
 
 trainer_manager = SeqTrainerManager(trainers.CPUTrainer, batch_size=50, epochs=20, criterion=nn.CrossEntropyLoss(),
                                     optimizer=optims.sgd(0.1))
@@ -34,12 +31,12 @@ trainer_manager = SeqTrainerManager(trainers.CPUTrainer, batch_size=50, epochs=2
 federated = FederatedLearning(
     trainer_manager=trainer_manager,
     aggregator=aggregators.AVGAggregator(),
-    tester=testers.Normal(batch_size=8, criterion=nn.CrossEntropyLoss()),
-    client_selector=client_selectors.All(),
+    tester=testers.Normal(batch_size=50, criterion=nn.CrossEntropyLoss()),
+    client_selector=client_selectors.Random(3),
     trainers_data_dict=client_data,
-    # initial_model=lambda: LogisticRegression(28 * 28, 10),
-    initial_model=lambda: CNN_OriginalFedAvg(),
-    num_rounds=10,
+    initial_model=lambda: LogisticRegression(28 * 28, 10),
+    # initial_model=lambda: CNN_OriginalFedAvg(),
+    num_rounds=0,
     desired_accuracy=0.99
 )
 
