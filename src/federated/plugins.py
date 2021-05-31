@@ -1,3 +1,4 @@
+import atexit
 import logging
 import os
 import pickle
@@ -268,6 +269,7 @@ class WandbLogger(FederatedEventPlug):
         wandb.login(key='18de3183a3487d875345d2ee7948376df2a31c39')
         wandb.init(project='fedavg', entity='arafeh', config=config)
         self.wandb = wandb
+        atexit.register(lambda: self.wandb.finish())
 
     def on_round_end(self, params):
         self.wandb.log({'acc': params['accuracy'], 'loss': params['loss']})

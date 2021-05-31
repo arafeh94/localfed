@@ -12,10 +12,13 @@ from src.federated.trainer_manager import TrainerManager
 
 
 class FederatedLearning:
+    TEST_ON_ALL = 0
+    TEST_ON_SELECTED = 1
 
     def __init__(self, trainer_manager: TrainerManager, aggregator: Aggregator, client_selector: ClientSelector,
                  tester: ModelInfer, trainers_data_dict: Dict[int, DataContainer], initial_model: callable,
-                 num_rounds=10, desired_accuracy=0.9, train_ratio=0.8, ignore_acc_decrease=False, **kwargs):
+                 num_rounds=10, desired_accuracy=0.9, train_ratio=0.8, ignore_acc_decrease=False, test_on=TEST_ON_ALL,
+                 **kwargs):
         self.trainer_manager = trainer_manager
         self.aggregator = aggregator
         self.client_selector = client_selector
@@ -30,6 +33,13 @@ class FederatedLearning:
         self.events = {}
         self.check_params()
         self.context = FederatedLearning.Context()
+        self.trainers_test = {}
+        self.trainers_train = {}
+        self.test_on = test_on
+        for trainer_id, data in trainers_data_dict.items():
+            train, test = data.split(train_ratio)
+            self.trainers_train[trainer_id] = train
+            self.trainers_test[trainer_id] = test
 
     def start(self):
         self.broadcast(Events.ET_FED_START, **self.configs())
@@ -40,14 +50,17 @@ class FederatedLearning:
             trainers_ids = self.client_selector.select(list(self.trainers_data_dict.keys()), self.context.round_id)
             self.broadcast(Events.ET_TRAINER_SELECTED, trainers_ids=trainers_ids)
             selected_trainers = tools.dict_select(trainers_ids, self.trainers_data_dict)
-            trainers_train_data, trainers_test_data = self.split(selected_trainers)
+            trainers_train_data = tools.dict_select(trainers_ids, self.trainers_train)
+            trainers_test_data = tools.dict_select(trainers_ids, self.trainers_test)
             self.broadcast(Events.ET_TRAIN_START, trainers_data=trainers_train_data)
             trainers_weights, sample_size_dict = self.train(trainers_train_data)
             self.broadcast(Events.ET_TRAIN_END, trainers_weights=trainers_weights, sample_size=sample_size_dict)
             global_weights = self.aggregator.aggregate(trainers_weights, sample_size_dict, self.context.round_id)
             tools.load(self.context.model, global_weights)
             self.broadcast(Events.ET_AGGREGATION_END, global_weights=global_weights, global_model=self.context.model)
-            accuracy, loss, local_acc, local_loss = self.infer(self.context.model, trainers_test_data)
+            test_data = self.trainers_test if self.test_on == FederatedLearning.TEST_ON_ALL else \
+                tools.dict_select(trainers_ids, self.trainers_test)
+            accuracy, loss, local_acc, local_loss = self.infer(self.context.model, test_data)
             self.broadcast(Events.ET_ROUND_FINISHED, round=self.context.round_id, accuracy=accuracy, loss=loss,
                            local_acc=local_acc, local_loss=local_loss)
             self.context.store(acc=accuracy, loss=loss, lacc=local_acc, lloss=local_loss)
@@ -74,15 +87,6 @@ class FederatedLearning:
         total_accuracy = sum(local_accuracy.values()) / len(local_accuracy)
         total_loss = sum(local_loss.values()) / len(local_loss)
         return total_accuracy, total_loss, local_accuracy, local_loss
-
-    def split(self, trainers_data: Dict[int, DataContainer]):
-        train_trainers_data = {}
-        test_trainers_data = {}
-        for trainer_id, data in trainers_data.items():
-            train_data, test_data = data.split(self.train_ratio)
-            train_trainers_data[trainer_id] = train_data
-            test_trainers_data[trainer_id] = test_data
-        return train_trainers_data, test_trainers_data
 
     def compare(self, other, verbose=1):
         local_history = self.context.history

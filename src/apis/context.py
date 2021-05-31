@@ -26,23 +26,19 @@ class Context:
         self.init_model = self.create_model()
         self.logging = logging.getLogger('context')
 
-    def build(self):
+    def build(self, ratio=0):
         self.logging.info("Building Models --Started")
-        all_threads = []
-        for client_idx, data in self.clients_data.items():
-            thread = threading.Thread(target=self._train_models, args=(client_idx, data))
-            thread.start()
-            all_threads.append(thread)
-        for thread in all_threads:
-            thread.join()
-        self.logging.info("Building Models --Finished")
 
-    def _train_models(self, client_idx, data):
-        model = copy.deepcopy(self.init_model)
-        trained = tools.train(model, data.batch(8))
-        self.model_stats[client_idx] = trained
-        self.models[client_idx] = model
-        self.sample_dict[client_idx] = len(data)
+        for client_idx, data in self.clients_data.items():
+            if ratio > 0:
+                data.x = data.x[0:int(len(data.x) * ratio)]
+                data.y = data.y[0:int(len(data.y) * ratio)]
+            model = copy.deepcopy(self.init_model)
+            trained = tools.train(model, data.batch(8))
+            self.model_stats[client_idx] = trained
+            self.models[client_idx] = model
+            self.sample_dict[client_idx] = len(data)
+        self.logging.info("Building Models --Finished")
 
     def cluster(self, cluster_size=10):
         self.logging.info("Clustering Models --Started")
