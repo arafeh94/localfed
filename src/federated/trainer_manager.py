@@ -19,7 +19,7 @@ class TrainerManager:
         pass
 
 
-class SeqTrainerManager:
+class SeqTrainerManager(TrainerManager):
     def __init__(self, trainer_class: type, batch_size: int, epochs: int, criterion, optimizer: callable, **args):
         self.criterion = criterion
         self.epochs = epochs

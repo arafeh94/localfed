@@ -266,8 +266,9 @@ class WandbLogger(FederatedEventPlug):
     def __init__(self, config=None):
         super().__init__()
         import wandb
-        wandb.login(key='18de3183a3487d875345d2ee7948376df2a31c39')
-        wandb.init(project='fedavg', entity='arafeh', config=config)
+        wandb.login(key='24db2a5612aaf7311dd29a5178f252a1c0a351a9')
+        # 1. Start a W&B run
+        wandb.init(project='localfed', entity='mwazzeh', config=config)
         self.wandb = wandb
         atexit.register(lambda: self.wandb.finish())
 

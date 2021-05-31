@@ -10,14 +10,14 @@ from src.data.data_generator import DataGenerator
 from src.data.data_provider import LocalMnistDataProvider, PickleDataProvider
 from src.federated import plugins
 from src.federated.federated import Events, FederatedLearning
-from src.federated.trainer_manager import TrainerManager
+from src.federated.trainer_manager import TrainerManager, SeqTrainerManager
 
 import numpy as np
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-data_file = "../datasets/pickles/10_1000_big_ca.pkl"
+data_file = "../datasets/pickles/10_6000_big_ca.pkl"
 # custom test file contains only 20 samples from each client
 # custom_test_file = '../datasets/pickles/test_data.pkl'
 
@@ -37,9 +37,8 @@ optimizer = optims.sgd(learn_rate)
 
 print(
     f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds} ')
-trainer_manager = TrainerManager(trainers.CPUChunkTrainer, batch_size=batch_size, epochs=epochs,
-                                 criterion=criterion,
-                                 optimizer=optims.sgd(learn_rate))
+trainer_manager = SeqTrainerManager(trainers.CPUChunkTrainer, batch_size=batch_size, epochs=epochs,
+                                    criterion=criterion, optimizer=optims.sgd(learn_rate))
 
 federated = FederatedLearning(
     trainer_manager=trainer_manager,
@@ -47,8 +46,8 @@ federated = FederatedLearning(
     tester=testers.Normal(batch_size=batch_size, criterion=criterion),
     client_selector=client_selectors.All(),
     trainers_data_dict=client_data,
-    # initial_model=lambda: LogisticRegression(28 * 28, 10),
-    initial_model=lambda: CNN_OriginalFedAvg(),
+    initial_model=lambda: LogisticRegression(28 * 28, 10),
+    # initial_model=lambda: CNN_OriginalFedAvg(),
     num_rounds=num_rounds,
     desired_accuracy=0.99
 )
