@@ -37,6 +37,7 @@ class FederatedLearning:
         self.trainers_train = {}
         self.test_on = test_on
         for trainer_id, data in trainers_data_dict.items():
+            data = data.shuffle().as_tensor()
             train, test = data.split(train_ratio)
             self.trainers_train[trainer_id] = train
             self.trainers_test[trainer_id] = test

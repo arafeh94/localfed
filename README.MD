@@ -189,8 +189,8 @@ federated.start()
 
 Federated Learning tasks should include experiments of different kinds of data that are usually non identically
 distributed and compare to data identically distributed and so on. That would cause researcher to preprocess the same
-data differently before even starting with federated learning. To get the idea, support that we are working on mnist
-data. Using federated learning, we should test the model creation under these scenarios:
+data differently before even starting with federated learning. To get the idea, suppose that we are working on mnist
+dataset. Using federated learning, we should test the model creation under these scenarios:
 
 1. mnist data distributed into x number of clients with the same simple size
 2. mnist data distributed into x number of clients of big different in sample size

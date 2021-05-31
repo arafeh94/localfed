@@ -22,8 +22,6 @@ test_file = '../datasets/pickles/test_data.pkl'
 logger.info('Generating Data --Started')
 dg = src.data.data_generator.load(data_file)
 client_data = dg.distributed
-# dg = DataGenerator(LocalMnistDataProvider(limit=10000))
-# client_data = dg.distribute_size(10, 100, 100)
 dg.describe()
 logger.info('Generating Data --Ended')
 
