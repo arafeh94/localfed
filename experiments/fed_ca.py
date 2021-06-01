@@ -1,4 +1,5 @@
-# mpiexec -n 11 python fed_ca.py
+# windows: mpiexec -n 11 python fed_ca.py
+# ubuntu: mpirun -np 11 python fed_ca.py
 
 import logging
 import sys
@@ -26,7 +27,7 @@ logger = logging.getLogger('main')
 comm = Comm()
 if comm.pid() == 0:
 
-    data_file = "../datasets/pickles/10_3000_big_ca.pkl"
+    data_file = "../datasets/pickles/10_6000_big_ca.pkl"
     # custom test file contains only 20 samples from each client
     # custom_test_file = '../datasets/pickles/test_data.pkl'
 
@@ -37,7 +38,7 @@ if comm.pid() == 0:
     dg.describe()
 
     # # setting hyper parameters
-    hyper_params = build_grid(batch_size=(5, 128, 7), epochs=(1, 20, 5), num_rounds=(5, 80, 10))
+    hyper_params = build_grid(batch_size=(5, 128, 10), epochs=(1, 20, 5), num_rounds=(5, 80, 10))
     configs = generate_configs(hyper_params)
     logger.info(calculate_max_rounds(hyper_params))
     runs = {}
@@ -65,7 +66,7 @@ if comm.pid() == 0:
             desired_accuracy=0.99
         )
 
-        federated.plug(plugins.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
+        # federated.plug(plugins.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
         # federated.plug(plugins.FederatedTimer([Events.ET_ROUND_START, Events.ET_TRAIN_END]))
         # federated.plug(plugins.CustomModelTestPlug(PickleDataProvider(custom_test_file).collect().as_tensor(), 8))
         # federated.plug(plugins.FedPlot())
@@ -73,7 +74,7 @@ if comm.pid() == 0:
         # federated.plug(plugins.FL_CA())
         federated.plug(plugins.WandbLogger(config={'lr': learn_rate, 'batch_size': batch_size, 'epochs': epochs,
                                                    'num_rounds': num_rounds, 'data_file': data_file,
-                                                   'model': 'logr'}))
+                                                   'model': 'LR', 'os': 'windows'}))
 
         logger.info("----------------------")
         logger.info("start federated")

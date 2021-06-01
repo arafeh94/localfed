@@ -41,3 +41,4 @@ cifar-10-batches-py
 ./experiments/logs/*
 ./experiments/wandb
 ./experiments/nogit
+/experiments/wandb/
