@@ -2,7 +2,8 @@ import logging
 
 from torch import nn
 
-from src.federated.components import testers, client_selectors, aggregators, trainers
+import libs.model.collection
+from src.federated.components import metrics, client_selectors, aggregators, trainers
 from libs.model.cv.cnn import CNN_OriginalFedAvg
 from libs.model.linear.lr import LogisticRegression
 from src.data import data_generator
@@ -29,9 +30,9 @@ client_data = dg.distributed
 dg.describe()
 
 # # setting hyper parameters
-batch_size = 10
-epochs = 5
-num_rounds = 120
+batch_size = 64
+epochs = 20
+num_rounds = 20
 learn_rate = 0.1
 optimizer = 'sgd'
 criterion = 'cel'
@@ -43,10 +44,11 @@ federated = FederatedLearning(
     trainer_manager=trainer_manager,
     trainer_params=trainer_params,
     aggregator=aggregators.AVGAggregator(),
-    tester=testers.Normal(batch_size=batch_size, criterion=nn.CrossEntropyLoss()),
+    metrics=metrics.AccLoss(batch_size=batch_size, criterion=nn.CrossEntropyLoss()),
     client_selector=client_selectors.All(),
     trainers_data_dict=client_data,
-    initial_model=lambda: LogisticRegression(28 * 28, 10),
+    # initial_model=lambda: LogisticRegression(28 * 28, 10),
+    initial_model=lambda: libs.model.collection.MLP(28 * 28, 64, 10),
     # initial_model=lambda: CNN_OriginalFedAvg(),
     num_rounds=num_rounds,
     desired_accuracy=0.99

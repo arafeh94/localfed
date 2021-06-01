@@ -17,7 +17,7 @@ This code will start a federated learning application with the given parameters.
 
 ## Federated Parameters
 
-FederatedLearning class requires different parameters to control the behavior of the running task Of these parameters we
+FederatedLearning class requires different parameters to control the behavior of the running task. Of these parameters we
 can list
 
 ### trainer_manager:
@@ -81,10 +81,10 @@ testing algorithm in case they exist. Available testers:
 - Normal(batch_size,criterion): test the model and returns accuracy and loss
 
 ```python
-from src.federated.components import testers
+from src.federated.components import metrics
 from torch import nn
 
-tester = testers.Normal(batch_size=8, criterion=nn.CrossEntropyLoss())
+tester = metrics.AccLoss(batch_size=8, criterion=nn.CrossEntropyLoss())
 ```
 
 ### trainers_data_dict
@@ -171,7 +171,7 @@ test_on = FederatedLearning.TEST_ON_SELECTED
 ```python
 from torch import nn
 
-from src.federated.components import testers, client_selectors, aggregators, params, trainers
+from src.federated.components import metrics, client_selectors, aggregators, params, trainers
 from libs.model.linear.lr import LogisticRegression
 from src.federated.federated import FederatedLearning
 from src.federated.trainer_manager import SeqTrainerManager
@@ -182,15 +182,15 @@ trainer_manager = SeqTrainerManager()
 trainer_params = TrainerParams(trainer_class=trainers.CPUChunkTrainer, batch_size=50, epochs=20, optimizer='sgd',
                                criterion='cel', lr=0.1)
 federated = FederatedLearning(
-    trainer_manager=trainer_manager,
-    trainer_params=trainer_params,
-    aggregator=aggregators.AVGAggregator(),
-    tester=testers.Normal(batch_size=50, criterion=nn.CrossEntropyLoss()),
-    client_selector=client_selectors.Random(3),
-    trainers_data_dict=client_data,
-    initial_model=lambda: LogisticRegression(28 * 28, 10),
-    num_rounds=0,
-    desired_accuracy=0.99
+  trainer_manager=trainer_manager,
+  trainer_params=trainer_params,
+  aggregator=aggregators.AVGAggregator(),
+  tester=metrics.AccLoss(batch_size=50, criterion=nn.CrossEntropyLoss()),
+  client_selector=client_selectors.Random(3),
+  trainers_data_dict=client_data,
+  initial_model=lambda: LogisticRegression(28 * 28, 10),
+  num_rounds=0,
+  desired_accuracy=0.99
 )
 federated.start()
 ```
