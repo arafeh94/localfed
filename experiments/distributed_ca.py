@@ -2,6 +2,8 @@
 import sys
 from os.path import dirname
 
+from src.federated.protocols import TrainerParams
+
 sys.path.append(dirname(__file__) + '../')
 import logging
 from torch import nn
@@ -39,9 +41,11 @@ if comm.pid() == 0:
     logger.info('Generating Data --Ended')
 
     trainer_manager = MPITrainerManager()
-
+    trainer_params = TrainerParams(trainer_class=trainers.CPUChunkTrainer, batch_size=50, epochs=20, optimizer='sgd',
+                                   criterion='cel', lr=0.1)
     federated = FederatedLearning(
         trainer_manager=trainer_manager,
+        trainer_params=trainer_params,
         aggregator=aggregators.AVGAggregator(),
         tester=testers.Normal(config['batch_size'], criterion=config['criterion']),
         client_selector=client_selectors.All(),
@@ -64,9 +68,4 @@ if comm.pid() == 0:
     logger.info("----------------------")
     federated.start()
 else:
-    while True:
-        model, train_data, context = comm.recv(0, 1)
-        trainer = trainers.CPUChunkTrainer(optimizer=config['optimizer'], epochs=config['epochs'],
-                                           batch_size=config['batch_size'], criterion=config['criterion'])
-        trained_weights, sample_size = trainer.train(model, train_data, context)
-        comm.send(0, (trained_weights, sample_size), 2)
+    MPITrainerManager.mpi_trainer_listener(comm)

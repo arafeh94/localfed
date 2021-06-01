@@ -25,8 +25,8 @@ if True:
     # creating custom initializers
     num_clients = 10
     # min and max size are equal since we need a balanced dataset for ca
-    min_size = 100
-    max_size = 100
+    min_size = 3000
+    max_size = 3000
 
     dataset_size = get_dataset_size_type(min_size)
 

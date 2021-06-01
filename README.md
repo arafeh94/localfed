@@ -22,23 +22,30 @@ can list
 
 ### trainer_manager:
 
-Instance of TrainerManager interface defines how trainers are running. for example, it exists two kinds of
-trainer_managers
+Instance of TrainerManager interface defines how trainers are running. Each manager take trainer manager is followed by
+trainer params which define the configurations, such as epochs, loss, and so on. It exists for now two trainer managers
+built in:
 
 - SeqTrainerManager that runs trainers sequentially on a single thread
 - MPITrainerManager that runs trainers on a different instance, so it would be possible to run multiple trainers at the
   same time. using this manager would also allow us to control the behavior of the trainers, in terms of allocated
   resources for their runs since they are running on different process. such control is given because we're using mpi to
-  complete this task
+  complete this task. Refer to MPI Section to see examples.
 
 ```python
 from src.federated.trainer_manager import SeqTrainerManager
-from src.federated.components.trainers import CPUTrainer
-from src.federated.components import optims
-from torch import nn
+from src.federated.components import trainers
+from src.federated.protocols import TrainerParams
+from src.federated.federated import FederatedLearning
 
-trainer_manager = SeqTrainerManager(trainer_class=CPUTrainer, batch_size=8, criterion=nn.CrossEntropyLoss(),
-                                    optimizer=optims.sgd(0.1), epochs=10)
+trainer_manager = SeqTrainerManager()
+trainer_params = TrainerParams(trainer_class=trainers.CPUTrainer, batch_size=50, epochs=20, optimizer='sgd',
+                               criterion='cel', lr=0.1)
+federated = FederatedLearning(
+    trainer_manager=trainer_manager,
+    trainer_params=trainer_params,
+    ...
+)
 ```
 
 ### aggregator:
@@ -164,16 +171,19 @@ test_on = FederatedLearning.TEST_ON_SELECTED
 ```python
 from torch import nn
 
-from src.federated.components import testers, client_selectors, aggregators, optims, trainers
+from src.federated.components import testers, client_selectors, aggregators, params, trainers
 from libs.model.linear.lr import LogisticRegression
 from src.federated.federated import FederatedLearning
 from src.federated.trainer_manager import SeqTrainerManager
+from src.federated.protocols import TrainerParams
 
 client_data = {}
-trainer_manager = SeqTrainerManager(trainers.CPUTrainer, batch_size=50, epochs=20, criterion=nn.CrossEntropyLoss(),
-                                    optimizer=optims.sgd(0.1))
+trainer_manager = SeqTrainerManager()
+trainer_params = TrainerParams(trainer_class=trainers.CPUChunkTrainer, batch_size=50, epochs=20, optimizer='sgd',
+                               criterion='cel', lr=0.1)
 federated = FederatedLearning(
     trainer_manager=trainer_manager,
+    trainer_params=trainer_params,
     aggregator=aggregators.AVGAggregator(),
     tester=testers.Normal(batch_size=50, criterion=nn.CrossEntropyLoss()),
     client_selector=client_selectors.Random(3),
