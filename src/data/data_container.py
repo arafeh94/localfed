@@ -69,6 +69,6 @@ class DataContainer:
         return DataContainer(x_train, y_train), DataContainer(x_test, y_test)
 
     def shuffle(self):
-        dc = copy.deepcopy(self) if self.as_numpy() else self.as_numpy()
+        dc = copy.deepcopy(self) if self.is_numpy() else self.as_numpy()
         p = np.random.permutation(len(dc.x))
         return DataContainer(dc.x[p], dc.y[p])

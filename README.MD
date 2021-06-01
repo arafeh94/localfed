@@ -17,7 +17,7 @@ This code will start a federated learning application with the given parameters.
 
 ## Federated Parameters
 
-FederatedLearning class requires different parameters to control the behavior of the running task Of these parameters we
+FederatedLearning class requires different parameters to control the behavior of the running task. Of these parameters we
 can list
 
 ### trainer_manager:

@@ -1,4 +1,4 @@
-# run using  mpiexec -n 3 python distributed.py
+# mpiexec -n 11 python distributed.py
 import sys
 from os.path import dirname
 
@@ -24,7 +24,7 @@ logger = logging.getLogger('main')
 comm = Comm()
 
 if comm.pid() == 0:
-    data_file = '../datasets/pickles/70_2_600_big_mnist.pkl'
+    data_file = '../datasets/pickles/100_10_400_mnist.pkl'
     test_file = '../datasets/pickles/test_data.pkl'
 
     logger.info('Generating Data --Started')
@@ -41,11 +41,11 @@ if comm.pid() == 0:
         trainer_params=trainer_params,
         aggregator=aggregators.AVGAggregator(),
         tester=testers.Normal(50, criterion=nn.CrossEntropyLoss()),
-        client_selector=client_selectors.Random(2),
+        client_selector=client_selectors.Random(5),
         trainers_data_dict=client_data,
         initial_model=lambda: LogisticRegression(28 * 28, 10),
         # initial_model=lambda: CNN_OriginalFedAvg(),
-        num_rounds=10,
+        num_rounds=0,
         desired_accuracy=0.99
     )
 

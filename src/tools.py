@@ -116,8 +116,12 @@ def random_trainer_selection(count, clients):
 
 
 def influence_ecl(aggregated, model):
-    l2_norm = torch.dist(aggregated["linear.weight"], model["linear.weight"], 2)
-    return l2_norm.numpy().min()
+    all = []
+    for key in aggregated.keys():
+        l2_norm = torch.dist(aggregated[key], model[key], 2)
+        val = l2_norm.numpy().min()
+        all.append(val)
+    return math.fsum(all) / len(all)
 
 
 def influence_cos(model1, model2, aggregated):

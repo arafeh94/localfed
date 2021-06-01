@@ -88,7 +88,6 @@ class MPITrainerManager(TrainerManager):
     def mpi_trainer_listener(comm: Comm):
         while True:
             model, train_data, context, config = comm.recv(0, 1)
-            logging.getLogger('asd').info(config.get_criterion())
             trainer: Trainer = config.trainer_class()
             trained_weights, sample_size = trainer.train(model, train_data, context, config)
             comm.send(0, (trained_weights, sample_size), 2)
