@@ -2,13 +2,14 @@ import logging
 
 from torch import nn
 
-from src.federated.components import testers, client_selectors, aggregators, optims, trainers
+from src.federated.components import testers, client_selectors, aggregators, params, trainers
 from libs.model.nlp.rnn import RNN_OriginalFedAvg
 from src.data.data_provider import LocalShakespeareDataProvider
 from src.federated import plugins
 from src.data.data_generator import DataGenerator
 from src.federated.federated import Events as et
 from src.federated.federated import FederatedLearning
+from src.federated.protocols import TrainerParams
 from src.federated.trainer_manager import TrainerManager, SeqTrainerManager
 
 logging.basicConfig(level=logging.INFO)
@@ -23,11 +24,12 @@ client_data = dg.distribute_size(10, 100, 100)
 dg.describe()
 logger.info('Generating Data --Ended')
 
-trainer_manager = SeqTrainerManager(trainers.CPUTrainer, batch_size=8, epochs=10, criterion=nn.CrossEntropyLoss(),
-                                 optimizer=optims.sgd(0.1))
-
+trainer_manager = SeqTrainerManager()
+trainer_params = TrainerParams(trainer_class=trainers.CPUTrainer, batch_size=50, epochs=20, optimizer='sgd',
+                               criterion='cel', lr=0.1)
 federated = FederatedLearning(
     trainer_manager=trainer_manager,
+    trainer_params=trainer_params,
     aggregator=aggregators.AVGAggregator(),
     tester=testers.Normal(batch_size=8, criterion=nn.CrossEntropyLoss()),
     client_selector=client_selectors.Random(10),

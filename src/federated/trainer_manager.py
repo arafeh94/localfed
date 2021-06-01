@@ -6,12 +6,12 @@ from torch import nn
 
 from src.apis.mpi import Comm
 from src.data.data_container import DataContainer
-from src.federated.protocols import Trainer
+from src.federated.protocols import Trainer, TrainerParams
 
 
 class TrainerManager:
     @abstractmethod
-    def train_req(self, trainer_id, model, train_data, context):
+    def train_req(self, trainer_id, model, train_data, context, config: TrainerParams):
         pass
 
     @abstractmethod
@@ -20,33 +20,22 @@ class TrainerManager:
 
 
 class SeqTrainerManager(TrainerManager):
-    def __init__(self, trainer_class: type, batch_size: int, epochs: int, criterion, optimizer: callable, **args):
-        self.criterion = criterion
-        self.epochs = epochs
-        self.batch_size = batch_size
-        self.optimizer = optimizer
-        self.trainer_class = trainer_class
-        self.trainer_args = args
+    def __init__(self):
         self.trainers = {}
         self.train_requests = {}
 
-    def create(self, trainer_id, **kwargs) -> Trainer:
-        all_args = reduce(lambda x, y: dict(x, **y), (self.trainer_args, kwargs))
-        trainer = self.trainer_class(optimizer=self.optimizer, criterion=self.criterion, epochs=self.epochs,
-                                     batch_size=self.batch_size)
+    def _create(self, trainer_id, config: TrainerParams) -> Trainer:
+        trainer = config.trainer_class()
         self.trainers[trainer_id] = trainer
         return trainer
 
-    def trainer(self, trainer_id, create_if_not_exists=True):
+    def _trainer(self, trainer_id, config):
         if trainer_id not in self.trainers.keys():
-            if create_if_not_exists:
-                self.trainers[trainer_id] = self.create(trainer_id)
-            else:
-                raise Exception("requested trainer does not exists")
+            self.trainers[trainer_id] = self._create(trainer_id, config)
         return self.trainers[trainer_id]
 
-    def train_req(self, trainer_id, model, train_data, context):
-        request = [self.trainer(trainer_id).train, model, train_data, context]
+    def train_req(self, trainer_id, model, train_data, context, config):
+        request = [self._trainer(trainer_id, config).train, model, train_data, context, config]
         self.train_requests[trainer_id] = request
         return request
 
@@ -54,7 +43,7 @@ class SeqTrainerManager(TrainerManager):
         trainers_trained_weights = {}
         trainers_sample_size = {}
         for trainer_id, request in self.train_requests.items():
-            trained_weights, sample_size = request[0](request[1], request[2], request[3])
+            trained_weights, sample_size = request[0](request[1], request[2], request[3], request[4])
             trainers_trained_weights[trainer_id] = trained_weights
             trainers_sample_size[trainer_id] = sample_size
         return trainers_trained_weights, trainers_sample_size
@@ -68,9 +57,9 @@ class MPITrainerManager(TrainerManager):
         self.used_procs = []
         self.requests = {}
 
-    def train_req(self, trainer_id, model, train_data, context):
+    def train_req(self, trainer_id, model, train_data, context, config):
         pid = self.get_proc()
-        self.comm.send(pid, (model, train_data, context), 1)
+        self.comm.send(pid, (model, train_data, context, config), 1)
         req = self.comm.irecv(pid, 2)
         self.requests[trainer_id] = req
 
@@ -94,3 +83,12 @@ class MPITrainerManager(TrainerManager):
             trainers_sample_size[trainer_id] = sample_size
         self.reset()
         return trainers_trained_weights, trainers_sample_size
+
+    @staticmethod
+    def mpi_trainer_listener(comm: Comm):
+        while True:
+            model, train_data, context, config = comm.recv(0, 1)
+            logging.getLogger('asd').info(config.get_criterion())
+            trainer: Trainer = config.trainer_class()
+            trained_weights, sample_size = trainer.train(model, train_data, context, config)
+            comm.send(0, (trained_weights, sample_size), 2)

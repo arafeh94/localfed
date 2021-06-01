@@ -6,9 +6,10 @@ sys.path.append(dirname(__file__) + '../')
 import logging
 from torch import nn
 import src
+from src.federated.protocols import TrainerParams
 from libs.model.cv.cnn import CNN_OriginalFedAvg
 from src.apis.mpi import Comm
-from src.federated.components import testers, client_selectors, aggregators, optims, trainers
+from src.federated.components import testers, client_selectors, aggregators, params, trainers
 from libs.model.linear.lr import LogisticRegression
 from src.data.data_provider import PickleDataProvider
 from src.federated import plugins
@@ -22,12 +23,6 @@ logger = logging.getLogger('main')
 
 comm = Comm()
 
-config = {
-    'criterion': nn.CrossEntropyLoss(),
-    'batch_size': 8,
-    'epochs': 2,
-    'optimizer': optims.sgd(0.1)
-}
 if comm.pid() == 0:
     data_file = '../datasets/pickles/70_2_600_big_mnist.pkl'
     test_file = '../datasets/pickles/test_data.pkl'
@@ -39,35 +34,32 @@ if comm.pid() == 0:
     logger.info('Generating Data --Ended')
 
     trainer_manager = MPITrainerManager()
-
+    trainer_params = TrainerParams(trainer_class=trainers.CPUTrainer, batch_size=50, epochs=20, optimizer='sgd',
+                                   criterion='cel', lr=0.1)
     federated = FederatedLearning(
         trainer_manager=trainer_manager,
+        trainer_params=trainer_params,
         aggregator=aggregators.AVGAggregator(),
-        tester=testers.Normal(config['batch_size'], criterion=config['criterion']),
-        client_selector=client_selectors.Random(10),
+        tester=testers.Normal(50, criterion=nn.CrossEntropyLoss()),
+        client_selector=client_selectors.Random(2),
         trainers_data_dict=client_data,
-        # initial_model=lambda: LogisticRegression(28 * 28, 10),
-        initial_model=lambda: CNN_OriginalFedAvg(),
+        initial_model=lambda: LogisticRegression(28 * 28, 10),
+        # initial_model=lambda: CNN_OriginalFedAvg(),
         num_rounds=10,
         desired_accuracy=0.99
     )
 
     federated.plug(plugins.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
     federated.plug(plugins.FederatedTimer([Events.ET_TRAINER_FINISHED]))
-    # federated.plug(plugins.FedPlot())
+    federated.plug(plugins.FedPlot())
     # federated.plug(plugins.CustomModelTestPlug(PickleDataProvider(test_file).collect().as_tensor(), 8))
     # federated.plug(plugins.FedSave())
     # federated.plug(plugins.WandbLogger(config={'num_rounds': 10}))
-    federated.plug(plugins.MPIStopPlug())
+    # federated.plug(plugins.MPIStopPlug())
 
     logger.info("----------------------")
     logger.info("start federated 1")
     logger.info("----------------------")
     federated.start()
 else:
-    while True:
-        model, train_data, context = comm.recv(0, 1)
-        trainer = trainers.CPUTrainer(optimizer=config['optimizer'], epochs=config['epochs'],
-                                      batch_size=config['batch_size'], criterion=config['criterion'])
-        trained_weights, sample_size = trainer.train(model, train_data, context)
-        comm.send(0, (trained_weights, sample_size), 2)
+    MPITrainerManager.mpi_trainer_listener(comm)

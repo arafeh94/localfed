@@ -5,7 +5,7 @@ from torch import nn
 import src
 from libs.model.cv.cnn import CNN_OriginalFedAvg
 from src.apis import ga
-from src.federated.components import testers, client_selectors, aggregators, optims, trainers
+from src.federated.components import testers, client_selectors, aggregators, params, trainers
 from libs.model.linear.lr import LogisticRegression
 from src.data.data_provider import PickleDataProvider
 from src.federated import plugins, fedruns
@@ -33,7 +33,7 @@ configs = {
         'batch_size': 25,
         'epochs': 8,
         'criterion': nn.CrossEntropyLoss(),
-        'optimizer': optims.sgd(0.1),
+        'optimizer': params.sgd(0.1),
         'clients_per_round': 10,
         'num_rounds': 10,
         'desired_accuracy': 0.99,
@@ -49,7 +49,7 @@ configs = {
         'batch_size': 25,
         'epochs': 8,
         'criterion': nn.CrossEntropyLoss(),
-        'optimizer': optims.sgd(0.1),
+        'optimizer': params.sgd(0.1),
         'clients_per_round': 10,
         'num_rounds': 10,
         'desired_accuracy': 0.99,

@@ -7,23 +7,20 @@ from torch import nn, Tensor
 from src.apis.mpi import Comm
 from src.data.data_container import DataContainer
 from src.federated.federated import FederatedLearning
-from src.federated.protocols import Trainer
+from src.federated.protocols import Trainer, TrainerParams
 
 
 class CPUTrainer(Trainer):
-    def __init__(self, optimizer=None, criterion=None, epochs=None, batch_size=None):
-        super().__init__(optimizer, criterion, epochs, batch_size)
-
-    def train(self, model: nn.Module, train_data: DataContainer, context: FederatedLearning.Context) \
-            -> Tuple[any, int]:
+    def train(self, model: nn.Module, train_data: DataContainer, context: FederatedLearning.Context,
+              config: TrainerParams) -> Tuple[any, int]:
         model.train()
-        optimizer = self.optimizer(model)
-        criterion = self.criterion
+        optimizer = config.get_optimizer()(model)
+        criterion = config.get_criterion()
 
         epoch_loss = []
-        for epoch in range(self.epochs):
+        for epoch in range(config.epochs):
             batch_loss = []
-            for batch_idx, (x, labels) in enumerate(train_data.batch(self.batch_size)):
+            for batch_idx, (x, labels) in enumerate(train_data.batch(config.batch_size)):
                 optimizer.zero_grad()
                 log_probs = model(x)
                 loss = criterion(log_probs, labels)
@@ -38,7 +35,8 @@ class CPUTrainer(Trainer):
 
 
 class CPUChunkTrainer(CPUTrainer):
-    def train(self, model: nn.Module, train_data: DataContainer, context: FederatedLearning.Context):
+    def train(self, model: nn.Module, train_data: DataContainer, context: FederatedLearning.Context,
+              config: TrainerParams) -> Tuple[any, int]:
         round_id = context.round_id
         num_rounds = context.num_rounds
         total_size = len(train_data)
@@ -46,6 +44,4 @@ class CPUChunkTrainer(CPUTrainer):
         x = train_data.x[int(round_id * round_data_size):int((round_id * round_data_size) + round_data_size)]
         y = train_data.y[int(round_id * round_data_size):int((round_id * round_data_size) + round_data_size)]
         chunk = DataContainer(x, y)
-        return super(CPUChunkTrainer, self).train(model, chunk, round_id)
-
-
+        return super(CPUChunkTrainer, self).train(model, chunk, round_id, config)
