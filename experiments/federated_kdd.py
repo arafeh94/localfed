@@ -2,7 +2,7 @@ import logging
 
 from torch import nn
 
-from src.federated.components import testers, client_selectors, aggregators, params, trainers
+from src.federated.components import metrics, client_selectors, aggregators, params, trainers
 from libs.model.linear.lr import LogisticRegression
 from src.data.data_provider import LocalKDDDataProvider
 from src.federated import plugins
@@ -26,7 +26,7 @@ trainer_manager = SeqTrainerManager(trainers.CPUTrainer, batch_size=50, epochs=1
 federated = FederatedLearning(
     trainer_manager=trainer_manager,
     aggregator=aggregators.AVGAggregator(),
-    tester=testers.Normal(batch_size=50, criterion=nn.CrossEntropyLoss()),
+    metrics=metrics.AccLoss(batch_size=50, criterion=nn.CrossEntropyLoss()),
     client_selector=client_selectors.Random(5),
     trainers_data_dict=client_data,
     initial_model=lambda: LogisticRegression(41, 2),

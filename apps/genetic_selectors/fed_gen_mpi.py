@@ -1,36 +1,39 @@
+# mpiexec -n 4 python fed_gen_mpi.py
 import logging
 import sys
 from os.path import dirname
 
 from torch import nn
 
-sys.path.append(dirname(__file__) + './')
+sys.path.append(dirname(__file__) + '../')
+
+from src.federated.components.trainers import CPUTrainer
+from src.federated.protocols import TrainerParams
 
 import src
 from libs.model.cv.cnn import CNN_OriginalFedAvg
-from src.apis import ga
+from apps.genetic_selectors import fed_comp
 from src.apis.mpi import Comm
-from src.federated.components import testers, client_selectors, aggregators, params, trainers
-from libs.model.linear.lr import LogisticRegression
+from src.federated.components import metrics, client_selectors, aggregators
 from src.data.data_provider import PickleDataProvider
 from src.federated import plugins, fedruns
 from src.data.data_generator import DataGenerator
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
-from src.federated.trainer_manager import TrainerManager, SeqTrainerManager, MPITrainerManager
+from src.federated.trainer_manager import MPITrainerManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
 comm = Comm()
-batch_size = 5000
-epochs = 1
+batch_size = 30
+epochs = 20
 clients_per_round = 3
 num_rounds = 20
-model = lambda: LogisticRegression(28 * 28, 10)
+model = lambda: CNN_OriginalFedAvg()
 if comm.pid() == 0:
-    data_file = '../datasets/pickles/70_2_600_big_mnist.pkl'
-    test_file = '../datasets/pickles/test_data.pkl'
+    data_file = '../../datasets/pickles/70_2_600_big_mnist.pkl'
+    test_file = '../../datasets/pickles/test_data.pkl'
 
     logger.info('Generating Data --Started')
     dg = src.data.data_generator.load(data_file)
@@ -42,8 +45,6 @@ if comm.pid() == 0:
         'ga': {
             'batch_size': batch_size,
             'epochs': epochs,
-            'criterion': nn.CrossEntropyLoss(),
-            'optimizer': params.sgd(0.1),
             'clients_per_round': clients_per_round,
             'num_rounds': num_rounds,
             'desired_accuracy': 0.99,
@@ -52,16 +53,14 @@ if comm.pid() == 0:
             'ga_max_iter': 10,
             'ga_r_cross': 0.05,
             'ga_r_mut': 0.1,
-            'ga_c_size': 10,
+            'ga_c_size': 30,
             'ga_p_size': 200,
-            'nb_clusters': 10,
-            'ga_min_fitness': 0.2,
+            'nb_clusters': 30,
+            'ga_min_fitness': 0.45,
         },
         'normal': {
             'batch_size': batch_size,
             'epochs': epochs,
-            'criterion': nn.CrossEntropyLoss(),
-            'optimizer': params.sgd(0.1),
             'clients_per_round': clients_per_round,
             'num_rounds': num_rounds,
             'desired_accuracy': 0.99,
@@ -71,8 +70,6 @@ if comm.pid() == 0:
         'clustered': {
             'batch_size': batch_size,
             'epochs': epochs,
-            'criterion': nn.CrossEntropyLoss(),
-            'optimizer': params.sgd(0.1),
             'clients_per_round': clients_per_round,
             'num_rounds': num_rounds,
             'desired_accuracy': 0.99,
@@ -84,23 +81,26 @@ if comm.pid() == 0:
     }
     runs = {}
     for name, config in configs.items():
-        trainer_manager = MPITrainerManager()
 
         initial_model = config['model']
         if name == 'ga':
-            initial_model = ga.ga_module_creator(client_data, initial_model, max_iter=config['ga_max_iter'],
-                                                 r_cross=config['ga_r_cross'], r_mut=config['ga_r_mut'],
-                                                 c_size=config['ga_c_size'], p_size=config['ga_p_size'],
-                                                 clusters=config['nb_clusters'],
-                                                 desired_fitness=config['ga_min_fitness'])
+            initial_model = fed_comp.ga_module_creator(client_data, initial_model, max_iter=config['ga_max_iter'],
+                                                       r_cross=config['ga_r_cross'], r_mut=config['ga_r_mut'],
+                                                       c_size=config['ga_c_size'], p_size=config['ga_p_size'],
+                                                       clusters=config['nb_clusters'],
+                                                       desired_fitness=config['ga_min_fitness'])
         elif name == 'clustered':
-            initial_model = ga.cluster_module_creator(client_data, initial_model, config['nb_clusters'],
-                                                      config['c_size'])
+            initial_model = fed_comp.cluster_module_creator(client_data, initial_model, config['nb_clusters'],
+                                                            config['c_size'])
 
+        trainer_manager = MPITrainerManager()
+        trainer_params = TrainerParams(trainer_class=CPUTrainer, optimizer='sgd', epochs=epochs, batch_size=batch_size,
+                                       criterion='cel', lr=0.1)
         federated = FederatedLearning(
             trainer_manager=trainer_manager,
+            trainer_params=trainer_params,
             aggregator=aggregators.AVGAggregator(),
-            tester=testers.Normal(batch_size=config['batch_size'], criterion=config['criterion']),
+            metrics=metrics.AccLoss(batch_size=config['batch_size'], criterion=nn.CrossEntropyLoss()),
             client_selector=client_selectors.Random(config['clients_per_round']),
             trainers_data_dict=client_data,
             initial_model=initial_model,
@@ -126,9 +126,4 @@ if comm.pid() == 0:
     fd.compare_all()
     fd.plot()
 else:
-    while True:
-        model, train_data, context = comm.recv(0, 1)
-        trainer = trainers.CPUTrainer(optimizer=params.sgd(0.1), epochs=epochs,
-                                      batch_size=batch_size, criterion=nn.CrossEntropyLoss())
-        trained_weights, sample_size = trainer.train(model, train_data, context)
-        comm.send(0, (trained_weights, sample_size), 2)
+    MPITrainerManager.mpi_trainer_listener(comm)

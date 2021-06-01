@@ -22,7 +22,7 @@ def non_iid_partition_with_dirichlet_distribution(label_list,
         ----------
             label_list : the label list from classification/segmentation dataset
             client_num : number of clients
-            classes: the number of classification (e.g., 10 for CIFAR-10) OR a list of segmentation categories
+            classes: the number of classification (e.genetic_selectors., 10 for CIFAR-10) OR a list of segmentation categories
             alpha: a concentration parameter controlling the identicalness among clients.
             task: CV specific task eg. classification, segmentation
         Returns
@@ -72,7 +72,7 @@ def non_iid_partition_with_dirichlet_distribution(label_list,
 def partition_class_samples_with_dirichlet_distribution(N, alpha, client_num, idx_batch, idx_k):
     np.random.shuffle(idx_k)
     # using dirichlet distribution to determine the unbalanced proportion for each client (client_num in total)
-    # e.g., when client_num = 4, proportions = [0.29543505 0.38414498 0.31998781 0.00043216], sum(proportions) = 1
+    # e.genetic_selectors., when client_num = 4, proportions = [0.29543505 0.38414498 0.31998781 0.00043216], sum(proportions) = 1
     proportions = np.random.dirichlet(np.repeat(alpha, client_num))
 
     # get the index in idx_k according to the dirichlet distribution
