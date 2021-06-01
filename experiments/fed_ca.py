@@ -9,13 +9,12 @@ from src.federated.components import testers, client_selectors, aggregators, opt
 from libs.model.cv.cnn import CNN_OriginalFedAvg
 from libs.model.linear.lr import LogisticRegression
 from src.data import data_generator
-from src.data.data_generator import DataGenerator
-from src.data.data_provider import LocalMnistDataProvider, PickleDataProvider
 from src.federated import plugins, fedruns
 from src.federated.federated import Events, FederatedLearning
 from src.federated.trainer_manager import TrainerManager, SeqTrainerManager
 
-import numpy as np
+
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
@@ -74,8 +73,7 @@ for config in configs:
     federated.start()
     name = f"-{randint(0, 999)}"
     runs[name] = federated.context
-    print()
 
 runs = fedruns.FedRuns(runs)
-runs.compare_all()
-runs.plot()
+# runs.compare_all()
+# runs.plot()

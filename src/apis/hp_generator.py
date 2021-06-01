@@ -1,7 +1,6 @@
-import math
 from collections import defaultdict
 from random import randint
-from typing import Dict, List, Callable
+from typing import Dict, List
 
 import numpy as np
 

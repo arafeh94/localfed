@@ -1,4 +1,4 @@
-# mpiexec -n 11 py distributed_cont.py
+# mpiexec -n 11 py distributed_ca.py
 import sys
 from os.path import dirname
 
