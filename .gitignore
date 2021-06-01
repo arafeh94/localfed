@@ -1,3 +1,6 @@
+#ignore all files that are bigger than 100M
+#find . -size +100M | cat >> .gitignore
+
 .DS_Store
 .idea
 .idea/*
@@ -36,8 +39,15 @@ cifar-10-batches-py
 #big pkl files
 *_big*.pkl
 
-./datasets/preprocess/data
 ./experiments/logs
 ./experiments/logs/*
 ./experiments/wandb
-./experiments/nogit/*
+./datasets/pickles/100_10_400_mnist.pkl
+./datasets/pickles/70_2_600_big_mnist.pkl
+./datasets/pickles/femnist.pkl
+./datasets/pickles/mnist.pkl
+./datasets/preprocess/data/femnist/fed_emnist_train.h5
+./datasets/preprocess/data/shakespeare/shakespeare_all_data.json
+/datasets/pickles/100_10_400_mnist.pkl
+/datasets/pickles/femnist.pkl
+/datasets/pickles/mnist.pkl
