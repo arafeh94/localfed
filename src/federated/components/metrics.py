@@ -5,7 +5,7 @@ from src.data.data_container import DataContainer
 from src.federated.protocols import Trainer, ModelInfer
 
 
-class Normal(ModelInfer):
+class AccLoss(ModelInfer):
     def infer(self, model: nn.Module, test_data: DataContainer):
         model.eval()
         test_loss = test_acc = test_total = 0.

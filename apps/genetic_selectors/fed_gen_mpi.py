@@ -12,10 +12,9 @@ from src.federated.protocols import TrainerParams
 
 import src
 from libs.model.cv.cnn import CNN_OriginalFedAvg
-from src.apis import ga
+from apps.genetic_selectors import fed_comp
 from src.apis.mpi import Comm
-from src.federated.components import testers, client_selectors, aggregators
-from libs.model.linear.lr import LogisticRegression
+from src.federated.components import metrics, client_selectors, aggregators
 from src.data.data_provider import PickleDataProvider
 from src.federated import plugins, fedruns
 from src.data.data_generator import DataGenerator
@@ -33,8 +32,8 @@ clients_per_round = 3
 num_rounds = 20
 model = lambda: CNN_OriginalFedAvg()
 if comm.pid() == 0:
-    data_file = '../datasets/pickles/70_2_600_big_mnist.pkl'
-    test_file = '../datasets/pickles/test_data.pkl'
+    data_file = '../../datasets/pickles/70_2_600_big_mnist.pkl'
+    test_file = '../../datasets/pickles/test_data.pkl'
 
     logger.info('Generating Data --Started')
     dg = src.data.data_generator.load(data_file)
@@ -85,14 +84,14 @@ if comm.pid() == 0:
 
         initial_model = config['model']
         if name == 'ga':
-            initial_model = ga.ga_module_creator(client_data, initial_model, max_iter=config['ga_max_iter'],
-                                                 r_cross=config['ga_r_cross'], r_mut=config['ga_r_mut'],
-                                                 c_size=config['ga_c_size'], p_size=config['ga_p_size'],
-                                                 clusters=config['nb_clusters'],
-                                                 desired_fitness=config['ga_min_fitness'])
+            initial_model = fed_comp.ga_module_creator(client_data, initial_model, max_iter=config['ga_max_iter'],
+                                                       r_cross=config['ga_r_cross'], r_mut=config['ga_r_mut'],
+                                                       c_size=config['ga_c_size'], p_size=config['ga_p_size'],
+                                                       clusters=config['nb_clusters'],
+                                                       desired_fitness=config['ga_min_fitness'])
         elif name == 'clustered':
-            initial_model = ga.cluster_module_creator(client_data, initial_model, config['nb_clusters'],
-                                                      config['c_size'])
+            initial_model = fed_comp.cluster_module_creator(client_data, initial_model, config['nb_clusters'],
+                                                            config['c_size'])
 
         trainer_manager = MPITrainerManager()
         trainer_params = TrainerParams(trainer_class=CPUTrainer, optimizer='sgd', epochs=epochs, batch_size=batch_size,
@@ -101,7 +100,7 @@ if comm.pid() == 0:
             trainer_manager=trainer_manager,
             trainer_params=trainer_params,
             aggregator=aggregators.AVGAggregator(),
-            tester=testers.Normal(batch_size=config['batch_size'], criterion=nn.CrossEntropyLoss()),
+            metrics=metrics.AccLoss(batch_size=config['batch_size'], criterion=nn.CrossEntropyLoss()),
             client_selector=client_selectors.Random(config['clients_per_round']),
             trainers_data_dict=client_data,
             initial_model=initial_model,

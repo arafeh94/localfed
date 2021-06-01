@@ -6,12 +6,13 @@ from numpy.random import default_rng
 import random
 import numpy as np
 
+from apps.genetic_selectors.cluster_selector import ClusterSelector
 from src import tools
 
 logger = logging.getLogger('ga')
 
 
-def select_random(genes: tools.Clustered, size):
+def select_random(genes: tools.ClusterSelector, size):
     if len(genes) < size:
         raise Exception("genes size is less than the requested population size")
     rng = default_rng()
@@ -26,7 +27,7 @@ def select_random(genes: tools.Clustered, size):
     return selected
 
 
-def build_population(genes: tools.Clustered, p_size, c_size):
+def build_population(genes: tools.ClusterSelector, p_size, c_size):
     population = []
     for i in range(p_size):
         population.append(select_random(genes, c_size))
@@ -103,7 +104,7 @@ def clean(population):
     return temp
 
 
-def ga(fitness, genes: tools.Clustered, desired, max_iter, r_cross=0.1, r_mut=0.05, c_size=20, p_size=10):
+def ga(fitness, genes: ClusterSelector, desired, max_iter, r_cross=0.1, r_mut=0.05, c_size=20, p_size=10):
     population = build_population(genes, p_size, c_size)
     solution = None
     all_solutions = []

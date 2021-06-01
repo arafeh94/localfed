@@ -3,7 +3,7 @@ import logging
 from torch import nn
 
 import src
-from src.federated.components import testers, client_selectors, aggregators, params, trainers
+from src.federated.components import metrics, client_selectors, aggregators, params, trainers
 from libs.model.linear.lr import LogisticRegression
 from src.data.data_provider import PickleDataProvider
 from src.federated import plugins
@@ -77,7 +77,7 @@ for name, federated_params in federated_configs.items():
         trainer_manager=trainer_manager,
         trainer_params=trainer_params,
         aggregator=aggregators.AVGAggregator(),
-        tester=testers.Normal(batch_size=federated_params['batch_size'], criterion=nn.CrossEntropyLoss()),
+        metrics=metrics.AccLoss(batch_size=federated_params['batch_size'], criterion=nn.CrossEntropyLoss()),
         client_selector=client_selectors.Random(federated_params['num_clients']),
         trainers_data_dict=federated_params['clients_data'],
         initial_model=federated_params['model_init'],

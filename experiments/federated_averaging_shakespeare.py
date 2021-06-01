@@ -2,7 +2,7 @@ import logging
 
 from torch import nn
 
-from src.federated.components import testers, client_selectors, aggregators, params, trainers
+from src.federated.components import metrics, client_selectors, aggregators, params, trainers
 from libs.model.nlp.rnn import RNN_OriginalFedAvg
 from src.data.data_provider import LocalShakespeareDataProvider
 from src.federated import plugins
@@ -31,7 +31,7 @@ federated = FederatedLearning(
     trainer_manager=trainer_manager,
     trainer_params=trainer_params,
     aggregator=aggregators.AVGAggregator(),
-    tester=testers.Normal(batch_size=8, criterion=nn.CrossEntropyLoss()),
+    metrics=metrics.AccLoss(batch_size=8, criterion=nn.CrossEntropyLoss()),
     client_selector=client_selectors.Random(10),
     trainers_data_dict=client_data,
     initial_model=lambda: RNN_OriginalFedAvg(),

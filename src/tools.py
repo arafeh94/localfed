@@ -146,34 +146,6 @@ def normalize(arr):
     return [i / total for i in arr]
 
 
-class Clusters:
-    def __init__(self, min, max, nb_clusters):
-        space = np.linspace(min, max, nb_clusters)
-        spaces = []
-
-        for i in range(len(space)):
-            if i + 1 < len(space):
-                spaces.append([space[i], space[i + 1]])
-        self.spaces = spaces
-
-    def get_cluster(self, point, out=False):
-        for index, space in enumerate(self.spaces):
-            if space[0] < point < space[1]:
-                if out:
-                    print(space)
-                return index
-        return -1
-
-    def get_clusters(self, points):
-        clusters = []
-        for point in points:
-            clusters.append(self.get_cluster(point))
-        return np.array(clusters)
-
-    def count(self, points):
-        return len(numpy.unique(self.get_clusters(points)))
-
-
 class Dict:
     @staticmethod
     def select(idx, dict_ref):
@@ -200,7 +172,7 @@ class Dict:
         return new_dict
 
 
-class Clustered:
+class ClusterSelector:
     def __init__(self, id_label_dict: dict):
         """
         @param id_label_dict dictionary of user id, and the label of this user
@@ -234,39 +206,6 @@ class Clustered:
 
     def __len__(self):
         return len(self.id_label_dict.keys())
-
-
-def client_training(train_model, client_data: {int: DataContainer}, batch_size, epochs, lr) -> (
-        {int: nn.ModuleDict}, {int: int}):
-    trained_models_dict = {}
-    sample_size_dict = {}
-    for trainer_id, trainer_data in client_data.items():
-        sample_size_dict[trainer_id] = len(trainer_data)
-        model_copy = copy.deepcopy(train_model)
-        _inner_train(model_copy, trainer_id, trainer_data, trained_models_dict, batch_size, epochs, lr)
-    return trained_models_dict, sample_size_dict
-
-
-def threaded_train(train_model, client_data: {int: DataContainer}, batch_size) -> ({int: nn.ModuleDict}, {int: int}):
-    all_threads = []
-    trained_models_dict = {}
-    sample_size_dict = {}
-    for trainer_id, trainer_data in client_data.items():
-        sample_size_dict[trainer_id] = len(trainer_data)
-        model_copy = copy.deepcopy(train_model)
-        thread = threading.Thread(target=_inner_train,
-                                  args=(model_copy, trainer_id, trainer_data, trained_models_dict, batch_size))
-        thread.start()
-        all_threads.append(thread)
-    for thread in all_threads:
-        thread.join()
-    return trained_models_dict, sample_size_dict
-
-
-def _inner_train(model, trainer_id: int, trainer_data: DataContainer, cache: {int: [nn.ModuleDict, int]}, batch_size,
-                 epochs, lr):
-    trained = train(model, trainer_data.batch(batch_size), epochs, lr)
-    cache[trainer_id] = trained
 
 
 def detail(client_data: {int: DataContainer}, selection=None):

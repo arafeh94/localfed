@@ -16,7 +16,7 @@ class FederatedLearning:
     TEST_ON_SELECTED = 1
 
     def __init__(self, trainer_manager: TrainerManager, trainer_params, aggregator: Aggregator,
-                 client_selector: ClientSelector, tester: ModelInfer, trainers_data_dict: Dict[int, DataContainer],
+                 client_selector: ClientSelector, metrics: ModelInfer, trainers_data_dict: Dict[int, DataContainer],
                  initial_model: callable, num_rounds=10, desired_accuracy=0.9, train_ratio=0.8,
                  ignore_acc_decrease=False, test_on=TEST_ON_ALL, optimizer: str = None, **kwargs):
         self.optimizer = optimizer
@@ -24,7 +24,7 @@ class FederatedLearning:
         self.trainer_manager = trainer_manager
         self.aggregator = aggregator
         self.client_selector = client_selector
-        self.tester = tester
+        self.metrics = metrics
         self.ignore_acc_decrease = ignore_acc_decrease
         self.trainers_data_dict = trainers_data_dict
         self.desired_accuracy = desired_accuracy
@@ -87,7 +87,7 @@ class FederatedLearning:
         local_accuracy = {}
         local_loss = {}
         for trainer_id, test_data in trainers_data.items():
-            acc, loss = self.tester.infer(model, test_data)
+            acc, loss = self.metrics.infer(model, test_data)
             self.client_selector.on_client_selected(trainer_id, accuracy=acc, loss=loss)
             local_accuracy[trainer_id] = acc
             local_loss[trainer_id] = loss

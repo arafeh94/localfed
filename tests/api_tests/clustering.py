@@ -1,13 +1,10 @@
 import logging
 from collections import defaultdict
 
-import libs.model.linear as models
 from libs.model.cv.cnn import CNN_OriginalFedAvg
 from src import tools
-from src.apis import genetic
-from src.apis.context import Context
+from apps.genetic_selectors.context import Context
 import src.data.data_generator as dgg
-from src.data.data_provider import LocalMnistDataProvider
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')

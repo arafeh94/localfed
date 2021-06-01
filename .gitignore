@@ -39,15 +39,15 @@ cifar-10-batches-py
 #big pkl files
 *_big*.pkl
 
-./experiments/logs
-./experiments/logs/*
-./experiments/wandb
-./datasets/pickles/100_10_400_mnist.pkl
-./datasets/pickles/70_2_600_big_mnist.pkl
-./datasets/pickles/femnist.pkl
-./datasets/pickles/mnist.pkl
-./datasets/preprocess/data/femnist/fed_emnist_train.h5
-./datasets/preprocess/data/shakespeare/shakespeare_all_data.json
+/experiments/logs
+/experiments/logs/*
+/experiments/wandb
+/datasets/pickles/100_10_400_mnist.pkl
+/datasets/pickles/70_2_600_big_mnist.pkl
+/datasets/pickles/femnist.pkl
+/datasets/pickles/mnist.pkl
+/datasets/preprocess/data/femnist/fed_emnist_train.h5
+/datasets/preprocess/data/shakespeare/shakespeare_all_data.json
 /datasets/pickles/100_10_400_mnist.pkl
 /datasets/pickles/femnist.pkl
 /datasets/pickles/mnist.pkl

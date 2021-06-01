@@ -9,7 +9,7 @@ import src
 from src.federated.protocols import TrainerParams
 from libs.model.cv.cnn import CNN_OriginalFedAvg
 from src.apis.mpi import Comm
-from src.federated.components import testers, client_selectors, aggregators, params, trainers
+from src.federated.components import metrics, client_selectors, aggregators, params, trainers
 from libs.model.linear.lr import LogisticRegression
 from src.data.data_provider import PickleDataProvider
 from src.federated import plugins
@@ -40,7 +40,7 @@ if comm.pid() == 0:
         trainer_manager=trainer_manager,
         trainer_params=trainer_params,
         aggregator=aggregators.AVGAggregator(),
-        tester=testers.Normal(50, criterion=nn.CrossEntropyLoss()),
+        metrics=metrics.AccLoss(50, criterion=nn.CrossEntropyLoss()),
         client_selector=client_selectors.Random(5),
         trainers_data_dict=client_data,
         initial_model=lambda: LogisticRegression(28 * 28, 10),
