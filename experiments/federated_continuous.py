@@ -2,12 +2,13 @@ import logging
 
 from torch import nn
 
-from src.federated.components import testers, client_selectors, aggregators, optims, trainers
+from src.federated.components import testers, client_selectors, aggregators, params, trainers
 from libs.model.linear.lr import LogisticRegression
 from src.data import data_generator
 from src.data.data_provider import PickleDataProvider
 from src.federated import plugins
 from src.federated.federated import Events, FederatedLearning
+from src.federated.protocols import TrainerParams
 from src.federated.trainer_manager import TrainerManager, SeqTrainerManager
 
 logging.basicConfig(level=logging.INFO)
@@ -22,11 +23,12 @@ dg = data_generator.load(data_file)
 client_data = dg.distributed
 dg.describe()
 
-trainer_manager = SeqTrainerManager(trainers.CPUChunkTrainer, batch_size=8, epochs=10, criterion=nn.CrossEntropyLoss(),
-                                    optimizer=optims.sgd(0.1))
-
+trainer_manager = SeqTrainerManager()
+trainer_params = TrainerParams(trainer_class=trainers.CPUChunkTrainer, batch_size=50, epochs=20, optimizer='sgd',
+                               criterion='cel', lr=0.1)
 federated = FederatedLearning(
     trainer_manager=trainer_manager,
+    trainer_params=trainer_params,
     aggregator=aggregators.AVGAggregator(),
     tester=testers.Normal(batch_size=8, criterion=nn.CrossEntropyLoss()),
     client_selector=client_selectors.All(),

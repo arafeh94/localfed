@@ -2,7 +2,7 @@ import logging
 
 from torch import nn
 
-from src.federated.components import testers, client_selectors, aggregators, optims, trainers
+from src.federated.components import testers, client_selectors, aggregators, params, trainers
 from libs.model.linear.lr import LogisticRegression
 from src.data.data_provider import LocalKDDDataProvider
 from src.federated import plugins
@@ -21,7 +21,7 @@ dg.describe()
 logger.info('Generating Data --Ended')
 
 trainer_manager = SeqTrainerManager(trainers.CPUTrainer, batch_size=50, epochs=10, criterion=nn.CrossEntropyLoss(),
-                                    optimizer=optims.sgd(0.1))
+                                    optimizer=params.sgd(0.1))
 
 federated = FederatedLearning(
     trainer_manager=trainer_manager,

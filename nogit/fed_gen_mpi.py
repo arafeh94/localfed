@@ -10,7 +10,7 @@ import src
 from libs.model.cv.cnn import CNN_OriginalFedAvg
 from src.apis import ga
 from src.apis.mpi import Comm
-from src.federated.components import testers, client_selectors, aggregators, optims, trainers
+from src.federated.components import testers, client_selectors, aggregators, params, trainers
 from libs.model.linear.lr import LogisticRegression
 from src.data.data_provider import PickleDataProvider
 from src.federated import plugins, fedruns
@@ -43,7 +43,7 @@ if comm.pid() == 0:
             'batch_size': batch_size,
             'epochs': epochs,
             'criterion': nn.CrossEntropyLoss(),
-            'optimizer': optims.sgd(0.1),
+            'optimizer': params.sgd(0.1),
             'clients_per_round': clients_per_round,
             'num_rounds': num_rounds,
             'desired_accuracy': 0.99,
@@ -61,7 +61,7 @@ if comm.pid() == 0:
             'batch_size': batch_size,
             'epochs': epochs,
             'criterion': nn.CrossEntropyLoss(),
-            'optimizer': optims.sgd(0.1),
+            'optimizer': params.sgd(0.1),
             'clients_per_round': clients_per_round,
             'num_rounds': num_rounds,
             'desired_accuracy': 0.99,
@@ -72,7 +72,7 @@ if comm.pid() == 0:
             'batch_size': batch_size,
             'epochs': epochs,
             'criterion': nn.CrossEntropyLoss(),
-            'optimizer': optims.sgd(0.1),
+            'optimizer': params.sgd(0.1),
             'clients_per_round': clients_per_round,
             'num_rounds': num_rounds,
             'desired_accuracy': 0.99,
@@ -128,7 +128,7 @@ if comm.pid() == 0:
 else:
     while True:
         model, train_data, context = comm.recv(0, 1)
-        trainer = trainers.CPUTrainer(optimizer=optims.sgd(0.1), epochs=epochs,
+        trainer = trainers.CPUTrainer(optimizer=params.sgd(0.1), epochs=epochs,
                                       batch_size=batch_size, criterion=nn.CrossEntropyLoss())
         trained_weights, sample_size = trainer.train(model, train_data, context)
         comm.send(0, (trained_weights, sample_size), 2)

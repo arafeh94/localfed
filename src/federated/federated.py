@@ -15,10 +15,12 @@ class FederatedLearning:
     TEST_ON_ALL = 0
     TEST_ON_SELECTED = 1
 
-    def __init__(self, trainer_manager: TrainerManager, aggregator: Aggregator, client_selector: ClientSelector,
-                 tester: ModelInfer, trainers_data_dict: Dict[int, DataContainer], initial_model: callable,
-                 num_rounds=10, desired_accuracy=0.9, train_ratio=0.8, ignore_acc_decrease=False, test_on=TEST_ON_ALL,
-                 **kwargs):
+    def __init__(self, trainer_manager: TrainerManager, trainer_params, aggregator: Aggregator,
+                 client_selector: ClientSelector, tester: ModelInfer, trainers_data_dict: Dict[int, DataContainer],
+                 initial_model: callable, num_rounds=10, desired_accuracy=0.9, train_ratio=0.8,
+                 ignore_acc_decrease=False, test_on=TEST_ON_ALL, optimizer: str = None, **kwargs):
+        self.optimizer = optimizer
+        self.trainer_params = trainer_params
         self.trainer_manager = trainer_manager
         self.aggregator = aggregator
         self.client_selector = client_selector
@@ -31,7 +33,7 @@ class FederatedLearning:
         self.num_rounds = num_rounds
         self.args = kwargs
         self.events = {}
-        self.check_params()
+        self._check_params()
         self.context = FederatedLearning.Context()
         self.trainers_test = {}
         self.trainers_train = {}
@@ -48,22 +50,25 @@ class FederatedLearning:
         self.broadcast(Events.ET_INIT, global_model=self.context.model)
         while True:
             self.broadcast(Events.ET_ROUND_START, round=self.context.round_id)
+
             trainers_ids = self.client_selector.select(list(self.trainers_data_dict.keys()), self.context.round_id)
             self.broadcast(Events.ET_TRAINER_SELECTED, trainers_ids=trainers_ids)
-            selected_trainers = tools.dict_select(trainers_ids, self.trainers_data_dict)
+
             trainers_train_data = tools.dict_select(trainers_ids, self.trainers_train)
-            trainers_test_data = tools.dict_select(trainers_ids, self.trainers_test)
             self.broadcast(Events.ET_TRAIN_START, trainers_data=trainers_train_data)
             trainers_weights, sample_size_dict = self.train(trainers_train_data)
             self.broadcast(Events.ET_TRAIN_END, trainers_weights=trainers_weights, sample_size=sample_size_dict)
+
             global_weights = self.aggregator.aggregate(trainers_weights, sample_size_dict, self.context.round_id)
             tools.load(self.context.model, global_weights)
             self.broadcast(Events.ET_AGGREGATION_END, global_weights=global_weights, global_model=self.context.model)
+
             test_data = self.trainers_test if self.test_on == FederatedLearning.TEST_ON_ALL else \
                 tools.dict_select(trainers_ids, self.trainers_test)
             accuracy, loss, local_acc, local_loss = self.infer(self.context.model, test_data)
             self.broadcast(Events.ET_ROUND_FINISHED, round=self.context.round_id, accuracy=accuracy, loss=loss,
                            local_acc=local_acc, local_loss=local_loss)
+
             self.context.store(acc=accuracy, loss=loss, lacc=local_acc, lloss=local_loss)
             self.context.new_round()
             if self.context.stop(accuracy):
@@ -75,7 +80,7 @@ class FederatedLearning:
         for trainer_id, train_data in trainers_train_data.items():
             self.broadcast(Events.ET_TRAINER_STARTED, trainer_id=trainer_id, train_data=train_data)
             model_copy = copy.deepcopy(self.context.model)
-            self.trainer_manager.train_req(trainer_id, model_copy, train_data, self.context)
+            self.trainer_manager.train_req(trainer_id, model_copy, train_data, self.context, self.trainer_params)
         return self.trainer_manager.resolve()
 
     def infer(self, model, trainers_data: Dict[int, DataContainer]):
@@ -83,6 +88,7 @@ class FederatedLearning:
         local_loss = {}
         for trainer_id, test_data in trainers_data.items():
             acc, loss = self.tester.infer(model, test_data)
+            self.client_selector.on_client_selected(trainer_id, accuracy=acc, loss=loss)
             local_accuracy[trainer_id] = acc
             local_loss[trainer_id] = loss
         total_accuracy = sum(local_accuracy.values()) / len(local_accuracy)
@@ -108,7 +114,7 @@ class FederatedLearning:
         else:
             return diff, performance_history
 
-    def check_params(self):
+    def _check_params(self):
         pass
 
     def configs(self):

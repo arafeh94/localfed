@@ -3,7 +3,7 @@ import logging
 from torch import nn
 
 import src
-from src.federated.components import testers, client_selectors, aggregators, optims, trainers
+from src.federated.components import testers, client_selectors, aggregators, params, trainers
 from libs.model.linear.lr import LogisticRegression
 from src.data.data_provider import PickleDataProvider
 from src.federated import plugins
@@ -11,6 +11,7 @@ from src.data.data_generator import DataGenerator
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.fedruns import FedRuns
+from src.federated.protocols import TrainerParams
 from src.federated.trainer_manager import TrainerManager, SeqTrainerManager
 
 logging.basicConfig(level=logging.INFO)
@@ -29,8 +30,9 @@ federated_configs = {
     'first': {
         'batch_size': 8,
         'epochs': 10,
-        'criterion': nn.CrossEntropyLoss(),
-        'optimizer': optims.sgd(0.1),
+        'criterion': 'cel',
+        'optimizer': 'sgd',
+        'lr': 0.1,
         'num_clients': 10,
         'num_rounds': 3,
         'desired_accuracy': 0.99,
@@ -40,8 +42,9 @@ federated_configs = {
     'second': {
         'batch_size': 8,
         'epochs': 3,
-        'criterion': nn.CrossEntropyLoss(),
-        'optimizer': optims.sgd(0.1),
+        'criterion': 'cel',
+        'optimizer': 'sgd',
+        'lr': 0.1,
         'num_clients': 10,
         'num_rounds': 3,
         'desired_accuracy': 0.99,
@@ -51,8 +54,9 @@ federated_configs = {
     'third': {
         'batch_size': 18,
         'epochs': 2,
-        'criterion': nn.CrossEntropyLoss(),
-        'optimizer': optims.sgd(0.1),
+        'criterion': 'cel',
+        'optimizer': 'sgd',
+        'lr': 0.1,
         'num_clients': 10,
         'num_rounds': 10,
         'desired_accuracy': 0.99,
@@ -64,18 +68,16 @@ federated_configs = {
 federated_runs = {}
 
 for name, federated_params in federated_configs.items():
-    trainer_manager = SeqTrainerManager(
-        trainers.CPUTrainer,
-        batch_size=federated_params['batch_size'],
-        epochs=federated_params['epochs'],
-        criterion=federated_params['criterion'],
-        optimizer=federated_params['optimizer'],
-    )
+    trainer_manager = SeqTrainerManager()
+    trainer_params = TrainerParams(trainer_class=trainers.CPUTrainer, batch_size=federated_params['batch_size'],
+                                   epochs=federated_params['epochs'], optimizer=federated_params['optimizer'],
+                                   criterion=federated_params['criterion'], lr=federated_params['lr'])
 
     federated = FederatedLearning(
         trainer_manager=trainer_manager,
+        trainer_params=trainer_params,
         aggregator=aggregators.AVGAggregator(),
-        tester=testers.Normal(batch_size=federated_params['batch_size'], criterion=federated_params['criterion']),
+        tester=testers.Normal(batch_size=federated_params['batch_size'], criterion=nn.CrossEntropyLoss()),
         client_selector=client_selectors.Random(federated_params['num_clients']),
         trainers_data_dict=federated_params['clients_data'],
         initial_model=federated_params['model_init'],

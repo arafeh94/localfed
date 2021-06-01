@@ -5,6 +5,7 @@ from typing import Dict, Tuple, List
 from torch import nn, Tensor
 
 from src.data.data_container import DataContainer
+from src.federated.components import params
 
 
 class Aggregator(ABC):
@@ -24,27 +25,40 @@ class ModelInfer(ABC):
         pass
 
 
-class Trainer:
-    def __init__(self, optimizer=None, criterion=None, epochs=None, batch_size=None):
-        self.optimizer = optimizer
-        self.criterion = criterion
+class TrainerParams:
+    def __init__(self, trainer_class: type, batch_size: int, epochs: int,
+                 criterion: str, optimizer: str, **kwargs):
         self.epochs = epochs
+        self.criterion = criterion
         self.batch_size = batch_size
+        self.trainer_class = trainer_class
+        self.optimizer = optimizer
+        self.args = kwargs
 
-    def init(self, **kwargs):
-        for item, value in kwargs.items():
-            self.__setattr__(item, value)
-        self.on_create()
+    def get_optimizer(self):
+        return params.optimizer(self.optimizer, **self.args)
 
-    def on_create(self):
-        pass
+    def get_criterion(self):
+        return params.criterion(self.criterion, **self.args)
 
+
+class Trainer:
     @abstractmethod
-    def train(self, model: nn.Module, train_data: DataContainer, context) -> Tuple[Dict[str, Tensor], int]:
+    def train(self, model: nn.Module, train_data: DataContainer, context, config: TrainerParams) -> Tuple[
+        Dict[str, Tensor], int]:
         pass
 
 
 class ClientSelector:
     @abstractmethod
-    def select(self, trainer_ids: List[int], round_id: int) -> List[int]:
+    def select(self, client_ids: List[int], round_id: int) -> List[int]:
+        pass
+
+    def on_client_selected(self, client_id, **kwargs):
+        """
+        function to let the client selectors knows the accuracy results of selecting such a client
+        :param client_id:
+        :param kwargs: {'accuracy':int,'loss':int}
+        :return:
+        """
         pass
