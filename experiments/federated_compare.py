@@ -17,7 +17,7 @@ from src.federated.trainer_manager import TrainerManager, SeqTrainerManager
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-data_file = '../datasets/pickles/2_50_medium_shards.pkl'
+data_file = '../datasets/pickles/mnist_2shards_70c_600mn_600mx.pkl'
 test_file = '../datasets/pickles/test_data.pkl'
 
 logger.info('Generating Data --Started')

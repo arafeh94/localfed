@@ -29,15 +29,13 @@ def transform_tensor_to_list(model_params):
 def train(model, train_data, epochs=10, lr=0.1):
     # change to train mode
     model.train()
-    optimizer = torch.optim.SGD(model.parameters(), lr=lr)
+    optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
     criterion = nn.CrossEntropyLoss()
 
     epoch_loss = []
     for epoch in range(epochs):
-        print(epoch)
         batch_loss = []
         for batch_idx, (x, labels) in enumerate(train_data):
-            print(batch_idx)
             optimizer.zero_grad()
             log_probs = model(x)
             loss = criterion(log_probs, labels)

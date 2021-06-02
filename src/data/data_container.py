@@ -52,12 +52,12 @@ class DataContainer:
             convert_y(torch.from_numpy(np.asarray(self.y)))
         )
 
-    def as_numpy(self):
+    def as_numpy(self, dtype=None):
         if self.is_tensor():
             return DataContainer(self.x.numpy(), self.y.numpy())
         if self.is_numpy():
             return self
-        return DataContainer(np.asarray(self.x), np.asarray(self.y))
+        return DataContainer(np.asarray(self.x, dtype=dtype), np.asarray(self.y, dtype=dtype))
 
     def split(self, train_freq):
         total_size = len(self)

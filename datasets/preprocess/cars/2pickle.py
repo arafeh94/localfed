@@ -26,7 +26,7 @@ for location, folders, files in os.walk(images):
         if file.startswith("a"):
             file_path = location + "/" + file
             try:
-                image = Image.open(file_path).convert('L').resize((128, 128), Image.ANTIALIAS)
+                image = Image.open(file_path).resize((128, 128), Image.ANTIALIAS)
                 image_x = asarray(image, dtype=int)
                 x = image_x.flatten().tolist()
                 y = int(file[1:2])
@@ -34,7 +34,7 @@ for location, folders, files in os.walk(images):
                     show_count -= 1
                     pyplot.imshow(image_x)
                     pyplot.show()
-                if len(x) != 16384:
+                if len(x) != 16384*3:
                     raise Exception('invalid size')
                 all_x.append(x)
                 all_y.append(y)

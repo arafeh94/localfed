@@ -8,7 +8,7 @@ import src.data.data_generator as dgg
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
-dg = dgg.load('../../datasets/pickles/70_2_600_big_mnist.pkl')
+dg = dgg.load('../../datasets/pickles/mnist_2shards_70c_600mn_600mx.pkl')
 client_data = tools.dict_select(range(30), dg.distributed)
 dg.describe(range(30))
 context = Context(client_data, lambda: CNN_OriginalFedAvg())

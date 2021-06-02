@@ -5,11 +5,10 @@ from os.path import dirname
 
 from torch import nn
 
-sys.path.append(dirname(__file__) + '../')
-
+sys.path.append(dirname(__file__) + '../../')
+from libs.model.linear.lr import LogisticRegression
 from src.federated.components.trainers import CPUTrainer
 from src.federated.protocols import TrainerParams
-
 import src
 from libs.model.cv.cnn import CNN_OriginalFedAvg
 from apps.genetic_selectors import fed_comp
@@ -30,9 +29,9 @@ batch_size = 30
 epochs = 20
 clients_per_round = 3
 num_rounds = 20
-model = lambda: CNN_OriginalFedAvg()
+model = lambda: LogisticRegression(28 * 28, 10)
 if comm.pid() == 0:
-    data_file = '../../datasets/pickles/70_2_600_big_mnist.pkl'
+    data_file = '../../datasets/pickles/mnist_2shards_70c_600mn_600mx.pkl'
     test_file = '../../datasets/pickles/test_data.pkl'
 
     logger.info('Generating Data --Started')

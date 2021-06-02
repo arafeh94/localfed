@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
 data_file = '../datasets/pickles/cars.pkl'
-# data_file = '../datasets/pickles/70_2_600_big_mnist.pkl'
+# data_file = '../datasets/pickles/mnist_2shards_70c_600mn_600mx.pkl'
 test_file = '../datasets/pickles/test_data.pkl'
 
 logger.info('Generating Data --Started')
