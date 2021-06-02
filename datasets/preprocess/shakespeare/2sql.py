@@ -9,7 +9,7 @@ db = mysql.connector.connect(
 )
 cursor = db.cursor()
 
-file = open('../data/shakespeare/shakespeare_all_data.json', 'r')
+file = open('../../raw/shakespeare/shakespeare_all_data.json', 'r')
 shakespear = json.load(file)
 
 user_data = shakespear['user_data']

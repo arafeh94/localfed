@@ -34,8 +34,10 @@ def train(model, train_data, epochs=10, lr=0.1):
 
     epoch_loss = []
     for epoch in range(epochs):
+        print(epoch)
         batch_loss = []
         for batch_idx, (x, labels) in enumerate(train_data):
+            print(batch_idx)
             optimizer.zero_grad()
             log_probs = model(x)
             loss = criterion(log_probs, labels)

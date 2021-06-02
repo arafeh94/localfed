@@ -9,7 +9,6 @@ from src.data.data_provider import LocalMnistDataProvider, PickleDataProvider
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-data_file = '../datasets/pickles/100_10_400_mnist.pkl'
 logger.info('Generating Data --Started')
 dp = PickleDataProvider('../../datasets/pickles/mnist.pkl').collect()
 logger.info('Shuffling')

@@ -26,7 +26,7 @@ venv
 *.txt
 *.h5
 
-# data
+# raw
 *.rar
 *.csv
 *.dat
@@ -38,7 +38,7 @@ cifar-10-batches-py
 
 #big pkl files
 *_big*.pkl
-
+!/experiments/logs/log_viewer.py
 /experiments/logs
 /experiments/logs/*
 /experiments/wandb
@@ -46,8 +46,19 @@ cifar-10-batches-py
 /datasets/pickles/70_2_600_big_mnist.pkl
 /datasets/pickles/femnist.pkl
 /datasets/pickles/mnist.pkl
-/datasets/preprocess/data/femnist/fed_emnist_train.h5
-/datasets/preprocess/data/shakespeare/shakespeare_all_data.json
-/datasets/pickles/100_10_400_mnist.pkl
-/datasets/pickles/femnist.pkl
-/datasets/pickles/mnist.pkl
+/datasets/pickles/cars.pkl
+
+#raw datasets
+/datasets/raw/femnist/fed_emnist_train.h5
+/datasets/raw/femnist/fed_emnist_test.h5
+/datasets/raw/kdd/KDDTest+.arff
+/datasets/raw/kdd/KDDTrain+.arff
+/datasets/raw/shakespeare/shakespeare_all_data.json
+/datasets/raw/cars/a1/
+/datasets/raw/cars/a2/
+/datasets/raw/cars/a3/
+/datasets/raw/cars/a4/
+/datasets/raw/cars/a5/
+/datasets/raw/cars/a6/
+/datasets/raw/cars/a7/
+/datasets/raw/cars/a8/
