@@ -1,5 +1,6 @@
 # windows: mpiexec -n 11 python fed_ca.py
 # ubuntu: mpirun -np 11 python fed_ca.py
+# ubuntu: mpirun -np 11 --hostfile hosts python ./fed_ca.py
 
 import logging
 import sys
@@ -12,7 +13,7 @@ sys.path.append(dirname(__file__) + '../')
 
 from src.apis.hp_generator import generate_configs, build_grid, calculate_max_rounds
 from src.apis.mpi import Comm
-from src.federated.components import testers, client_selectors, aggregators, trainers
+from src.federated.components import metrics, client_selectors, aggregators, trainers
 from libs.model.cv.cnn import CNN_OriginalFedAvg
 from libs.model.linear.lr import LogisticRegression
 from src.data import data_generator
@@ -27,7 +28,7 @@ logger = logging.getLogger('main')
 comm = Comm()
 if comm.pid() == 0:
 
-    data_file = "../datasets/pickles/10_6000_big_ca.pkl"
+    data_file = "../datasets/pickles/10_1000_big_ca.pkl"
     # custom test file contains only 20 samples from each client
     # custom_test_file = '../datasets/pickles/test_data.pkl'
 
@@ -37,9 +38,12 @@ if comm.pid() == 0:
     client_data = dg.distributed
     dg.describe()
 
-    # # setting hyper parameters
+    # building Hyperparameters
     hyper_params = build_grid(batch_size=(5, 128, 10), epochs=(1, 20, 5), num_rounds=(5, 80, 10))
     configs = generate_configs(hyper_params)
+    for config in configs:
+         print(config)
+
     logger.info(calculate_max_rounds(hyper_params))
     runs = {}
     for config in configs:
@@ -57,7 +61,7 @@ if comm.pid() == 0:
             trainer_manager=trainer_manager,
             trainer_params=trainer_params,
             aggregator=aggregators.AVGAggregator(),
-            tester=testers.Normal(batch_size=batch_size, criterion=nn.CrossEntropyLoss()),
+            metrics=metrics.AccLoss(batch_size=batch_size, criterion=nn.CrossEntropyLoss()),
             client_selector=client_selectors.All(),
             trainers_data_dict=client_data,
             initial_model=lambda: LogisticRegression(28 * 28, 10),
