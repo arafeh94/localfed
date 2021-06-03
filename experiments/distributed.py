@@ -24,7 +24,7 @@ logger = logging.getLogger('main')
 comm = Comm()
 
 if comm.pid() == 0:
-    data_file = '../datasets/pickles/100_10_400_mnist.pkl'
+    data_file = '../datasets/pickles/mnist_10shards_100c_400mn_400mx.pkl'
     test_file = '../datasets/pickles/test_data.pkl'
 
     logger.info('Generating Data --Started')

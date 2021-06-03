@@ -29,7 +29,7 @@ def transform_tensor_to_list(model_params):
 def train(model, train_data, epochs=10, lr=0.1):
     # change to train mode
     model.train()
-    optimizer = torch.optim.SGD(model.parameters(), lr=lr)
+    optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
     criterion = nn.CrossEntropyLoss()
 
     epoch_loss = []

@@ -19,7 +19,7 @@ service = ['aol', 'auth', 'bgp', 'courier', 'csnet_ns', 'ctf', 'daytime', 'disca
            'uucp', 'uucp_path', 'vmnet', 'whois', 'X11', 'Z39_50']
 flag = ['OTH', 'REJ', 'RSTO', 'RSTOS0', 'RSTR', 'S0', 'S1', 'S2', 'S3', 'SF', 'SH']
 clazz = ['normal', 'anomaly']
-file = open('../data/kdd/KDDTrain+.arff', 'r')
+file = open('../../raw/kdd/KDDTrain+.arff', 'r')
 xs = []
 ys = []
 while True:

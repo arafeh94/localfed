@@ -17,7 +17,7 @@ from src.federated.trainer_manager import TrainerManager, SeqTrainerManager
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-data_file = '../datasets/pickles/70_2_600_big_mnist.pkl'
+data_file = '../datasets/pickles/mnist_2shards_70c_600mn_600mx.pkl'
 test_file = '../datasets/pickles/test_data.pkl'
 
 logger.info('Generating Data --Started')
@@ -38,7 +38,7 @@ federated = FederatedLearning(
     trainers_data_dict=client_data,
     initial_model=lambda: LogisticRegression(28 * 28, 10),
     # initial_model=lambda: CNN_OriginalFedAvg(),
-    num_rounds=0,
+    num_rounds=1000,
     desired_accuracy=0.99
 )
 
