@@ -5,7 +5,7 @@ import threading
 import numpy
 import numpy as np
 import torch
-from torch import nn
+from torch import nn, device
 import logging
 
 from src.data.data_container import DataContainer
@@ -27,15 +27,22 @@ def transform_tensor_to_list(model_params):
 
 
 def train(model, train_data, epochs=10, lr=0.1):
+    torch.cuda.empty_cache()
     # change to train mode
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model.to(device)
     model.train()
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
     criterion = nn.CrossEntropyLoss()
 
     epoch_loss = []
     for epoch in range(epochs):
+        print(f"epoch {epoch}")
         batch_loss = []
         for batch_idx, (x, labels) in enumerate(train_data):
+            x = x.to(device)
+            labels = labels.to(device)
+            print(f"batch {batch_idx}")
             optimizer.zero_grad()
             log_probs = model(x)
             loss = criterion(log_probs, labels)

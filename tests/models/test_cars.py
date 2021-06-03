@@ -23,9 +23,9 @@ logger.info('Splitting')
 x, y = dp.split(0.8)
 logger.info('Generating Data --Ended')
 
-lr = resnet56(10)
-tools.train(lr, x.batch(256), 1, 0.1)
-acc, loss = tools.infer(lr, y.batch(64))
+lr = resnet56(200)
+tools.train(lr, x.batch(10), 1, 0.1)
+acc, loss = tools.infer(lr, y.batch(40))
 print(acc)
 print(loss)
 
