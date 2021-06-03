@@ -1,7 +1,7 @@
 # windows: mpiexec -n 11 python fed_ca.py
 # ubuntu: mpirun -np 11 python fed_ca.py
 # ubuntu: mpirun -np 11 --hostfile hosts python ./fed_ca.py
-
+import platform
 import logging
 import sys
 from os.path import dirname
@@ -9,13 +9,14 @@ from random import randint
 
 from torch import nn
 
-sys.path.append(dirname(__file__) + '../')
+sys.path.append(dirname(__file__) + './')
 
-from src.apis.hp_generator import generate_configs, build_grid, calculate_max_rounds
+from src.apis.hp_generator import generate_configs, build_random, calculate_max_rounds
 from src.apis.mpi import Comm
 from src.federated.components import metrics, client_selectors, aggregators, trainers
 from libs.model.cv.cnn import CNN_OriginalFedAvg
 from libs.model.linear.lr import LogisticRegression
+from libs.model.collection import MLP
 from src.data import data_generator
 from src.federated import plugins, fedruns
 from src.federated.federated import Events, FederatedLearning
@@ -39,10 +40,23 @@ if comm.pid() == 0:
     dg.describe()
 
     # building Hyperparameters
-    hyper_params = build_grid(batch_size=(5, 128, 10), epochs=(1, 20, 5), num_rounds=(5, 80, 10))
-    configs = generate_configs(hyper_params)
+
+    input_shape = 28 * 28
+    labels_number = 10
+    """
+            each params=(min,max,num_value)
+    """
+    batch_size = (5, 128, 10)
+    epochs = (1, 20, 5)
+    num_rounds = (5, 80, 10)
+    # number of models that we are using
+    initial_models = (
+        LogisticRegression(input_shape, labels_number), CNN_OriginalFedAvg(), MLP(input_shape, labels_number))
+
+    hyper_params = build_random(batch_size=batch_size, epochs=epochs, num_rounds=num_rounds)
+    configs = generate_configs(initial_models=initial_models, hyper_params=hyper_params)
     for config in configs:
-         print(config)
+        print(config)
 
     logger.info(calculate_max_rounds(hyper_params))
     runs = {}
@@ -50,6 +64,7 @@ if comm.pid() == 0:
         batch_size = config['batch_size']
         epochs = config['epochs']
         num_rounds = config['num_rounds']
+        initial_model = config['initial_model']
         learn_rate = 0.1
 
         print(f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds} ')
@@ -65,7 +80,9 @@ if comm.pid() == 0:
             # client_selector=client_selectors.All(),
             client_selector=client_selectors.Random(3),
             trainers_data_dict=client_data,
-            initial_model=lambda: LogisticRegression(28 * 28, 10),
+            initial_model=lambda: initial_model,
+            # initial_model=lambda: libs.model.collection.MLP(28 * 28, 64, 10),
+            # initial_model=lambda: LogisticRegression(28 * 28, 10),
             # initial_model=lambda: CNN_OriginalFedAvg(),
             num_rounds=num_rounds,
             desired_accuracy=0.99
@@ -77,9 +94,16 @@ if comm.pid() == 0:
         # federated.plug(plugins.FedPlot())
 
         # federated.plug(plugins.FL_CA())
-        federated.plug(plugins.WandbLogger(config={'lr': learn_rate, 'batch_size': batch_size, 'epochs': epochs,
-                                                   'num_rounds': num_rounds, 'data_file': data_file,
-                                                   'model': 'LR', 'os': 'windows'}))
+        if initial_model == LogisticRegression(28 * 28, 10):
+            model_name = 'LR'
+        else:
+            if initial_model == CNN_OriginalFedAvg():
+                model_name = 'CNN'
+            else:
+                model_name = 'MLP'
+            federated.plug(plugins.WandbLogger(config={'lr': learn_rate, 'batch_size': batch_size, 'epochs': epochs,
+                                                       'num_rounds': num_rounds, 'data_file': data_file,
+                                                       'model': model_name, 'os': platform.system()}))
 
         logger.info("----------------------")
         logger.info("start federated")

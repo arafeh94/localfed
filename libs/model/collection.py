@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 
 class MLP(nn.Module):
-    def __init__(self, dim_in, dim_hidden, dim_out):
+    def __init__(self, dim_in, dim_out, dim_hidden=64):
         super(MLP, self).__init__()
         self.layer_input = nn.Linear(dim_in, dim_hidden)
         self.relu = nn.ReLU()

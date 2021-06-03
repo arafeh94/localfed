@@ -5,7 +5,7 @@ from typing import Dict, List
 import numpy as np
 
 
-def build_grid(**kwargs) -> Dict[str, List[int]]:
+def build_random(**kwargs) -> Dict[str, List[int]]:
     """
     each kwargs.params=(min,max,num_value)
     """
@@ -15,7 +15,7 @@ def build_grid(**kwargs) -> Dict[str, List[int]]:
     return hyper_params
 
 
-def generate_configs(hyper_params: Dict[str, List[int]], num_runs=0):
+def generate_configs(initial_models, hyper_params: Dict[str, List[int]], num_runs=0):
     """
     configs = generate_configs(build_grid(batch_size=(5, 50, 3), epochs=(5, 10, 3), num_rounds=(5, 120, 3)), 27)
     """
@@ -34,12 +34,17 @@ def generate_configs(hyper_params: Dict[str, List[int]], num_runs=0):
             params[param] = value[randint(0, len(value) - 1)]
         if params in generated_params:
             continue
+
         generated_params.append(params)
         runs += 1
+
+    for gen_param in generated_params:
+        gen_param['initial_model'] = initial_models[randint(0, len(initial_models) - 1)]
+
     return generated_params
 
 
-def calculate_max_rounds(hyper_params: Dict[str, List[int]] ):
+def calculate_max_rounds(hyper_params: Dict[str, List[int]]):
     max_rounds = 1
     for param, value in hyper_params.items():
         max_rounds *= len(value)
