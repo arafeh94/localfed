@@ -17,8 +17,7 @@ from src.federated.trainer_manager import TrainerManager, SeqTrainerManager
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-data_file = '../datasets/pickles/mnist_2shards_70c_600mn_600mx.pkl'
-test_file = '../datasets/pickles/test_data.pkl'
+data_file = '../datasets/pickles/mnist_10shards_100c_400mn_400mx.pkl'
 
 logger.info('Generating Data --Started')
 dg = src.data.data_generator.load(data_file)
@@ -45,7 +44,6 @@ federated = FederatedLearning(
 federated.plug(plugins.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.plug(plugins.FederatedTimer([Events.ET_TRAINER_FINISHED]))
 # federated.plug(plugins.FedPlot())
-# federated.plug(plugins.CustomModelTestPlug(PickleDataProvider(test_file).collect().as_tensor(), 8))
 # federated.plug(plugins.FedSave())
 # federated.plug(plugins.WandbLogger(config={'num_rounds': 10}))
 

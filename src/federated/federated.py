@@ -95,8 +95,8 @@ class FederatedLearning:
             sample_size[trainer_id] = len(test_data)
         weighted_accuracy = [local_accuracy[tid] * sample_size[tid] for tid in local_accuracy]
         weighted_loss = [local_loss[tid] * sample_size[tid] for tid in local_loss]
-        total_accuracy = sum(weighted_accuracy) / len(local_accuracy) / 100
-        total_loss = sum(weighted_loss) / len(local_loss) / 100
+        total_accuracy = sum(weighted_accuracy) / sum(sample_size.values())
+        total_loss = sum(weighted_loss) / sum(sample_size.values())
         return total_accuracy, total_loss, local_accuracy, local_loss
 
     def compare(self, other, verbose=1):
