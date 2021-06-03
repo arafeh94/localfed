@@ -15,7 +15,7 @@ def build_random(**kwargs) -> Dict[str, List[int]]:
     return hyper_params
 
 
-def generate_configs(initial_models, hyper_params: Dict[str, List[int]], num_runs=0):
+def generate_configs(model_param, hyper_params: Dict[str, List[int]], num_runs=0):
     """
     configs = generate_configs(build_grid(batch_size=(5, 50, 3), epochs=(5, 10, 3), num_rounds=(5, 120, 3)), 27)
     """
@@ -38,10 +38,16 @@ def generate_configs(initial_models, hyper_params: Dict[str, List[int]], num_run
         generated_params.append(params)
         runs += 1
 
-    for gen_param in generated_params:
-        gen_param['initial_model'] = initial_models[randint(0, len(initial_models) - 1)]
+    add_model_param_to_gen_params(model_param, generated_params)
 
     return generated_params
+
+
+def add_model_param_to_gen_params(model_param, generated_params):
+    for gen_params in generated_params:
+        gen_params['initial_model'] = model_param
+
+
 
 
 def calculate_max_rounds(hyper_params: Dict[str, List[int]]):
