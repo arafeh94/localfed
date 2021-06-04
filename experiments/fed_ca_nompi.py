@@ -105,7 +105,8 @@ for model_name, gen_model in initial_models.items():
 
         federated.plug(plugins.WandbLogger(config={'lr': learn_rate, 'batch_size': batch_size, 'epochs': epochs,
                                                    'num_rounds': num_rounds, 'data_file': data_file,
-                                                   'model': model_name, 'os': platform.system()}))
+                                                   'model': model_name, 'os': platform.system(),
+                                                   'selected_clients': percentage_nb_client}))
 
         logger.info("----------------------")
         logger.info("start federated")
