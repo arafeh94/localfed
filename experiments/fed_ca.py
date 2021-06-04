@@ -46,23 +46,21 @@ if comm.pid() == 0:
     labels_number = 10
 
     # number of models that we are using
-    initial_models = (
-        LogisticRegression(input_shape, labels_number), CNN_OriginalFedAvg(), MLP(input_shape, labels_number))
+    initial_models = {
+        'LR': LogisticRegression(input_shape, labels_number), 'CNN': CNN_OriginalFedAvg(),
+        'MLP': MLP(input_shape, labels_number)}
 
-    for gen_model in range(len(initial_models)):
+    for model_name, gen_model in initial_models.items():
 
         """
           each params=(min,max,num_value)
         """
-
-        batch_size = (5, 128, 2)
-        epochs = (1, 20, 2)
-        num_rounds = (5, 80, 2)
-
-        model_param = initial_models[gen_model]
+        batch_size = (5, 128, 1)
+        epochs = (1, 20, 1)
+        num_rounds = (5, 80, 1)
 
         hyper_params = build_random(batch_size=batch_size, epochs=epochs, num_rounds=num_rounds)
-        configs = generate_configs(model_param=model_param, hyper_params=hyper_params)
+        configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
         # for config in configs:
         #     print(config)
 
@@ -78,7 +76,8 @@ if comm.pid() == 0:
             print(
                 f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds}, initial_model={initial_model} ')
             trainer_manager = MPITrainerManager()
-            trainer_params = TrainerParams(trainer_class=trainers.CPUChunkTrainer, batch_size=batch_size, epochs=epochs,
+            trainer_params = TrainerParams(trainer_class=trainers.CPUChunkTrainer, batch_size=batch_size,
+                                           epochs=epochs,
                                            optimizer='sgd', criterion='cel', lr=learn_rate)
 
             federated = FederatedLearning(
@@ -103,16 +102,6 @@ if comm.pid() == 0:
             # federated.plug(plugins.FedPlot())
 
             # federated.plug(plugins.FL_CA())
-            if gen_model == 0:
-                model_name = 'LR'
-            else:
-                if gen_model == 1:
-                    model_name = 'CNN'
-                else:
-                    if gen_model == 2:
-                        model_name = 'MLP'
-                    else:
-                        model_name = 'Unknown'
 
             federated.plug(plugins.WandbLogger(config={'lr': learn_rate, 'batch_size': batch_size, 'epochs': epochs,
                                                        'num_rounds': num_rounds, 'data_file': data_file,

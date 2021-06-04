@@ -27,7 +27,7 @@ logger = logging.getLogger('main')
 
 comm = Comm()
 
-data_file = "../datasets/pickles/10_100_big_ca.pkl"
+data_file = "../datasets/pickles/10_1000_big_ca.pkl"
 # custom test file contains only 20 samples from each client
 # custom_test_file = '../datasets/pickles/test_data.pkl'
 
@@ -42,27 +42,29 @@ input_shape = 28 * 28
 labels_number = 10
 
 # number of models that we are using
-initial_models = (
-    LogisticRegression(input_shape, labels_number), CNN_OriginalFedAvg(), MLP(input_shape, labels_number))
+initial_models = {
+    'LR': LogisticRegression(input_shape, labels_number),
+    'CNN': CNN_OriginalFedAvg(),
+    'MLP': MLP(input_shape, labels_number)
+}
 
-for gen_model in range(len(initial_models)):
+runs = {}
+
+for model_name, gen_model in initial_models.items():
 
     """
-            each params=(min,max,num_value)
+      each params=(min,max,num_value)
     """
     batch_size = (5, 128, 1)
     epochs = (1, 20, 1)
-    num_rounds = (5, 80, 1)
-
-    model_param = initial_models[gen_model]
+    num_rounds = (30, 80, 1)
 
     hyper_params = build_random(batch_size=batch_size, epochs=epochs, num_rounds=num_rounds)
-    configs = generate_configs(model_param=model_param, hyper_params=hyper_params)
+    configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
     # for config in configs:
     #     print(config)
 
     logger.info(calculate_max_rounds(hyper_params))
-    runs = {}
     for config in configs:
         batch_size = config['batch_size']
         epochs = config['epochs']
@@ -73,7 +75,8 @@ for gen_model in range(len(initial_models)):
         print(
             f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds}, initial_model={initial_model} ')
         trainer_manager = SeqTrainerManager()
-        trainer_params = TrainerParams(trainer_class=trainers.CPUChunkTrainer, batch_size=batch_size, epochs=epochs,
+        trainer_params = TrainerParams(trainer_class=trainers.CPUChunkTrainer, batch_size=batch_size,
+                                       epochs=epochs,
                                        optimizer='sgd', criterion='cel', lr=learn_rate)
 
         federated = FederatedLearning(
@@ -82,7 +85,7 @@ for gen_model in range(len(initial_models)):
             aggregator=aggregators.AVGAggregator(),
             metrics=metrics.AccLoss(batch_size=batch_size, criterion=nn.CrossEntropyLoss()),
             # client_selector=client_selectors.All(),
-            client_selector=client_selectors.All(),
+            client_selector=client_selectors.Random(0.5),
             trainers_data_dict=client_data,
             initial_model=lambda: initial_model,
             # initial_model=lambda: libs.model.collection.MLP(28 * 28, 64, 10),
@@ -92,22 +95,12 @@ for gen_model in range(len(initial_models)):
             desired_accuracy=0.99
         )
 
-        # federated.plug(plugins.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
+        federated.plug(plugins.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
         # federated.plug(plugins.FederatedTimer([Events.ET_ROUND_START, Events.ET_TRAIN_END]))
         # federated.plug(plugins.CustomModelTestPlug(PickleDataProvider(custom_test_file).collect().as_tensor(), 8))
         # federated.plug(plugins.FedPlot())
 
         # federated.plug(plugins.FL_CA())
-        if gen_model == 0:
-            model_name = 'LR'
-        else:
-            if gen_model == 1:
-                model_name = 'CNN'
-            else:
-                if gen_model == 2:
-                    model_name = 'MLP'
-                else:
-                    model_name = 'Unknown'
 
         federated.plug(plugins.WandbLogger(config={'lr': learn_rate, 'batch_size': batch_size, 'epochs': epochs,
                                                    'num_rounds': num_rounds, 'data_file': data_file,
@@ -117,3 +110,7 @@ for gen_model in range(len(initial_models)):
         logger.info("start federated")
         logger.info("----------------------")
         federated.start()
+        runs[model_name] = federated.context
+
+r = fedruns.FedRuns(runs)
+r.plot()
