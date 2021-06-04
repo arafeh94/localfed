@@ -31,7 +31,7 @@ logger = logging.getLogger('main')
 comm = Comm()
 if comm.pid() == 0:
 
-    data_file = "../datasets/pickles/10_1000_big_ca.pkl"
+    data_file = "../datasets/pickles/10_6000_big_ca.pkl"
     # custom test file contains only 20 samples from each client
     # custom_test_file = '../datasets/pickles/test_data.pkl'
 
@@ -47,17 +47,19 @@ if comm.pid() == 0:
 
     # number of models that we are using
     initial_models = {
-        'LR': LogisticRegression(input_shape, labels_number), 'CNN': CNN_OriginalFedAvg(),
-        'MLP': MLP(input_shape, labels_number)}
+        'LR': LogisticRegression(input_shape, labels_number),
+        'MLP': MLP(input_shape, labels_number),
+        'CNN': CNN_OriginalFedAvg(),
+    }
 
     for model_name, gen_model in initial_models.items():
 
         """
           each params=(min,max,num_value)
         """
-        batch_size = (5, 128, 1)
-        epochs = (1, 20, 1)
-        num_rounds = (5, 80, 1)
+        batch_size = (5, 128, 5)
+        epochs = (5, 20, 4)
+        num_rounds = (13, 80, 5)
 
         hyper_params = build_random(batch_size=batch_size, epochs=epochs, num_rounds=num_rounds)
         configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)

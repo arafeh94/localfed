@@ -1,3 +1,4 @@
+import copy
 from collections import defaultdict
 from random import randint
 from typing import Dict, List
@@ -38,16 +39,16 @@ def generate_configs(model_param, hyper_params: Dict[str, List[int]], num_runs=0
         generated_params.append(params)
         runs += 1
 
-    add_model_param_to_gen_params(model_param, generated_params)
+    if model_param != None:
+        add_model_param_to_gen_params(model_param, generated_params)
 
     return generated_params
 
 
 def add_model_param_to_gen_params(model_param, generated_params):
     for gen_params in generated_params:
-        gen_params['initial_model'] = model_param
-
-
+        # deep copy is very important here so we don't use the last state of the model
+        gen_params['initial_model'] = copy.deepcopy(model_param)
 
 
 def calculate_max_rounds(hyper_params: Dict[str, List[int]]):

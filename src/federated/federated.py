@@ -87,16 +87,20 @@ class FederatedLearning:
         local_accuracy = {}
         local_loss = {}
         sample_size = {}
+
         for trainer_id, test_data in trainers_data.items():
             acc, loss = self.metrics.infer(model, test_data)
             self.client_selector.on_client_selected(trainer_id, accuracy=acc, loss=loss)
             local_accuracy[trainer_id] = acc
             local_loss[trainer_id] = loss
             sample_size[trainer_id] = len(test_data)
+
         weighted_accuracy = [local_accuracy[tid] * sample_size[tid] for tid in local_accuracy]
         weighted_loss = [local_loss[tid] * sample_size[tid] for tid in local_loss]
+
         total_accuracy = sum(weighted_accuracy) / sum(sample_size.values())
         total_loss = sum(weighted_loss) / sum(sample_size.values())
+
         return total_accuracy, total_loss, local_accuracy, local_loss
 
     def compare(self, other, verbose=1):
