@@ -44,6 +44,7 @@ if comm.pid() == 0:
     # building Hyperparameters
     input_shape = 28 * 28
     labels_number = 10
+    percentage_nb_client = 0.3
 
     # number of models that we are using
     initial_models = {
@@ -88,7 +89,7 @@ if comm.pid() == 0:
                 aggregator=aggregators.AVGAggregator(),
                 metrics=metrics.AccLoss(batch_size=batch_size, criterion=nn.CrossEntropyLoss()),
                 # client_selector=client_selectors.All(),
-                client_selector=client_selectors.All(),
+                client_selector=client_selectors.Random(percentage_nb_client),
                 trainers_data_dict=client_data,
                 initial_model=lambda: initial_model,
                 # initial_model=lambda: libs.model.collection.MLP(28 * 28, 64, 10),
@@ -107,7 +108,8 @@ if comm.pid() == 0:
 
             federated.plug(plugins.WandbLogger(config={'lr': learn_rate, 'batch_size': batch_size, 'epochs': epochs,
                                                        'num_rounds': num_rounds, 'data_file': data_file,
-                                                       'model': model_name, 'os': platform.system()}))
+                                                       'model': model_name, 'os': platform.system(),
+                                                       'selected_clients': percentage_nb_client}))
 
             logger.info("----------------------")
             logger.info("start federated")

@@ -40,6 +40,7 @@ dg.describe()
 # building Hyperparameters
 input_shape = 28 * 28
 labels_number = 10
+percentage_nb_client = 0.3
 
 # number of models that we are using
 initial_models = {
@@ -85,7 +86,7 @@ for model_name, gen_model in initial_models.items():
             aggregator=aggregators.AVGAggregator(),
             metrics=metrics.AccLoss(batch_size=batch_size, criterion=nn.CrossEntropyLoss()),
             client_selector=client_selectors.All(),
-            # client_selector=client_selectors.Random(0.5),
+            # client_selector=client_selectors.Random(percentage_nb_client),
             trainers_data_dict=client_data,
             initial_model=lambda: initial_model,
             # initial_model=lambda: libs.model.collection.MLP(28 * 28, 64, 10),
