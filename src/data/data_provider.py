@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import pickle
+import sys
 from abc import abstractmethod
 from zipfile import ZipFile
 
@@ -45,14 +46,22 @@ class PickleDataProvider(DataProvider):
         file_name = url_parts[2].rpartition('/')[-1]
 
         downloaded_file_path = manifest.DATA_PATH + file_name
-        if self._file_exists(downloaded_file_path.replace('zip', 'pkl')):
+        local_file = downloaded_file_path.replace('zip', 'pkl')
+        if self._file_exists(local_file):
+            logger.info(f'file exists locally, loading path {local_file}')
             self.uri = downloaded_file_path.replace('zip', 'pkl')
         else:
             downloaded = self._download(self.uri, downloaded_file_path)
             if downloaded:
-                self.uri = downloaded_file_path.replace('zip', 'pkl')
+                self.uri = local_file
             else:
                 raise Exception('error while downloaded the file')
+
+    def _bar_progress(self, current, total, width=80):
+        progress_message = "Downloading: %d%% [%d / %d] bytes" % (current / total * 100, current, total)
+        # Don't use print() as it will print in new line every time.
+        sys.stdout.write("\r" + progress_message)
+        sys.stdout.flush()
 
     def _file_exists(self, downloaded_file):
         return os.path.isfile(downloaded_file)
@@ -60,10 +69,11 @@ class PickleDataProvider(DataProvider):
     def _download(self, url, downloaded_file_path):
         try:
             logger.info(f'downloading file into {downloaded_file_path}')
-            wget.download(url, downloaded_file_path)
-            logger.info('extracting...')
+            wget.download(url, downloaded_file_path, bar=self._bar_progress)
+            logger.info('\nextracting...')
             with ZipFile(downloaded_file_path, 'r') as zipObj:
                 zipObj.extractall(manifest.DATA_PATH)
+            logger.info('loading...')
             return True
         except Exception as e:
             logger.info('error while downloading the file')

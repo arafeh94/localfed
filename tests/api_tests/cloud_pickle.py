@@ -1,4 +1,7 @@
-from src.data.data_provider import PickleDataProvider
+import logging
 
-data = PickleDataProvider('https://www.dropbox.com/s/p6zf16hb4pinswr/mnist10k.zip?dl=1').collect()
+from src.data.data_provider import PickleDataProvider
+logging.basicConfig(level=logging.INFO)
+
+data = PickleDataProvider('https://www.dropbox.com/s/nd25svv30chttln/mnist.zip?dl=1').collect()
 print(data.x)
