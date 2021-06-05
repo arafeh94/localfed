@@ -23,3 +23,4 @@ class Comm:
 
     def stop(self):
         self.mpi.Abort()
+

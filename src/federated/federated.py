@@ -1,4 +1,5 @@
 import copy
+import logging
 import math
 from collections import defaultdict
 from functools import reduce
@@ -50,19 +51,17 @@ class FederatedLearning:
         self.broadcast(Events.ET_INIT, global_model=self.context.model)
         while True:
             self.broadcast(Events.ET_ROUND_START, round=self.context.round_id)
-
-            trainers_ids = self.client_selector.select(list(self.trainers_data_dict.keys()), self.context.round_id)
+            trainers_ids = self.client_selector.select(list(self.trainers_data_dict.keys()), self.context)
             self.broadcast(Events.ET_TRAINER_SELECTED, trainers_ids=trainers_ids)
-
             trainers_train_data = tools.dict_select(trainers_ids, self.trainers_train)
             self.broadcast(Events.ET_TRAIN_START, trainers_data=trainers_train_data)
             trainers_weights, sample_size_dict = self.train(trainers_train_data)
             self.broadcast(Events.ET_TRAIN_END, trainers_weights=trainers_weights, sample_size=sample_size_dict)
-
             global_weights = self.aggregator.aggregate(trainers_weights, sample_size_dict, self.context.round_id)
+            self.notify_selector(trainers_weights, sample_size_dict, global_weights)
             tools.load(self.context.model, global_weights)
             self.broadcast(Events.ET_AGGREGATION_END, global_weights=global_weights, global_model=self.context.model)
-
+            self.notify_selector(trainers_weights, sample_size_dict, global_weights)
             test_data = self.trainers_test if self.test_on == FederatedLearning.TEST_ON_ALL else \
                 tools.dict_select(trainers_ids, self.trainers_test)
             accuracy, loss, local_acc, local_loss = self.infer(self.context.model, test_data)
@@ -89,7 +88,6 @@ class FederatedLearning:
         sample_size = {}
         for trainer_id, test_data in trainers_data.items():
             acc, loss = self.metrics.infer(model, test_data)
-            self.client_selector.on_client_selected(trainer_id, accuracy=acc, loss=loss)
             local_accuracy[trainer_id] = acc
             local_loss[trainer_id] = loss
             sample_size[trainer_id] = len(test_data)
@@ -153,6 +151,13 @@ class FederatedLearning:
                 if event_name not in plugin.force():
                     continue
             self.register_event(event_name, call)
+
+    def notify_selector(self, trainers_weights, sample_size_dict, global_weights):
+        for trainer_id in trainers_weights:
+            self.client_selector.on_client_selected(trainer_id, trainer_weights=trainers_weights[trainer_id],
+                                                    sample_size=sample_size_dict[trainer_id],
+                                                    global_weights=global_weights)
+
 
     class Context:
         def __init__(self):

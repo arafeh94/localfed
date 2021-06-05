@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 
 import torch
 from torch import nn
@@ -14,18 +15,32 @@ from src.data.data_provider import LocalMnistDataProvider, PickleDataProvider
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-
 logger.info('Generating Data --Started')
 dp = PickleDataProvider('../../datasets/pickles/cars.pkl').collect()
+
+labels_data = defaultdict(lambda: [])
+
+for index in range(len(dp.x)):
+    labels_data[dp.y[index]].append(dp.x)
+
+keys = sorted(labels_data.keys())
+
+for key in keys:
+    print(f"{key} : {len(labels_data[key])}")
+
+exit(1)
+
 logger.info('Shuffling')
 dp = dp.shuffle().as_tensor()
 logger.info('Splitting')
 x, y = dp.split(0.8)
 logger.info('Generating Data --Ended')
 
+exit(1)
+
 lr = resnet56(200)
-tools.train(lr, x.batch(10), 1, 0.1)
-acc, loss = tools.infer(lr, y.batch(40))
+tools.train(lr, x.batch(15), 1, 0.1)
+acc, loss = tools.infer(lr, y.batch(15))
 print(acc)
 print(loss)
 

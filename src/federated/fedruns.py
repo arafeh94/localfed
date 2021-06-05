@@ -18,6 +18,11 @@ class FedRuns:
                 new_dict[f'run{index}'] = run
             self.runs = new_dict
 
+    def append(self, name, run):
+        if isinstance(run, FederatedLearning):
+            run = run.context
+        self.runs[name] = run
+
     def compare_all(self):
         for i, first in enumerate(self.runs):
             for j, second in enumerate(self.runs):
@@ -54,13 +59,17 @@ class FedRuns:
                 loss.append(performance['loss'])
             acc_plot[name] = acc
             loss_plot[name] = loss
+        fig, axs = plt.subplots(2)
+
         for run_name, acc in acc_plot.items():
-            plt.plot(acc, label=run_name)
-            plt.legend()
-            plt.tight_layout()
-        plt.show()
+            axs[0].plot(acc, label=run_name)
+            axs[0].set_title('Total Accuracy')
+            axs[0].set_xticks(range(len(acc)))
         for run_name, loss in loss_plot.items():
-            plt.plot(loss, label=run_name)
-            plt.legend()
-            plt.tight_layout()
+            axs[1].plot(loss, label=run_name)
+            axs[1].set_title('Total Loss')
+            axs[1].set_xticks(range(len(loss)))
+
+        plt.legend()
+        plt.tight_layout()
         plt.show()

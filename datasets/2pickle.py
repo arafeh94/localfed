@@ -8,4 +8,4 @@ def sql_to_pickle(name, data_provider):
 
 
 print('mnist')
-sql_to_pickle('mnist', LocalMnistDataProvider())
+sql_to_pickle('mnist10k', LocalMnistDataProvider(limit=10000))

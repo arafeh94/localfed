@@ -1,22 +1,21 @@
-# mpiexec -n 4 python fed_gen_mpi.py
+# mpiexec -n 4 python main_mpi.py
 import logging
 import sys
 from os.path import dirname
 
 from torch import nn
 
+
 sys.path.append(dirname(__file__) + '../../')
+from src.data import data_generator
 from libs.model.linear.lr import LogisticRegression
 from src.federated.components.trainers import CPUTrainer
 from src.federated.protocols import TrainerParams
 import src
-from libs.model.cv.cnn import CNN_OriginalFedAvg
-from apps.genetic_selectors import fed_comp
+from apps.genetic_selectors.src import initializer
 from src.apis.mpi import Comm
 from src.federated.components import metrics, client_selectors, aggregators
-from src.data.data_provider import PickleDataProvider
 from src.federated import plugins, fedruns
-from src.data.data_generator import DataGenerator
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.trainer_manager import MPITrainerManager
@@ -35,7 +34,7 @@ if comm.pid() == 0:
     test_file = '../../datasets/pickles/test_data.pkl'
 
     logger.info('Generating Data --Started')
-    dg = src.data.data_generator.load(data_file)
+    dg = data_generator.load(data_file)
     client_data = dg.distributed
     dg.describe()
     logger.info('Generating Data --Ended')
@@ -83,14 +82,14 @@ if comm.pid() == 0:
 
         initial_model = config['model']
         if name == 'ga':
-            initial_model = fed_comp.ga_module_creator(client_data, initial_model, max_iter=config['ga_max_iter'],
-                                                       r_cross=config['ga_r_cross'], r_mut=config['ga_r_mut'],
-                                                       c_size=config['ga_c_size'], p_size=config['ga_p_size'],
-                                                       clusters=config['nb_clusters'],
-                                                       desired_fitness=config['ga_min_fitness'])
+            initial_model = initializer.ga_module_creator(client_data, initial_model, max_iter=config['ga_max_iter'],
+                                                          r_cross=config['ga_r_cross'], r_mut=config['ga_r_mut'],
+                                                          c_size=config['ga_c_size'], p_size=config['ga_p_size'],
+                                                          clusters=config['nb_clusters'],
+                                                          desired_fitness=config['ga_min_fitness'])
         elif name == 'clustered':
-            initial_model = fed_comp.cluster_module_creator(client_data, initial_model, config['nb_clusters'],
-                                                            config['c_size'])
+            initial_model = initializer.cluster_module_creator(client_data, initial_model, config['nb_clusters'],
+                                                               config['c_size'])
 
         trainer_manager = MPITrainerManager()
         trainer_params = TrainerParams(trainer_class=CPUTrainer, optimizer='sgd', epochs=epochs, batch_size=batch_size,

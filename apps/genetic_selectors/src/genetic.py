@@ -6,7 +6,7 @@ from numpy.random import default_rng
 import random
 import numpy as np
 
-from apps.genetic_selectors.cluster_selector import ClusterSelector
+from apps.genetic_selectors.src.cluster_selector import ClusterSelector
 from src import tools
 
 logger = logging.getLogger('ga')
