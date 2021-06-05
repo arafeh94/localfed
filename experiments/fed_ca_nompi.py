@@ -27,7 +27,8 @@ logger = logging.getLogger('main')
 
 comm = Comm()
 
-data_file = "../datasets/pickles/10_6000_big_ca.pkl"
+# data_file = "../datasets/pickles/10_6000_big_ca.pkl"
+data_file = "../datasets/pickles/10_800_1000_big_imbalanced_ca.pkl"
 # custom test file contains only 20 samples from each client
 # custom_test_file = '../datasets/pickles/test_data.pkl'
 
@@ -45,8 +46,8 @@ percentage_nb_client = 0.3
 # number of models that we are using
 initial_models = {
     'LR': LogisticRegression(input_shape, labels_number),
-    'CNN': CNN_OriginalFedAvg(),
     'MLP': MLP(input_shape, labels_number)
+    # 'CNN': CNN_OriginalFedAvg()
 }
 
 runs = {}

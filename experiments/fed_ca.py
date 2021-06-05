@@ -1,10 +1,10 @@
+# to run MPI, u wull first need to change the terminal current working directory to D:\Github\my_repository\localfed\experiments>
 # windows: mpiexec -n 11 python fed_ca.py
 # ubuntu: mpirun -np 11 --hostfile hosts python ./fed_ca.py
-import platform
 import logging
+import platform
 import sys
 from os.path import dirname
-from random import randint
 
 from torch import nn
 
@@ -20,10 +20,10 @@ from libs.model.cv.cnn import CNN_OriginalFedAvg
 from libs.model.linear.lr import LogisticRegression
 from libs.model.collection import MLP
 from src.data import data_generator
-from src.federated import plugins, fedruns
-from src.federated.federated import Events, FederatedLearning
+from src.federated import plugins
+from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
-from src.federated.trainer_manager import TrainerManager, SeqTrainerManager, MPITrainerManager
+from src.federated.trainer_manager import MPITrainerManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
@@ -31,9 +31,7 @@ logger = logging.getLogger('main')
 comm = Comm()
 if comm.pid() == 0:
 
-    data_file = "../datasets/pickles/10_6000_big_ca.pkl"
-    # custom test file contains only 20 samples from each client
-    # custom_test_file = '../datasets/pickles/test_data.pkl'
+    data_file = "../datasets/pickles/10_1000_big_ca.pkl"
 
     logger.info('generating data --Started')
 
@@ -44,13 +42,13 @@ if comm.pid() == 0:
     # building Hyperparameters
     input_shape = 28 * 28
     labels_number = 10
-    percentage_nb_client = 0.3
+    percentage_nb_client = 0.5
 
     # number of models that we are using
     initial_models = {
         'LR': LogisticRegression(input_shape, labels_number),
-        'MLP': MLP(input_shape, labels_number),
-        'CNN': CNN_OriginalFedAvg(),
+        'MLP': MLP(input_shape, labels_number)
+        # 'CNN': CNN_OriginalFedAvg(),
     }
 
     for model_name, gen_model in initial_models.items():
@@ -64,8 +62,6 @@ if comm.pid() == 0:
 
         hyper_params = build_random(batch_size=batch_size, epochs=epochs, num_rounds=num_rounds)
         configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
-        # for config in configs:
-        #     print(config)
 
         logger.info(calculate_max_rounds(hyper_params))
         runs = {}
@@ -92,19 +88,13 @@ if comm.pid() == 0:
                 client_selector=client_selectors.Random(percentage_nb_client),
                 trainers_data_dict=client_data,
                 initial_model=lambda: initial_model,
-                # initial_model=lambda: libs.model.collection.MLP(28 * 28, 64, 10),
-                # initial_model=lambda: LogisticRegression(28 * 28, 10),
-                # initial_model=lambda: CNN_OriginalFedAvg(),
                 num_rounds=num_rounds,
                 desired_accuracy=0.99
             )
 
             # federated.plug(plugins.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
             # federated.plug(plugins.FederatedTimer([Events.ET_ROUND_START, Events.ET_TRAIN_END]))
-            # federated.plug(plugins.CustomModelTestPlug(PickleDataProvider(custom_test_file).collect().as_tensor(), 8))
             # federated.plug(plugins.FedPlot())
-
-            # federated.plug(plugins.FL_CA())
 
             federated.plug(plugins.WandbLogger(config={'lr': learn_rate, 'batch_size': batch_size, 'epochs': epochs,
                                                        'num_rounds': num_rounds, 'data_file': data_file,

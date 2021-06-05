@@ -21,19 +21,30 @@ def get_dataset_size_type(minimum_size):
     return size
 
 
+def dataset_type(min_size, max_size):
+    dataset = 'balanced'
+    if min_size != max_size:
+        dataset = 'imbalanced'
+
+    return dataset
+
+
 if True:
     # creating custom initializers
     num_clients = 10
     # min and max size are equal since we need a balanced dataset for ca
-    min_size = 3000
-    max_size = 3000
+    min_size = 4800
+    max_size = 6000
 
     dataset_size = get_dataset_size_type(min_size)
+    dataset_type = str(dataset_type(min_size, max_size))
 
     print("Creating a pickle file for continuous authentication dataset")
     dg = DataGenerator(LocalMnistDataProvider('select data, label from mnist_60k'))
     dg.distribute_continuous(num_clients=num_clients, min_size=min_size, max_size=max_size)
-    dg.save('./pickles/' + str(num_clients) + '_' + str(min_size) + '_' + str(dataset_size) + '_ca.pkl')
+    dg.save(
+        './pickles/' + str(num_clients) + '_' + str(min_size) + '_' + str(max_size) + '_' + str(dataset_size) + '_' +
+        dataset_type + '_ca.pkl')
     print("finished")
     exit(0)
 
