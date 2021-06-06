@@ -5,6 +5,7 @@ import threading
 import numpy
 import numpy as np
 import torch
+from matplotlib import pyplot
 from sklearn.cluster import KMeans
 import logging
 from src import tools
@@ -21,7 +22,7 @@ class Context:
         self.init_model = self.create_model()
         self.logging = logging.getLogger('context')
 
-    def build(self, ratio=0):
+    def train(self, ratio=0):
         self.logging.info("Building Models --Started")
 
         for client_idx, data in self.clients_data.items():
@@ -36,6 +37,11 @@ class Context:
             self.model_stats[client_idx] = trained
             self.models[client_idx] = model
             self.sample_dict[client_idx] = len(data)
+            for key in trained:
+                if torch.prod(torch.isnan(trained[key])) != 0:
+                    for image in data.as_tensor().x:
+                        pyplot.imshow(image.view(28, 28))
+                        pyplot.show()
         self.logging.info("Building Models --Finished")
 
     def cluster(self, cluster_size=10):
@@ -45,10 +51,7 @@ class Context:
         clustered = {}
         for client_id, stats in self.model_stats.items():
             client_ids.append(client_id)
-            total_weights = np.array([])
-            for key, local_weights in stats.items():
-                total_weights = np.concatenate((total_weights, local_weights.numpy().flatten()))
-            weights.append(total_weights)
+            weights.append(tools.flatten_weights(stats))
         kmeans = KMeans(n_clusters=cluster_size).fit(weights)
         for i, label in enumerate(kmeans.labels_):
             clustered[client_ids[i]] = label

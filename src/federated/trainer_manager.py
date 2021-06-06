@@ -46,6 +46,7 @@ class SeqTrainerManager(TrainerManager):
             trained_weights, sample_size = request[0](request[1], request[2], request[3], request[4])
             trainers_trained_weights[trainer_id] = trained_weights
             trainers_sample_size[trainer_id] = sample_size
+        self.train_requests = {}
         return trainers_trained_weights, trainers_sample_size
 
 
@@ -86,8 +87,10 @@ class MPITrainerManager(TrainerManager):
 
     @staticmethod
     def mpi_trainer_listener(comm: Comm):
+        trainer: Trainer = None
         while True:
             model, train_data, context, config = comm.recv(0, 1)
-            trainer: Trainer = config.trainer_class()
+            if trainer is None:
+                trainer = config.trainer_class()
             trained_weights, sample_size = trainer.train(model, train_data, context, config)
             comm.send(0, (trained_weights, sample_size), 2)

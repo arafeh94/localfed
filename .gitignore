@@ -1,3 +1,6 @@
+#ignore all files that are bigger than 100M
+#find . -size +100M | cat >> .gitignore
+
 .DS_Store
 .idea
 .idea/*
@@ -23,7 +26,7 @@ venv
 *.txt
 *.h5
 
-# data
+# raw
 *.rar
 *.csv
 *.dat
@@ -35,10 +38,28 @@ cifar-10-batches-py
 
 #big pkl files
 *_big*.pkl
+!/experiments/logs/log_viewer.py
+/experiments/logs
+/experiments/logs/*
+/experiments/wandb
+/datasets/pickles/mnist_10shards_100c_400mn_400mx.pkl
+/datasets/pickles/mnist_2shards_70c_600mn_600mx.pkl
+/datasets/pickles/femnist.pkl
+/datasets/pickles/mnist.pkl
+/datasets/pickles/cars.pkl
 
-./datasets/preprocess/data
-./experiments/logs
-./experiments/logs/*
-./experiments/wandb
-./experiments/nogit
-/experiments/wandb/
+#raw datasets
+/datasets/raw/femnist/fed_emnist_train.h5
+/datasets/raw/femnist/fed_emnist_test.h5
+/datasets/raw/kdd/KDDTest+.arff
+/datasets/raw/kdd/KDDTrain+.arff
+/datasets/raw/shakespeare/shakespeare_all_data.json
+/datasets/raw/cars/a1/
+/datasets/raw/cars/a2/
+/datasets/raw/cars/a3/
+/datasets/raw/cars/a4/
+/datasets/raw/cars/a5/
+/datasets/raw/cars/a6/
+/datasets/raw/cars/a7/
+/datasets/raw/cars/a8/
+/datasets/
