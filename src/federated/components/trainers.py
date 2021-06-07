@@ -12,6 +12,8 @@ from src.data.data_container import DataContainer
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import Trainer, TrainerParams
 
+import random
+
 
 class CPUTrainer(Trainer):
     def __init__(self):
@@ -53,4 +55,42 @@ class CPUChunkTrainer(CPUTrainer):
         x = train_data.x[int(round_id * round_data_size):int((round_id * round_data_size) + round_data_size)]
         y = train_data.y[int(round_id * round_data_size):int((round_id * round_data_size) + round_data_size)]
         chunk = DataContainer(x, y)
+
         return super(CPUChunkTrainer, self).train(model, chunk, round_id, config)
+
+
+# train with random number of samples equal to batch_size
+class CPURandomTrainer(CPUTrainer):
+    def train(self, model: nn.Module, train_data: DataContainer, context: FederatedLearning.Context,
+              config: TrainerParams) -> Tuple[any, int]:
+        round_id = context.round_id
+        total_size = len(train_data)
+
+        # check for errors
+        batch_size = config.batch_size
+        # in case the total size is less than the requested batch_size
+        if batch_size > total_size:
+            batch_size = total_size
+
+        # the data ranges is equal to the batch_size and cannot exceed its range.
+        min_range = random.randint(0, total_size) - batch_size
+        max_range = min_range + batch_size
+        x = train_data.x[min_range:max_range]
+        y = train_data.y[min_range:max_range]
+
+        chunk = DataContainer(x, y)
+        return super(CPURandomTrainer, self).train(model, chunk, round_id, config)
+
+
+# train on all data samples of the clients
+class CPUAllTrainer(CPUTrainer):
+    def train(self, model: nn.Module, train_data: DataContainer, context: FederatedLearning.Context,
+              config: TrainerParams) -> Tuple[any, int]:
+        round_id = context.round_id
+        total_size = len(train_data)
+
+        x = train_data.x[0:total_size]
+        y = train_data.y[0:total_size]
+
+        chunk = DataContainer(x, y)
+        return super(CPUAllTrainer, self).train(model, chunk, round_id, config)

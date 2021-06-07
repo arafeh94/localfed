@@ -31,7 +31,8 @@ logger = logging.getLogger('main')
 comm = Comm()
 if comm.pid() == 0:
 
-    data_file = "../datasets/pickles/10_1000_big_ca.pkl"
+    # data_file = "../datasets/pickles/10_1000_big_ca.pkl"
+    data_file = "../datasets/pickles/10_2400_3000_big_imbalanced_ca.pkl"
 
     logger.info('generating data --Started')
 
@@ -42,7 +43,7 @@ if comm.pid() == 0:
     # building Hyperparameters
     input_shape = 28 * 28
     labels_number = 10
-    percentage_nb_client = 0.5
+    percentage_nb_client = 0.3
 
     # number of models that we are using
     initial_models = {
@@ -73,9 +74,10 @@ if comm.pid() == 0:
             learn_rate = 0.1
 
             print(
-                f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds}, initial_model={initial_model} ')
+                f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds}, '
+                f'initial_model={initial_model} ')
             trainer_manager = MPITrainerManager()
-            trainer_params = TrainerParams(trainer_class=trainers.CPUChunkTrainer, batch_size=batch_size,
+            trainer_params = TrainerParams(trainer_class=trainers.CPUAllTrainer, batch_size=batch_size,
                                            epochs=epochs,
                                            optimizer='sgd', criterion='cel', lr=learn_rate)
 

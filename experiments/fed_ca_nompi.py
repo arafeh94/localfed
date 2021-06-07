@@ -27,7 +27,7 @@ logger = logging.getLogger('main')
 
 comm = Comm()
 
-# data_file = "../datasets/pickles/10_6000_big_ca.pkl"
+# data_file = "../datasets/pickles/10_1000_big_ca.pkl"
 data_file = "../datasets/pickles/10_800_1000_big_imbalanced_ca.pkl"
 # custom test file contains only 20 samples from each client
 # custom_test_file = '../datasets/pickles/test_data.pkl'
@@ -58,8 +58,8 @@ for model_name, gen_model in initial_models.items():
       each params=(min,max,num_value)
     """
     batch_size = (5, 128, 5)
-    epochs = (5, 20, 4)
-    num_rounds = (13, 80, 5)
+    epochs = (5, 20, 3)
+    num_rounds = (13, 80, 3)
 
     hyper_params = build_random(batch_size=batch_size, epochs=epochs, num_rounds=num_rounds)
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
@@ -77,7 +77,7 @@ for model_name, gen_model in initial_models.items():
         print(
             f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds}, initial_model={initial_model} ')
         trainer_manager = SeqTrainerManager()
-        trainer_params = TrainerParams(trainer_class=trainers.CPUChunkTrainer, batch_size=batch_size,
+        trainer_params = TrainerParams(trainer_class=trainers.CPUAllTrainer, batch_size=batch_size,
                                        epochs=epochs,
                                        optimizer='sgd', criterion='cel', lr=learn_rate)
 
@@ -86,8 +86,8 @@ for model_name, gen_model in initial_models.items():
             trainer_params=trainer_params,
             aggregator=aggregators.AVGAggregator(),
             metrics=metrics.AccLoss(batch_size=batch_size, criterion=nn.CrossEntropyLoss()),
-            client_selector=client_selectors.All(),
-            # client_selector=client_selectors.Random(percentage_nb_client),
+            # client_selector=client_selectors.All(),
+            client_selector=client_selectors.Random(percentage_nb_client),
             trainers_data_dict=client_data,
             initial_model=lambda: initial_model,
             # initial_model=lambda: libs.model.collection.MLP(28 * 28, 64, 10),
