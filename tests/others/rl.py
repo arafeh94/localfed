@@ -193,7 +193,7 @@ def optimize_model():
     # We don't want to backprop through the expected action values and volatile
     # will save us on temporarily changing the model parameters'
     # requires_grad to False!
-    non_final_next_states = Variable(torch.cat([s for s in batch.next_state if s is not None]), volatile=True)
+    next_states = Variable(torch.cat([s for s in batch.next_state if s is not None]), volatile=True)
     state_batch = Variable(torch.cat(batch.state))
     action_batch = Variable(torch.cat(batch.action))
     reward_batch = Variable(torch.cat(batch.reward))
@@ -204,12 +204,12 @@ def optimize_model():
 
     # Compute V(s_{t+1}) for all next states.
     next_state_values = Variable(torch.zeros(BATCH_SIZE).type(Tensor))
-    next_state_values[non_final_mask] = model(non_final_next_states).max(1)[0]
+    next_state_values[non_final_mask] = model(next_states).max(1)[0]
     # Now, we don't want to mess up the loss with a volatile flag, so let's
     # clear it. After this, we'll just end up with a Variable that has
     # requires_grad=False
     next_state_values.volatile = False
-    
+
     # Compute the expected Q values
     expected_state_action_values = (next_state_values * GAMMA) + reward_batch
 
