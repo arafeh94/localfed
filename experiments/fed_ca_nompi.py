@@ -25,8 +25,6 @@ from src.federated.trainer_manager import TrainerManager, SeqTrainerManager, MPI
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-comm = Comm()
-
 # data_file = "../datasets/pickles/10_1000_big_ca.pkl"
 data_file = "../datasets/pickles/10_4800_6000_big_imbalanced_ca.pkl"
 # custom test file contains only 20 samples from each client
