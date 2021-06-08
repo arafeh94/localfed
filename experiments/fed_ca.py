@@ -8,10 +8,12 @@ from os.path import dirname
 
 from torch import nn
 
-# Linux
-# sys.path.append(dirname(__file__) + './')
-# windows
-sys.path.append(dirname(__file__) + '../')
+if platform.system() == 'Linux':
+    # Linux
+    sys.path.append(dirname(__file__) + './')
+else:
+    # windows
+    sys.path.append(dirname(__file__) + '../')
 
 from src.apis.hp_generator import generate_configs, build_random, calculate_max_rounds
 from src.apis.mpi import Comm
@@ -32,7 +34,7 @@ comm = Comm()
 if comm.pid() == 0:
 
     # data_file = "../datasets/pickles/10_1000_big_ca.pkl"
-    data_file = "../datasets/pickles/10_2400_3000_big_imbalanced_ca.pkl"
+    data_file = "../datasets/pickles/10_4800_6000_big_imbalanced_ca.pkl"
 
     logger.info('generating data --Started')
 
@@ -47,9 +49,9 @@ if comm.pid() == 0:
 
     # number of models that we are using
     initial_models = {
-        'LR': LogisticRegression(input_shape, labels_number),
-        'MLP': MLP(input_shape, labels_number)
-        # 'CNN': CNN_OriginalFedAvg(),
+        # 'LR': LogisticRegression(input_shape, labels_number),
+        # 'MLP': MLP(input_shape, labels_number)
+         'CNN': CNN_OriginalFedAvg()
     }
 
     for model_name, gen_model in initial_models.items():
@@ -57,9 +59,9 @@ if comm.pid() == 0:
         """
           each params=(min,max,num_value)
         """
-        batch_size = (5, 128, 5)
-        epochs = (5, 20, 4)
-        num_rounds = (13, 80, 5)
+        batch_size = (10, 50, 2)
+        epochs = (5, 20, 2)
+        num_rounds = (1000, 1000, 1)
 
         hyper_params = build_random(batch_size=batch_size, epochs=epochs, num_rounds=num_rounds)
         configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)

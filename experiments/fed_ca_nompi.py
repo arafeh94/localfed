@@ -28,7 +28,7 @@ logger = logging.getLogger('main')
 comm = Comm()
 
 # data_file = "../datasets/pickles/10_1000_big_ca.pkl"
-data_file = "../datasets/pickles/10_800_1000_big_imbalanced_ca.pkl"
+data_file = "../datasets/pickles/10_4800_6000_big_imbalanced_ca.pkl"
 # custom test file contains only 20 samples from each client
 # custom_test_file = '../datasets/pickles/test_data.pkl'
 
@@ -41,13 +41,13 @@ dg.describe()
 # building Hyperparameters
 input_shape = 28 * 28
 labels_number = 10
-percentage_nb_client = 0.3
+percentage_nb_client = 0.2
 
 # number of models that we are using
 initial_models = {
-    'LR': LogisticRegression(input_shape, labels_number),
-    'MLP': MLP(input_shape, labels_number)
-    # 'CNN': CNN_OriginalFedAvg()
+    # 'LR': LogisticRegression(input_shape, labels_number),
+    # 'MLP': MLP(input_shape, labels_number)
+    'CNN': CNN_OriginalFedAvg()
 }
 
 runs = {}
@@ -57,9 +57,9 @@ for model_name, gen_model in initial_models.items():
     """
       each params=(min,max,num_value)
     """
-    batch_size = (5, 128, 5)
-    epochs = (5, 20, 3)
-    num_rounds = (13, 80, 3)
+    batch_size = (10, 50, 2)
+    epochs = (5, 20, 2)
+    num_rounds = (1000, 1000, 1)
 
     hyper_params = build_random(batch_size=batch_size, epochs=epochs, num_rounds=num_rounds)
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
@@ -106,7 +106,7 @@ for model_name, gen_model in initial_models.items():
 
         federated.plug(plugins.WandbLogger(config={'lr': learn_rate, 'batch_size': batch_size, 'epochs': epochs,
                                                    'num_rounds': num_rounds, 'data_file': data_file,
-                                                   'model': model_name, 'os': platform.system(),
+                                                   'model': model_name, 'os': platform.system()+'-1',
                                                    'selected_clients': percentage_nb_client}))
 
         logger.info("----------------------")
