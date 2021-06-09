@@ -100,6 +100,7 @@ class FederatedLearning:
         weighted_loss = [local_loss[tid] * sample_size[tid] for tid in local_loss]
         total_accuracy = sum(weighted_accuracy) / sum(sample_size.values())
         total_loss = sum(weighted_loss) / sum(sample_size.values())
+        self.context.store(acc=total_accuracy, loss=total_loss, local_acc=local_accuracy, local_loss=local_loss)
         return total_accuracy, total_loss, local_accuracy, local_loss
 
     def compare(self, other, verbose=1):
