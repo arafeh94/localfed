@@ -20,30 +20,74 @@ class FederatedEventPlug(ABC):
         self.only = only
 
     def on_federated_started(self, params):
+        """
+        :param params: params['context']
+        :return:
+        """
         pass
 
     def on_federated_ended(self, params):
+        """
+
+        :param params: params['aggregated_model'], params['context']
+        :return:
+        """
         pass
 
     def on_init(self, params):
+        """
+        :param params: params['global_model'], params['context']
+        :return:
+        """
         pass
 
     def on_training_start(self, params):
+        """
+
+        :param params: params['trainers_data'], params['context']
+        :return:
+        """
         pass
 
     def on_training_end(self, params):
+        """
+
+        :param params: params['trainers_weights'], params['sample_size'], params['context']
+        :return:
+        """
         pass
 
     def on_aggregation_end(self, params):
+        """
+
+        :param params: params['global_weights'], params['global_model'], params['context']
+        :return:
+        """
         pass
 
     def on_round_end(self, params):
+        """
+
+        :param params: params['round'], params['accuracy'], params['loss'], params['local_acc'], params['local_loss'],
+            params['context']
+        :return:
+        """
         pass
 
     def on_round_start(self, params):
+        """
+
+        :param params: params['round'], params['context']
+        :return:
+        """
         pass
 
     def on_trainers_selected(self, params):
+        """
+
+        :param params: params['trainers_ids'], params['context']
+        :return:
+        """
         pass
 
     def on_trainer_start(self, params):
