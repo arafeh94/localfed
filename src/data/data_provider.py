@@ -6,8 +6,6 @@ import sys
 from abc import abstractmethod
 from zipfile import ZipFile
 
-import mysql.connector
-import requests
 import wget
 
 from src import manifest
@@ -85,6 +83,7 @@ class PickleDataProvider(DataProvider):
 
 class SQLDataProvider(DataProvider):
     def __init__(self, host, user, password, database, query, fetch_x_y: callable):
+        import mysql.connector
         self.db = mysql.connector.connect(
             host=host,
             user=user,
