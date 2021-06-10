@@ -29,7 +29,7 @@ dqn = DeepQNetwork(400350, 64, 16, 50)
 optimizer = optim.Adam(dqn.parameters(), lr=1e-6)
 criterion = nn.MSELoss()
 dnq_learn_batch = 10
-epsilon = 0
+epsilon = 0.99
 eps_reduction = 0.01
 gamma = 0.99
 
@@ -76,11 +76,12 @@ def memories(state, action, reward, new_state):
 def action(state):
     global epsilon
     if epsilon > random.uniform(0, 1):
-        epsilon -= eps_reduction
-        return np.random.choice(list(client_data.keys()), per_round)
+        epsilon += eps_reduction
+        client_eval = np.random.dirichlet(np.ones(len(client_data)), size=1)[0]
+        return torch.topk(torch.tensor(client_eval), per_round)[1].numpy(), client_eval
     else:
         client_eval = dqn(state.flatten())
-        return torch.topk(client_eval, per_round)[1].numpy()
+        return torch.topk(client_eval, per_round)[1].numpy(), client_eval
 
 
 def calculate_rewards():
@@ -94,7 +95,7 @@ def learn():
     learn_sample = random.sample(memory, 2)
     state_batch = torch.cat(tuple(torch.unsqueeze(d[0].flatten(), 0) for d in learn_sample))
     new_state_batch = torch.cat(tuple(torch.unsqueeze(d[3].flatten(), 0) for d in learn_sample))
-    action_batch = torch.cat(tuple(torch.tensor([d[1]]) for d in learn_sample))
+    action_batch = torch.cat(tuple(torch.unsqueeze(d[1], 0) for d in learn_sample))
     reward_batch = torch.tensor([d[2] for d in learn_sample])
     output_batch = dqn(state_batch)
     output_1_batch = dqn(new_state_batch)
@@ -110,19 +111,19 @@ def learn():
     optimizer.step()
 
 
-def init():
+def main():
     client_train(clients_ids=client_data.keys())
     aggregate(client_ids=client_data.keys())
-    current_state = get_state()
 
+    current_state = get_state()
     while True:
-        selected_clients = action(current_state)
+        selected_clients, r_action = action(current_state)
         client_train(clients_ids=selected_clients)
         aggregate(client_ids=selected_clients)
         reward = calculate_rewards()
         next_state = get_state()
-        memories(current_state, selected_clients, reward, next_state)
+        memories(current_state, r_action, reward, next_state)
         learn()
 
 
-init()
+main()

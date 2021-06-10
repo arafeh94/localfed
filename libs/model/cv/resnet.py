@@ -112,9 +112,11 @@ class Bottleneck(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, num_classes=10, zero_init_residual=False, groups=1,
+    def __init__(self, channels, xy_size, block, layers, num_classes=10, zero_init_residual=False, groups=1,
                  width_per_group=64, replace_stride_with_dilation=None, norm_layer=None, KD=False):
         super(ResNet, self).__init__()
+        self.channels = channels
+        self.xy_size = xy_size
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
         self._norm_layer = norm_layer
@@ -131,7 +133,7 @@ class ResNet(nn.Module):
 
         self.groups = groups
         self.base_width = width_per_group
-        self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=3, stride=1, padding=1,
+        self.conv1 = nn.Conv2d(channels, self.inplanes, kernel_size=3, stride=1, padding=1,
                                bias=False)
         self.bn1 = nn.BatchNorm2d(self.inplanes)
         self.relu = nn.ReLU(inplace=True)
@@ -183,7 +185,7 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        x = x.view(-1, 3, 224, 224)
+        x = x.view(-1, self.channels, self.xy_size, self.xy_size)
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)  # B x 16 x 32 x 32
@@ -200,14 +202,14 @@ class ResNet(nn.Module):
             return x
 
 
-def resnet56(class_num, pretrained=False, path=None, **kwargs):
+def resnet56(class_num, channels: int, xy_size: int, pretrained=False, path=None, **kwargs):
     """
     Constructs a ResNet-110 model.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained.
     """
-    model = ResNet(Bottleneck, [6, 6, 6], class_num, **kwargs)
+    model = ResNet(channels, xy_size, Bottleneck, [6, 6, 6], class_num, **kwargs)
     if pretrained:
         checkpoint = torch.load(path)
         state_dict = checkpoint['state_dict']
@@ -223,7 +225,7 @@ def resnet56(class_num, pretrained=False, path=None, **kwargs):
     return model
 
 
-def resnet110(class_num, pretrained=False, path=None, **kwargs):
+def resnet110(class_num, channels: int, xy_size: int, pretrained=False, path=None, **kwargs):
     """
     Constructs a ResNet-110 model.
 
@@ -231,7 +233,7 @@ def resnet110(class_num, pretrained=False, path=None, **kwargs):
         pretrained (bool): If True, returns a model pre-trained.
     """
     logging.info("path = " + str(path))
-    model = ResNet(Bottleneck, [12, 12, 12], class_num, **kwargs)
+    model = ResNet(channels, xy_size, Bottleneck, [12, 12, 12], class_num, **kwargs)
     if pretrained:
         checkpoint = torch.load(path)
         state_dict = checkpoint['state_dict']

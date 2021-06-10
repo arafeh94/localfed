@@ -1,6 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 from functools import reduce
+from typing import List
 
 from torch import nn
 
@@ -20,22 +21,20 @@ class TrainerManager:
 
 
 class SeqTrainerManager(TrainerManager):
-    def __init__(self):
-        self.trainers = {}
+    class TrainerProvider(ABC):
+        @abstractmethod
+        def collect(self, trainer_id, config: TrainerParams) -> Trainer:
+            pass
+
+    def __init__(self, trainer_provider: TrainerProvider = None):
         self.train_requests = {}
-
-    def _create(self, trainer_id, config: TrainerParams) -> Trainer:
-        trainer = config.trainer_class()
-        self.trainers[trainer_id] = trainer
-        return trainer
-
-    def _trainer(self, trainer_id, config):
-        if trainer_id not in self.trainers.keys():
-            self.trainers[trainer_id] = self._create(trainer_id, config)
-        return self.trainers[trainer_id]
+        self.trainer_provider = trainer_provider
+        if trainer_provider is None:
+            self.trainer_provider = SharedTrainerProvider()
 
     def train_req(self, trainer_id, model, train_data, context, config):
-        request = [self._trainer(trainer_id, config).train, model, train_data, context, config]
+        trainer = self.trainer_provider.collect(trainer_id, config)
+        request = [trainer.train, model, train_data, context, config]
         self.train_requests[trainer_id] = request
         return request
 
@@ -48,6 +47,24 @@ class SeqTrainerManager(TrainerManager):
             trainers_sample_size[trainer_id] = sample_size
         self.train_requests = {}
         return trainers_trained_weights, trainers_sample_size
+
+
+class SharedTrainerProvider(SeqTrainerManager.TrainerProvider):
+    def __init__(self):
+        self.trainers = {}
+
+    def collect(self, trainer_id, config: TrainerParams) -> Trainer:
+        return self._trainer(trainer_id, config)
+
+    def _create(self, trainer_id, config: TrainerParams) -> Trainer:
+        trainer = config.trainer_class()
+        self.trainers[trainer_id] = trainer
+        return trainer
+
+    def _trainer(self, trainer_id, config):
+        if trainer_id not in self.trainers.keys():
+            self.trainers[trainer_id] = self._create(trainer_id, config)
+        return self.trainers[trainer_id]
 
 
 class MPITrainerManager(TrainerManager):

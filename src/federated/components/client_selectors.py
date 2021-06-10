@@ -1,9 +1,6 @@
 import random
 from typing import List
-
-import torch
-
-from src.federated.protocols import Trainer, ClientSelector
+from src.federated.protocols import ClientSelector
 
 
 class All(ClientSelector):

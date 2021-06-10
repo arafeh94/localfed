@@ -53,14 +53,3 @@ class ClientSelector:
     @abstractmethod
     def select(self, client_ids: List[int], context) -> List[int]:
         pass
-
-    def on_client_selected(self, client_id, trainer_weights, sample_size, global_weights):
-        """
-        function to let the client selectors knows the accuracy results of selecting such a client
-        :param global_weights:
-        :param sample_size:
-        :param trainer_weights:
-        :param client_id:
-        :return:
-        """
-        pass

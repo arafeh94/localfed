@@ -52,3 +52,6 @@ logger.info("----------------------")
 logger.info("start federated 1")
 logger.info("----------------------")
 federated.start()
+
+a = federated.context.history
+print(a)
