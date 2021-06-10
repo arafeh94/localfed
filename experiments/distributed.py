@@ -2,6 +2,8 @@
 import sys
 from os.path import dirname
 
+from src.federated.subscribers import Timer
+
 sys.path.append(dirname(__file__) + '../')
 import logging
 from torch import nn
@@ -49,7 +51,7 @@ if comm.pid() == 0:
     )
 
     federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
-    federated.add_subscriber(subscribers.FederatedTimer([Events.ET_TRAINER_FINISHED]))
+    federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
     federated.add_subscriber(subscribers.FedPlot())
     # federated.plug(plugins.CustomModelTestPlug(PickleDataProvider(test_file).collect().as_tensor(), 8))
     # federated.plug(plugins.FedSave())

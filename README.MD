@@ -293,7 +293,7 @@ federated = ...
 # display log only when federated task is selecting trainers and when the round is finished
 federated.plug(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 # compute the time needed to all trainers to finished training
-federated.plug(subscribers.FederatedTimer([Events.ET_TRAINER_FINISHED]))
+federated.plug(subscribers.Timer([Events.ET_TRAINER_FINISHED]))
 # show plot
 # per_rounds -> trainers accuracy after each rounds
 # per_federated_local -> show plots of local trainer accuracy and loss

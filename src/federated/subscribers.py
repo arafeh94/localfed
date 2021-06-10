@@ -14,64 +14,57 @@ from src.federated.events import FederatedEventPlug, Events
 from src.federated.federated import FederatedLearning
 
 
-class FederatedTimer(FederatedEventPlug):
+class Timer(FederatedEventPlug):
+    FEDERATED = 'federated'
+    ROUND = 'round'
+    TRAINING = 'training'
+    AGGREGATION = 'aggregation'
+
     def __init__(self, show_only=None):
         super().__init__(None)
-        self.last_tick = 0
-        self.last_tick_cpu = 0
-        self.first_tick = 0
+        self.ticks = defaultdict(lambda: 0)
         self.show_only = show_only
         self.logger = logging.getLogger("fed_timer")
+        if show_only is not None:
+            for item in show_only:
+                if item not in [Timer.FEDERATED, Timer.ROUND, Timer.AGGREGATION, Timer.TRAINING]:
+                    Exception('requested timer does not exists')
 
-    def tick(self, name):
+    def tick(self, name, is_done):
         now = time.time()
         now_cpu = time.process_time()
-        dif = now - self.last_tick
-        dif_cpu = now_cpu - self.last_tick_cpu
-        self.last_tick = now
-        self.last_tick_cpu = now_cpu
-        if self.show_only is not None and name not in self.show_only:
-            return
-        self.logger.info(f'{name}, elapsed: {round(dif, 3)}s')
-        self.logger.info(f'{name}, elapsed: {round(dif_cpu, 3)}s of cpu time')
+        if is_done:
+            dif = now - self.ticks[name]
+            dif_cpu = now_cpu - self.ticks[name + '_cpu']
+            if self.show_only is not None and name not in self.show_only:
+                return
+            self.logger.info(f'{name}, elapsed: {round(dif, 3)}s')
+            self.logger.info(f'{name}, elapsed: {round(dif_cpu, 3)}s of cpu time')
+        else:
+            self.ticks[name] = now
+            self.ticks[name + '_cpu'] = now_cpu
 
     def on_federated_started(self, params):
-        self.first_tick = time.time()
-        self.last_tick = time.time()
-        self.last_tick_cpu = time.process_time()
-        self.tick(Events.ET_FED_START)
+        self.tick('federated', False)
 
     def on_federated_ended(self, params):
-        self.tick(Events.ET_FED_END)
-        dif = time.time() - self.first_tick
-        self.logger.info(f"federated total time: {dif}s")
+        self.tick('federated', True)
 
     def on_training_start(self, params):
-        self.tick(Events.ET_TRAIN_START)
+        self.tick('training', False)
 
     def on_training_end(self, params):
-        self.tick(Events.ET_TRAIN_END)
+        self.tick('training', True)
+        self.tick('aggregation', False)
 
     def on_round_start(self, params):
-        self.tick(Events.ET_ROUND_START)
+        self.tick('round', False)
 
     def on_round_end(self, params):
-        self.tick(Events.ET_ROUND_FINISHED)
+        self.tick('round', True)
 
     def on_aggregation_end(self, params):
-        self.tick(Events.ET_AGGREGATION_END)
-
-    def on_trainers_selected(self, params):
-        self.tick(Events.ET_TRAINER_SELECTED)
-
-    def on_trainer_start(self, params):
-        self.tick(Events.ET_TRAINER_STARTED)
-
-    def on_trainer_end(self, params):
-        self.tick(Events.ET_TRAINER_FINISHED)
-
-    def on_init(self, params):
-        self.tick(Events.ET_INIT)
+        self.tick('aggregation', True)
 
     def force(self) -> []:
         return [Events.ET_FED_START, Events.ET_TRAINER_FINISHED, Events.ET_TRAINER_STARTED, Events.ET_TRAIN_START,

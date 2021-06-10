@@ -4,6 +4,7 @@ import logging
 import sys
 from os.path import dirname
 
+from src.federated.subscribers import Timer
 
 sys.path.append(dirname(__file__) + '../')
 from libs.model.collection import MLP
@@ -126,8 +127,8 @@ if not is_mpi or is_mpi and comm.pid() == 0:
             test_on=FederatedLearning.TEST_ON_ALL
         )
 
-        federated.plug(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
-        federated.plug(subscribers.FederatedTimer([Events.ET_TRAINER_FINISHED]))
+        federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
+        federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
         # federated.plug(plugins.FedPlot())
         # federated.plug(plugins.FedSave())
         # federated.plug(plugins.WandbLogger(config={'method': 'genetic', 'max_rounds': 10}))

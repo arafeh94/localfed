@@ -11,6 +11,7 @@ from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
 from src.federated.components.trainer_manager import SeqTrainerManager
+from src.federated.subscribers import Timer
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
@@ -37,7 +38,7 @@ federated = FederatedLearning(
 )
 
 federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
-federated.add_subscriber(subscribers.FederatedTimer([Events.ET_ROUND_FINISHED]))
+federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
 federated.add_subscriber(subscribers.FedPlot())
 # federated.plug(plugins.FedSave())
 # federated.plug(plugins.WandbLogger(config={'num_rounds': 10}))

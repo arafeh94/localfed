@@ -7,6 +7,7 @@ from torch import nn
 
 from apps.flsim.src.client_selector import RLSelector
 from apps.flsim.src.initializer import rl_module_creator
+from src.federated.subscribers import Timer
 
 sys.path.append(dirname(__file__) + '../')
 
@@ -122,7 +123,7 @@ for name, config in configs.items():
     )
 
     federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
-    federated.add_subscriber(subscribers.FederatedTimer([Events.ET_TRAINER_FINISHED]))
+    federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
     # federated.plug(plugins.FedPlot())
     # federated.plug(plugins.FedSave())
     # federated.plug(plugins.WandbLogger(config={'method': 'genetic', 'max_rounds': 10}))

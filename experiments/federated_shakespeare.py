@@ -11,6 +11,7 @@ from src.federated.federated import Events as et
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
 from src.federated.components.trainer_manager import SeqTrainerManager
+from src.federated.subscribers import Timer
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
@@ -38,7 +39,7 @@ federated = FederatedLearning(
 
 federated.add_subscriber(subscribers.FederatedLogger([
     et.ET_ROUND_FINISHED, et.ET_TRAINER_SELECTED, et.ET_TRAINER_STARTED, et.ET_TRAINER_FINISHED]))
-federated.add_subscriber(subscribers.FederatedTimer([et.ET_TRAINER_FINISHED, et.ET_TRAIN_END]))
+federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
 federated.add_subscriber(subscribers.FedPlot())
 # federated.plug(plugins.CustomModelTestPlug(PickleDataProvider(test_file).collect().as_tensor(), 8))
 
