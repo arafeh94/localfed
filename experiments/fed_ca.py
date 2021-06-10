@@ -34,7 +34,7 @@ comm = Comm()
 if comm.pid() == 0:
 
     # data_file = "../datasets/pickles/10_1000_big_ca.pkl"
-    data_file = "../datasets/pickles/10_4800_6000_big_imbalanced_ca.pkl"
+    data_file = "../datasets/pickles/10_2400_3000_big_imbalanced_ca.pkl"
 
     logger.info('generating data --Started')
 
@@ -45,7 +45,7 @@ if comm.pid() == 0:
     # building Hyperparameters
     input_shape = 28 * 28
     labels_number = 10
-    percentage_nb_client = 0.3
+    percentage_nb_client = 0.2
 
     # number of models that we are using
     initial_models = {
@@ -60,7 +60,7 @@ if comm.pid() == 0:
           each params=(min,max,num_value)
         """
         batch_size = (10, 50, 2)
-        epochs = (5, 20, 2)
+        epochs = (1, 1, 1)
         num_rounds = (1000, 1000, 1)
 
         hyper_params = build_random(batch_size=batch_size, epochs=epochs, num_rounds=num_rounds)
