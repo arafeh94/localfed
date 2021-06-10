@@ -33,7 +33,7 @@ built in:
   complete this task. Refer to MPI Section to see examples.
 
 ```python
-from src.federated.trainer_manager import SeqTrainerManager
+from src.federated.components.trainer_manager import SeqTrainerManager
 from src.federated.components import trainers
 from src.federated.protocols import TrainerParams
 from src.federated.federated import FederatedLearning
@@ -174,7 +174,7 @@ from torch import nn
 from src.federated.components import metrics, client_selectors, aggregators, params, trainers
 from libs.model.linear.lr import LogisticRegression
 from src.federated.federated import FederatedLearning
-from src.federated.trainer_manager import SeqTrainerManager
+from src.federated.components.trainer_manager import SeqTrainerManager
 from src.federated.protocols import TrainerParams
 
 client_data = {}
@@ -182,15 +182,15 @@ trainer_manager = SeqTrainerManager()
 trainer_params = TrainerParams(trainer_class=trainers.CPUChunkTrainer, batch_size=50, epochs=20, optimizer='sgd',
                                criterion='cel', lr=0.1)
 federated = FederatedLearning(
-  trainer_manager=trainer_manager,
-  trainer_params=trainer_params,
-  aggregator=aggregators.AVGAggregator(),
-  tester=metrics.AccLoss(batch_size=50, criterion=nn.CrossEntropyLoss()),
-  client_selector=client_selectors.Random(3),
-  trainers_data_dict=client_data,
-  initial_model=lambda: LogisticRegression(28 * 28, 10),
-  num_rounds=0,
-  desired_accuracy=0.99
+    trainer_manager=trainer_manager,
+    trainer_params=trainer_params,
+    aggregator=aggregators.AVGAggregator(),
+    tester=metrics.AccLoss(batch_size=50, criterion=nn.CrossEntropyLoss()),
+    client_selector=client_selectors.Random(3),
+    trainers_data_dict=client_data,
+    initial_model=lambda: LogisticRegression(28 * 28, 10),
+    num_rounds=0,
+    desired_accuracy=0.99
 )
 federated.start()
 ```
@@ -286,24 +286,24 @@ Receiving additionally the parameters that are active in the current step.
 Example of federated event subscribers:
 
 ```python
-from src.federated import plugins
+from src.federated import subscribers
 from src.federated.federated import Events
 
 federated = ...
 # display log only when federated task is selecting trainers and when the round is finished
-federated.plug(plugins.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
+federated.plug(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 # compute the time needed to all trainers to finished training
-federated.plug(plugins.FederatedTimer([Events.ET_TRAINER_FINISHED]))
+federated.plug(subscribers.FederatedTimer([Events.ET_TRAINER_FINISHED]))
 # show plot
 # per_rounds -> trainers accuracy after each rounds
 # per_federated_local -> show plots of local trainer accuracy and loss
 # per_federated_total-> show only one plot when the federated task is finished showing the improvement of the 
 #   model accuracy after each round
-federated.plug(plugins.FedPlot(per_rounds=True, per_federated_local=True, per_federated_total=True))
+federated.plug(subscribers.FedPlot(per_rounds=True, per_federated_local=True, per_federated_total=True))
 # save data to wandb online service
-federated.plug(plugins.WandbLogger(config={'method': 'genetic', 'max_rounds': 10}))
+federated.plug(subscribers.WandbLogger(config={'method': 'genetic', 'max_rounds': 10}))
 # save the results into file
-federated.plug(plugins.FedSave())
+federated.plug(subscribers.FedSave())
 ```
 
 ## Compare Federated Runs

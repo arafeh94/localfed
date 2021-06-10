@@ -3,16 +3,16 @@ import logging
 from torch import nn
 
 import src
-from src.federated.components import metrics, client_selectors, aggregators, params, trainers
+from src.federated.components import metrics, client_selectors, aggregators, trainers
 from libs.model.linear.lr import LogisticRegression
 from src.data.data_provider import PickleDataProvider
-from src.federated import plugins
+from src.federated import subscribers
 from src.data.data_generator import DataGenerator
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.fedruns import FedRuns
 from src.federated.protocols import TrainerParams
-from src.federated.trainer_manager import TrainerManager, SeqTrainerManager
+from src.federated.components.trainer_manager import SeqTrainerManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
@@ -75,7 +75,7 @@ for name, federated_params in federated_configs.items():
 
     federated = FederatedLearning(
         trainer_manager=trainer_manager,
-        trainer_params=trainer_params,
+        trainer_config=trainer_params,
         aggregator=aggregators.AVGAggregator(),
         metrics=metrics.AccLoss(batch_size=federated_params['batch_size'], criterion=nn.CrossEntropyLoss()),
         client_selector=client_selectors.Random(federated_params['num_clients']),
@@ -85,9 +85,9 @@ for name, federated_params in federated_configs.items():
         desired_accuracy=federated_params['desired_accuracy']
     )
 
-    federated.plug(plugins.FederatedLogger([Events.ET_ROUND_FINISHED]))
-    federated.plug(plugins.CustomModelTestPlug(PickleDataProvider(test_file).collect().as_tensor(),
-                                               federated_params['batch_size'], False))
+    federated.add_subscriber(subscribers.FederatedLogger([Events.ET_ROUND_FINISHED]))
+    federated.add_subscriber(subscribers.CustomModelTestPlug(PickleDataProvider(test_file).collect().as_tensor(),
+                                                             federated_params['batch_size'], False))
 
     logger.info("----------------------")
     logger.info("start federated " + name)

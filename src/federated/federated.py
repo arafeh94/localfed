@@ -1,27 +1,28 @@
 import copy
-import logging
 import math
 from collections import defaultdict
 from functools import reduce
 from typing import Dict
 
 from src import tools
+from src.apis.broadcaster import Broadcaster
 from src.data.data_container import DataContainer
 from src.federated.events import Events, FederatedEventPlug
-from src.federated.protocols import Aggregator, ClientSelector, ModelInfer, Trainer
-from src.federated.trainer_manager import TrainerManager
+from src.federated.protocols import Aggregator, ClientSelector, ModelInfer
+from src.federated.components.trainer_manager import TrainerManager
 
 
-class FederatedLearning:
+class FederatedLearning(Broadcaster):
     TEST_ON_ALL = 0
     TEST_ON_SELECTED = 1
 
-    def __init__(self, trainer_manager: TrainerManager, trainer_params, aggregator: Aggregator,
+    def __init__(self, trainer_manager: TrainerManager, trainer_config, aggregator: Aggregator,
                  client_selector: ClientSelector, metrics: ModelInfer, trainers_data_dict: Dict[int, DataContainer],
                  initial_model: callable, num_rounds=10, desired_accuracy=0.9, train_ratio=0.8,
                  ignore_acc_decrease=False, test_on=TEST_ON_ALL, optimizer: str = None, **kwargs):
+        super().__init__()
         self.optimizer = optimizer
-        self.trainer_params = trainer_params
+        self.trainer_config = trainer_config
         self.trainer_manager = trainer_manager
         self.aggregator = aggregator
         self.client_selector = client_selector
@@ -84,7 +85,7 @@ class FederatedLearning:
         for trainer_id, train_data in trainers_train_data.items():
             self.broadcast(Events.ET_TRAINER_STARTED, trainer_id=trainer_id, train_data=train_data)
             model_copy = copy.deepcopy(self.context.model)
-            self.trainer_manager.train_req(trainer_id, model_copy, train_data, self.context, self.trainer_params)
+            self.trainer_manager.train_req(trainer_id, model_copy, train_data, self.context, self.trainer_config)
         return self.trainer_manager.resolve()
 
     def infer(self, model, trainers_data: Dict[int, DataContainer]):
@@ -141,22 +142,7 @@ class FederatedLearning:
 
     def broadcast(self, event_name: str, **kwargs):
         args = reduce(lambda x, y: dict(x, **y), ({'context': self.context}, kwargs))
-        if event_name in self.events:
-            for item in self.events[event_name]:
-                item(args)
-
-    def register_event(self, event_name: str, action: callable):
-        if event_name not in self.events:
-            self.events[event_name] = []
-        self.events[event_name].append(action)
-
-    def plug(self, plugin: FederatedEventPlug):
-        events = plugin.as_events()
-        for event_name, call in events.items():
-            if plugin.only is not None and event_name not in plugin.only:
-                if event_name not in plugin.force():
-                    continue
-            self.register_event(event_name, call)
+        super(FederatedLearning, self).broadcast(event_name, **args)
 
     class Context:
         def __init__(self):

@@ -2,20 +2,16 @@ import logging
 
 from torch import nn
 
-import src
 from apps.flsim.src.client_selector import RLSelector
 from apps.flsim.src.initializer import rl_module_creator
-from libs.model.cv.cnn import CNN_OriginalFedAvg
 from src.data import data_generator
-from src.federated.components import metrics, client_selectors, aggregators, params, trainers
+from src.federated.components import metrics, aggregators, trainers
 from libs.model.linear.lr import LogisticRegression
-from src.data.data_provider import PickleDataProvider
-from src.federated import plugins
-from src.data.data_generator import DataGenerator
+from src.federated import subscribers
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
-from src.federated.trainer_manager import TrainerManager, SeqTrainerManager
+from src.federated.components.trainer_manager import SeqTrainerManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
@@ -37,7 +33,7 @@ client_selector = RLSelector(10, client_director, w_first)
 
 federated = FederatedLearning(
     trainer_manager=SeqTrainerManager(),
-    trainer_params=trainer_params,
+    trainer_config=trainer_params,
     aggregator=aggregators.AVGAggregator(),
     metrics=metrics.AccLoss(batch_size=50, criterion=nn.CrossEntropyLoss()),
     client_selector=client_selector,
@@ -48,8 +44,8 @@ federated = FederatedLearning(
     desired_accuracy=0.99
 )
 
-federated.plug(plugins.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
-federated.plug(plugins.FederatedTimer([Events.ET_ROUND_FINISHED]))
+federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
+federated.add_subscriber(subscribers.FederatedTimer([Events.ET_ROUND_FINISHED]))
 # federated.plug(plugins.FedPlot())
 # federated.plug(plugins.FedSave())
 # federated.plug(plugins.WandbLogger(config={'num_rounds': 10}))

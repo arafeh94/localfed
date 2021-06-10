@@ -10,16 +10,15 @@ from apps.flsim.src.initializer import rl_module_creator
 
 sys.path.append(dirname(__file__) + '../')
 
-from libs.model.linear.net import Net
 from libs.model.linear.lr import LogisticRegression
 from src.federated.components.trainers import CPUTrainer
 from src.federated.protocols import TrainerParams
 from apps.genetic_selectors.src import initializer
 from src.federated.components import metrics, client_selectors, aggregators
-from src.federated import plugins, fedruns
+from src.federated import subscribers, fedruns
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
-from src.federated.trainer_manager import SeqTrainerManager
+from src.federated.components.trainer_manager import SeqTrainerManager
 from src.data import data_generator
 
 logging.basicConfig(level=logging.INFO)
@@ -111,7 +110,7 @@ for name, config in configs.items():
                                    criterion='cel', lr=0.1)
     federated = FederatedLearning(
         trainer_manager=trainer_manager,
-        trainer_params=trainer_params,
+        trainer_config=trainer_params,
         aggregator=aggregators.AVGAggregator(),
         metrics=metrics.AccLoss(batch_size=config['batch_size'], criterion=nn.CrossEntropyLoss()),
         client_selector=client_selectors.Random(config['clients_per_round']),
@@ -122,8 +121,8 @@ for name, config in configs.items():
         test_on=FederatedLearning.TEST_ON_ALL
     )
 
-    federated.plug(plugins.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
-    federated.plug(plugins.FederatedTimer([Events.ET_TRAINER_FINISHED]))
+    federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
+    federated.add_subscriber(subscribers.FederatedTimer([Events.ET_TRAINER_FINISHED]))
     # federated.plug(plugins.FedPlot())
     # federated.plug(plugins.FedSave())
     # federated.plug(plugins.WandbLogger(config={'method': 'genetic', 'max_rounds': 10}))

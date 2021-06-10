@@ -1,4 +1,7 @@
+import typing
 from abc import ABC
+
+from src.apis.broadcaster import Subscriber
 
 
 class Events:
@@ -15,9 +18,10 @@ class Events:
     ET_TRAINER_FINISHED = 'trainer_ended'
 
 
-class FederatedEventPlug(ABC):
+class FederatedEventPlug(Subscriber):
+
     def __init__(self, only: None or [] = None):
-        self.only = only
+        super().__init__(only)
 
     def on_federated_started(self, params):
         """
@@ -99,7 +103,7 @@ class FederatedEventPlug(ABC):
     def force(self) -> []:
         return []
 
-    def as_events(self):
+    def map_events(self) -> typing.Dict[str, typing.Callable]:
         return {
             Events.ET_FED_START: self.on_federated_started,
             Events.ET_INIT: self.on_init,

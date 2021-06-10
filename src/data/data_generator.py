@@ -1,13 +1,18 @@
 import copy
 import logging
+import os
 import random
+from collections import defaultdict
+
 import numpy as np
 import pickle
 
 from libs.data_distribute import non_iid_partition_with_dirichlet_distribution
-from src import tools
+from src import tools, manifest
 from src.data.data_container import DataContainer
-from src.data.data_provider import DataProvider
+from src.data.data_provider import DataProvider, PickleDataProvider
+
+logger = logging.getLogger('data_generator')
 
 
 class DataGenerator:
@@ -62,27 +67,45 @@ class DataGenerator:
         return clients_data
 
     def distribute_shards(self, num_clients, shards_per_client, min_size, max_size, verbose=0):
-        clients_data = {}
-        xs = self.data.x.tolist()
-        ys = self.data.y.tolist()
-        unique_labels = list(iter(np.unique(ys)))
-        for i in range(num_clients):
+        clients_data = defaultdict(list)
+        grouper = self.Grouper(self.data.x, self.data.y)
+        for client_id in range(num_clients):
             client_data_size = random.randint(min_size, max_size)
-            selected_shards = random.sample(unique_labels, shards_per_client)
-            client_x = []
-            client_y = []
-            for index, shard in enumerate(selected_shards):
-                while len(client_y) / client_data_size < (index + 1) / shards_per_client:
-                    for inner_index, item in enumerate(ys):
-                        if item == shard:
-                            client_x.append(xs.pop(inner_index))
-                            client_y.append(ys.pop(inner_index))
-                            break
-            clients_data[i] = DataContainer(client_x, client_y).as_tensor(self.xtt, self.ytt)
-            if verbose > 0:
-                print(f"client_{i} finished")
+            selected_shards = grouper.groups(shards_per_client)
+            logging.getLogger('distribute_shards').info(f'generating data for {client_id}-{selected_shards}')
+            client_x = None
+            client_y = None
+            for shard in selected_shards:
+                rx, ry = grouper.get(shard, int(client_data_size / len(selected_shards)))
+                client_x = rx if client_x is None else np.concatenate((client_x, rx))
+                client_y = ry if client_y is None else np.concatenate((client_y, ry))
+            clients_data[client_id] = DataContainer(client_x, client_y).as_tensor(self.xtt, self.ytt)
         self.distributed = clients_data
         return clients_data
+
+    class Grouper:
+        def __init__(self, x, y):
+            self.grouped = defaultdict(list)
+            self.selected = defaultdict(lambda: 0)
+            self.label_cursor = 0
+            for label, data in zip(y, x):
+                self.grouped[label].append(data)
+            self.all_labels = list(self.grouped.keys())
+
+        def groups(self, count=None):
+            if count is None:
+                return self.all_labels
+            selected_labels = []
+            for i in range(count):
+                selected_labels.append(self.all_labels[self.label_cursor])
+                self.label_cursor = (self.label_cursor + 1) % len(self.all_labels)
+            return selected_labels
+
+        def get(self, label, size):
+            x = self.grouped[label][self.selected[label]:self.selected[label] + size]
+            y = [label] * len(x)
+            self.selected[label] += size
+            return x, y
 
     def distribute_continuous(self, num_clients, min_size, max_size):
         clients_data = {}
@@ -117,9 +140,15 @@ class DataGenerator:
 
     def describe(self, selection=None):
         if self.distributed is None:
-            print("distribute first")
+            logging.getLogger(self).error('you have to distribute first')
             return
         tools.detail(self.distributed, selection)
+
+    def get_distributed_data(self):
+        if self.distributed is None:
+            logging.getLogger('data_generator').error('you have to distribute first')
+            return None
+        return self.distributed
 
     def save(self, path):
         obj = copy.deepcopy(self)
@@ -133,3 +162,4 @@ def load(path) -> DataGenerator:
     file = open(path, 'rb')
     dg = pickle.load(file)
     return dg
+

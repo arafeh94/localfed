@@ -11,14 +11,13 @@ from src.data import data_generator
 from libs.model.linear.lr import LogisticRegression
 from src.federated.components.trainers import CPUTrainer
 from src.federated.protocols import TrainerParams
-import src
 from apps.genetic_selectors.src import initializer
 from src.apis.mpi import Comm
 from src.federated.components import metrics, client_selectors, aggregators
-from src.federated import plugins, fedruns
+from src.federated import subscribers, fedruns
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
-from src.federated.trainer_manager import MPITrainerManager
+from src.federated.components.trainer_manager import MPITrainerManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
@@ -96,7 +95,7 @@ if comm.pid() == 0:
                                        criterion='cel', lr=0.1)
         federated = FederatedLearning(
             trainer_manager=trainer_manager,
-            trainer_params=trainer_params,
+            trainer_config=trainer_params,
             aggregator=aggregators.AVGAggregator(),
             metrics=metrics.AccLoss(batch_size=config['batch_size'], criterion=nn.CrossEntropyLoss()),
             client_selector=client_selectors.Random(config['clients_per_round']),
@@ -107,8 +106,8 @@ if comm.pid() == 0:
             test_on=FederatedLearning.TEST_ON_ALL
         )
 
-        federated.plug(plugins.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
-        federated.plug(plugins.FederatedTimer([Events.ET_TRAINER_FINISHED]))
+        federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
+        federated.add_subscriber(subscribers.FederatedTimer([Events.ET_TRAINER_FINISHED]))
         # federated.plug(plugins.FedPlot())
         # federated.plug(plugins.CustomModelTestPlug(PickleDataProvider(test_file).collect().as_tensor(), 8))
         # federated.plug(plugins.FedSave())

@@ -2,29 +2,27 @@ import logging
 
 from torch import nn
 
-from src.federated.components import metrics, client_selectors, aggregators, params, trainers
+from src.data import data_loader
+from src.federated.components import metrics, client_selectors, aggregators, trainers
 from libs.model.linear.lr import LogisticRegression
-from src.data.data_provider import LocalKDDDataProvider
-from src.federated import plugins
-from src.data.data_generator import DataGenerator
+from src.federated import subscribers
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
-from src.federated.trainer_manager import TrainerManager, SeqTrainerManager
+from src.federated.protocols import TrainerParams
+from src.federated.components.trainer_manager import SeqTrainerManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
 logger.info('Generating Data --Started')
-dg = DataGenerator(LocalKDDDataProvider())
-client_data = dg.distribute_size(10, 5000, 5000)
-dg.describe()
+client_data = data_loader.kdd_100c_400min_400max()
 logger.info('Generating Data --Ended')
 
-trainer_manager = SeqTrainerManager(trainers.CPUTrainer, batch_size=50, epochs=10, criterion=nn.CrossEntropyLoss(),
-                                    optimizer=params.sgd(0.1))
-
+trainer_config = TrainerParams(trainer_class=trainers.CPUTrainer, batch_size=50, epochs=20, optimizer='sgd',
+                               criterion='cel', lr=0.1)
 federated = FederatedLearning(
-    trainer_manager=trainer_manager,
+    trainer_manager=SeqTrainerManager(),
+    trainer_config=trainer_config,
     aggregator=aggregators.AVGAggregator(),
     metrics=metrics.AccLoss(batch_size=50, criterion=nn.CrossEntropyLoss()),
     client_selector=client_selectors.Random(5),
@@ -34,11 +32,9 @@ federated = FederatedLearning(
     desired_accuracy=0.99
 )
 
-federated.plug(plugins.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_TRAINER_SELECTED]))
-federated.plug(plugins.FederatedTimer([Events.ET_TRAINER_FINISHED]))
-federated.plug(plugins.FedPlot())
-# federated.plug(plugins.FedSave())
-# federated.plug(plugins.WandbLogger(config={'num_rounds': 10}))
+federated.add_subscriber(subscribers.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_TRAINER_SELECTED]))
+federated.add_subscriber(subscribers.FederatedTimer([Events.ET_TRAINER_FINISHED]))
+federated.add_subscriber(subscribers.FedPlot())
 
 logger.info("----------------------")
 logger.info("start federated 1")
