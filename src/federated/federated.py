@@ -13,13 +13,12 @@ from src.federated.components.trainer_manager import TrainerManager
 
 
 class FederatedLearning(Broadcaster):
-    TEST_ON_ALL = 0
-    TEST_ON_SELECTED = 1
 
     def __init__(self, trainer_manager: TrainerManager, trainer_config, aggregator: Aggregator,
                  client_selector: ClientSelector, metrics: ModelInfer, trainers_data_dict: Dict[int, DataContainer],
                  initial_model: callable, num_rounds=10, desired_accuracy=0.9, train_ratio=0.8,
-                 ignore_acc_decrease=False, test_on=TEST_ON_ALL, optimizer: str = None, **kwargs):
+                 ignore_acc_decrease=False, optimizer: str = None,
+                 test_data: DataContainer = None, **kwargs):
         super().__init__()
         self.optimizer = optimizer
         self.trainer_config = trainer_config
@@ -37,14 +36,16 @@ class FederatedLearning(Broadcaster):
         self.events = {}
         self._check_params()
         self.context = FederatedLearning.Context()
-        self.trainers_test = {}
-        self.trainers_train = {}
-        self.test_on = test_on
-        for trainer_id, data in trainers_data_dict.items():
-            data = data.shuffle().as_tensor()
-            train, test = data.split(train_ratio)
-            self.trainers_train[trainer_id] = train
-            self.trainers_test[trainer_id] = test
+        self.test_data = test_data
+        self.trainers_train = self.trainers_data_dict
+        if self.test_data is None:
+            self.test_data = {}
+            self.trainers_train = {}
+            for trainer_id, data in trainers_data_dict.items():
+                data = data.shuffle().as_tensor()
+                train, test = data.split(train_ratio)
+                self.trainers_train[trainer_id] = train
+                self.test_data[trainer_id] = test
 
     def start(self):
         self.init()
@@ -70,9 +71,7 @@ class FederatedLearning(Broadcaster):
         global_weights = self.aggregator.aggregate(trainers_weights, sample_size_dict, self.context.round_id)
         tools.load(self.context.model, global_weights)
         self.broadcast(Events.ET_AGGREGATION_END, global_weights=global_weights, global_model=self.context.model)
-        test_data = self.trainers_test if self.test_on == FederatedLearning.TEST_ON_ALL else \
-            tools.dict_select(trainers_ids, self.trainers_test)
-        accuracy, loss, local_acc, local_loss = self.infer(self.context.model, test_data)
+        accuracy, loss, local_acc, local_loss = self.infer(self.context.model, self.test_data)
         self.broadcast(Events.ET_ROUND_FINISHED, round=self.context.round_id, accuracy=accuracy, loss=loss,
                        local_acc=local_acc, local_loss=local_loss)
         self.context.new_round()
@@ -88,21 +87,26 @@ class FederatedLearning(Broadcaster):
             self.trainer_manager.train_req(trainer_id, model_copy, train_data, self.context, self.trainer_config)
         return self.trainer_manager.resolve()
 
-    def infer(self, model, trainers_data: Dict[int, DataContainer]):
-        local_accuracy = {}
-        local_loss = {}
-        sample_size = {}
-        for trainer_id, test_data in trainers_data.items():
+    def infer(self, model, test_data: Dict[int, DataContainer] or DataContainer):
+        if isinstance(test_data, DataContainer):
             acc, loss = self.metrics.infer(model, test_data)
-            local_accuracy[trainer_id] = acc
-            local_loss[trainer_id] = loss
-            sample_size[trainer_id] = len(test_data)
-        weighted_accuracy = [local_accuracy[tid] * sample_size[tid] for tid in local_accuracy]
-        weighted_loss = [local_loss[tid] * sample_size[tid] for tid in local_loss]
-        total_accuracy = sum(weighted_accuracy) / sum(sample_size.values())
-        total_loss = sum(weighted_loss) / sum(sample_size.values())
-        self.context.store(acc=total_accuracy, loss=total_loss, local_acc=local_accuracy, local_loss=local_loss)
-        return total_accuracy, total_loss, local_accuracy, local_loss
+            self.context.store(acc=acc, loss=loss, local_acc=[], local_loss=[])
+            return acc, loss, {}, {}
+        else:
+            local_accuracy = {}
+            local_loss = {}
+            sample_size = {}
+            for trainer_id, test_data in test_data.items():
+                acc, loss = self.metrics.infer(model, test_data)
+                local_accuracy[trainer_id] = acc
+                local_loss[trainer_id] = loss
+                sample_size[trainer_id] = len(test_data)
+            weighted_accuracy = [local_accuracy[tid] * sample_size[tid] for tid in local_accuracy]
+            weighted_loss = [local_loss[tid] * sample_size[tid] for tid in local_loss]
+            total_accuracy = sum(weighted_accuracy) / sum(sample_size.values())
+            total_loss = sum(weighted_loss) / sum(sample_size.values())
+            self.context.store(acc=total_accuracy, loss=total_loss, local_acc=local_accuracy, local_loss=local_loss)
+            return total_accuracy, total_loss, local_accuracy, local_loss
 
     def compare(self, other, verbose=1):
         local_history = self.context.history

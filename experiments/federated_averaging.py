@@ -3,6 +3,8 @@ import sys
 
 from torch import nn
 
+from src.data.data_provider import PickleDataProvider
+
 sys.path.append('../')
 from libs.model.linear.lr import LogisticRegression
 from src import tools
