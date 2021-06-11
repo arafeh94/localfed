@@ -103,6 +103,8 @@ class DataGenerator:
 
         def get(self, label, size):
             x = self.grouped[label][self.selected[label]:self.selected[label] + size]
+            if len(x) == 0:
+                print("ad")
             y = [label] * len(x)
             self.selected[label] += size
             return x, y

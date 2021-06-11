@@ -1,8 +1,10 @@
 import logging
+import sys
 
 from torch import nn
 
-from libs.model.linear.net import Net
+sys.path.append('../')
+from libs.model.linear.lr import LogisticRegression
 from src import tools
 from src.data import data_loader
 from src.federated.components import metrics, client_selectors, aggregators, trainers
@@ -31,8 +33,7 @@ federated = FederatedLearning(
     metrics=metrics.AccLoss(batch_size=50, criterion=nn.CrossEntropyLoss()),
     client_selector=client_selectors.Random(3),
     trainers_data_dict=client_data,
-    # initial_model=lambda: LogisticRegression(28 * 28, 10),
-    initial_model=lambda: Net(),
+    initial_model=lambda: LogisticRegression(28 * 28, 10),
     num_rounds=5,
     desired_accuracy=0.99
 )
@@ -47,4 +48,3 @@ logger.info("----------------------")
 logger.info("start federated 1")
 logger.info("----------------------")
 federated.start()
-

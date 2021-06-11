@@ -13,7 +13,7 @@ class DeepQNetwork(nn.Module):
         self.l2 = nn.Linear(self.l1_dims, self.l2_dims)
         self.l3 = nn.Linear(self.l2_dims, self.n_action)
         self.relu = nn.ReLU()
-        self.softmax = nn.Softmax()
+        self.softmax = nn.Softmax(dim=0)
         self.optimizer = optim.Adam(self.parameters(), lr=0.1)
         self.loss = nn.MSELoss()
 

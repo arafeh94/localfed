@@ -6,6 +6,7 @@ import numpy
 import numpy as np
 import torch
 from matplotlib import pyplot
+from sklearn import decomposition
 from sklearn.cluster import KMeans
 import logging
 from src import tools
@@ -44,19 +45,28 @@ class Context:
                         pyplot.show()
         self.logging.info("Building Models --Finished")
 
-    def cluster(self, cluster_size=10):
+    def cluster(self, cluster_size=10, compress=True):
         self.logging.info("Clustering Models --Started")
         weights = []
         client_ids = []
         clustered = {}
         for client_id, stats in self.model_stats.items():
             client_ids.append(client_id)
-            weights.append(tools.flatten_weights(stats))
+            weights.append(self.compress(tools.flatten_weights(stats))
+                           if compress else tools.flatten_weights(stats))
         kmeans = KMeans(n_clusters=cluster_size).fit(weights)
+        print(kmeans.labels_.reshape(-1, 10))
         for i, label in enumerate(kmeans.labels_):
             clustered[client_ids[i]] = label
         self.logging.info("Clustering Models --Finished")
         return clustered
+
+    def compress(self, weights):
+        weights = weights.reshape(10, -1)
+        pca = decomposition.PCA(n_components=4)
+        pca.fit(weights)
+        weights = pca.transform(weights)
+        return weights.flatten()
 
     def cosine(self, client_idx):
         aggregated = tools.aggregate(tools.dict_select(client_idx, self.model_stats),

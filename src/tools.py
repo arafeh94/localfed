@@ -2,9 +2,12 @@ import copy
 import math
 import random
 import threading
+import typing
+
 import numpy
 import numpy as np
 import torch
+from sklearn import decomposition
 from torch import nn, device
 import logging
 
@@ -26,12 +29,21 @@ def transform_tensor_to_list(model_params):
     return model_params
 
 
-def flatten_weights(weights):
+def flatten_weights(weights, compress=False):
     weight_vecs = []
     for _, weight in weights.items():
         weight_vecs.extend(weight.flatten().tolist())
-
+    if compress:
+        return compress_weights(np.array(weight_vecs))
     return np.array(weight_vecs)
+
+
+def compress_weights(flattened_weights):
+    weights = flattened_weights.reshape(10, -1)
+    pca = decomposition.PCA(n_components=4)
+    pca.fit(weights)
+    weights = pca.transform(weights)
+    return weights.flatten()
 
 
 def train(model, train_data, epochs=10, lr=0.1):
@@ -221,15 +233,16 @@ class ClusterSelector:
         return len(self.id_label_dict.keys())
 
 
-def detail(client_data: {int: DataContainer}, selection=None):
-    logger.info("<--clients_labels-->")
+def detail(client_data: {int: DataContainer}, selection=None, display: typing.Callable = None):
+    if display is None:
+        display = lambda x: logger.info(x)
+    display("<--clients_labels-->")
     for client_id, data in client_data.items():
         if selection is not None:
             if client_id not in selection:
                 continue
         uniques = np.unique(data.y)
-        logger.info(
-            f"client_id: {client_id} --size: {len(data.y)} --num_labels: {len(uniques)} --unique_labels:{uniques}")
+        display(f"client_id: {client_id} --size: {len(data.y)} --num_labels: {len(uniques)} --unique_labels:{uniques}")
         for unique in uniques:
             unique_count = 0
             for item in data.y:
@@ -237,4 +250,4 @@ def detail(client_data: {int: DataContainer}, selection=None):
                     unique_count += 1
             unique_count = unique_count / len(data.y) * 100
             unique_count = int(unique_count)
-            logger.info(f"labels_{unique}= {unique_count}%")
+            display(f"labels_{unique}= {unique_count}%")
