@@ -1,5 +1,5 @@
 # to run MPI, u wull first need to change the terminal current working directory to D:\Github\my_repository\localfed\experiments>
-# windows: mpiexec -n 11 python fed_ca.py
+# windows: mpiexec -n 63 python fed_ca.py
 # ubuntu: mpirun -np 11 --hostfile hosts python ./fed_ca.py
 import logging
 import platform
@@ -8,15 +8,15 @@ from os.path import dirname
 
 from torch import nn
 
-from src.federated import subscribers
-from src.federated.components.trainer_manager import MPITrainerManager
-
 if platform.system() == 'Linux':
     # Linux
     sys.path.append(dirname(__file__) + './')
 else:
     # windows
-    sys.path.append(dirname(__file__) + '../')
+    sys.path.append(dirname(__file__) + '../../')
+
+from src.federated import subscribers
+from src.federated.components.trainer_manager import MPITrainerManager
 
 from hp_generator import generate_configs, build_random, calculate_max_rounds
 from src.apis.mpi import Comm
@@ -24,7 +24,7 @@ from src.federated.components import metrics, client_selectors, aggregators, tra
 from libs.model.cv.cnn import CNN_OriginalFedAvg
 from libs.model.linear.lr import LogisticRegression
 from libs.model.collection import MLP
-from src.data import data_generator
+from src.data import data_generator, data_loader
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
 
@@ -35,24 +35,26 @@ comm = Comm()
 if comm.pid() == 0:
 
     # data_file = "../datasets/pickles/10_1000_big_ca.pkl"
-    data_file = "../datasets/pickles/10_2400_3000_big_imbalanced_ca.pkl"
+    # data_file = "../datasets/pickles/10_2400_3000_big_imbalanced_ca.pkl"
+
+    data_file = "femnist"
 
     logger.info('generating data --Started')
-
-    dg = data_generator.load(data_file)
-    client_data = dg.distributed
-    dg.describe()
+    client_data = data_loader.femnist_1shard_62c_200min_2000max()
+    # dg = data_generator.load(data_file)
+    # client_data = dg.distributed
+    # dg.describe()
 
     # building Hyperparameters
     input_shape = 28 * 28
-    labels_number = 10
-    percentage_nb_client = 0.2
+    labels_number = 62
+    percentage_nb_client = 62
 
     # number of models that we are using
     initial_models = {
         # 'LR': LogisticRegression(input_shape, labels_number),
         # 'MLP': MLP(input_shape, labels_number)
-        'CNN': CNN_OriginalFedAvg()
+        'CNN': CNN_OriginalFedAvg(False)
     }
 
     for model_name, gen_model in initial_models.items():
