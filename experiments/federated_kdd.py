@@ -19,7 +19,7 @@ logger.info('Generating Data --Started')
 client_data = data_loader.kdd_100c_400min_400max()
 logger.info('Generating Data --Ended')
 
-trainer_config = TrainerParams(trainer_class=trainers.CPUTrainer, batch_size=50, epochs=20, optimizer='sgd',
+trainer_config = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=50, epochs=20, optimizer='sgd',
                                criterion='cel', lr=0.1)
 federated = FederatedLearning(
     trainer_manager=SeqTrainerManager(),

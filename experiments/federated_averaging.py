@@ -25,7 +25,7 @@ client_data = data_loader.mnist_2shards_100c_600min_600max()
 tools.detail(client_data)
 logger.info('Generating Data --Ended')
 
-trainer_params = TrainerParams(trainer_class=trainers.CPUTrainer, batch_size=50, epochs=20, optimizer='sgd',
+trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=50, epochs=20, optimizer='sgd',
                                criterion='cel', lr=0.1)
 
 federated = FederatedLearning(

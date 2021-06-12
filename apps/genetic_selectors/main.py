@@ -12,7 +12,7 @@ from src.federated.subscribers import Timer
 sys.path.append(dirname(__file__) + '../')
 
 from libs.model.linear.lr import LogisticRegression
-from src.federated.components.trainers import CPUTrainer
+from src.federated.components.trainers import TorchTrainer
 from src.federated.protocols import TrainerParams
 from apps.genetic_selectors.src import initializer
 from src.federated.components import metrics, client_selectors, aggregators
@@ -107,7 +107,7 @@ for name, config in configs.items():
         initial_model = booted_model
 
     trainer_manager = SeqTrainerManager()
-    trainer_params = TrainerParams(trainer_class=CPUTrainer, optimizer='sgd', epochs=epochs, batch_size=batch_size,
+    trainer_params = TrainerParams(trainer_class=TorchTrainer, optimizer='sgd', epochs=epochs, batch_size=batch_size,
                                    criterion='cel', lr=0.1)
     federated = FederatedLearning(
         trainer_manager=trainer_manager,

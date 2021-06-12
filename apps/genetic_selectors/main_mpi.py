@@ -10,7 +10,7 @@ from src.federated.subscribers import Timer
 sys.path.append(dirname(__file__) + '../../')
 from src.data import data_generator
 from libs.model.linear.lr import LogisticRegression
-from src.federated.components.trainers import CPUTrainer
+from src.federated.components.trainers import TorchTrainer
 from src.federated.protocols import TrainerParams
 from apps.genetic_selectors.src import initializer
 from src.apis.mpi import Comm
@@ -92,7 +92,7 @@ if comm.pid() == 0:
                                                                config['c_size'])
 
         trainer_manager = MPITrainerManager()
-        trainer_params = TrainerParams(trainer_class=CPUTrainer, optimizer='sgd', epochs=epochs, batch_size=batch_size,
+        trainer_params = TrainerParams(trainer_class=TorchTrainer, optimizer='sgd', epochs=epochs, batch_size=batch_size,
                                        criterion='cel', lr=0.1)
         federated = FederatedLearning(
             trainer_manager=trainer_manager,

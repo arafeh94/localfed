@@ -23,7 +23,7 @@ dg.describe()
 logger.info('Generating Data --Ended')
 
 trainer_manager = SeqTrainerManager()
-trainer_params = TrainerParams(trainer_class=trainers.CPUTrainer, batch_size=50, epochs=20, optimizer='sgd',
+trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=50, epochs=20, optimizer='sgd',
                                criterion='cel', lr=0.1)
 federated = FederatedLearning(
     trainer_manager=trainer_manager,

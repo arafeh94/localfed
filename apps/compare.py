@@ -12,7 +12,7 @@ from src.apis.mpi import Comm
 from torch import nn
 from apps.flsim.src.client_selector import RLSelector
 from apps.flsim.src.initializer import rl_module_creator
-from src.federated.components.trainers import CPUTrainer
+from src.federated.components.trainers import TorchTrainer
 from src.federated.protocols import TrainerParams
 from apps.genetic_selectors.src import initializer
 from src.federated.components import metrics, client_selectors, aggregators
@@ -112,7 +112,7 @@ if not is_mpi or is_mpi and comm.pid() == 0:
             initial_model = booted_model
 
         trainer_manager = MPITrainerManager() if is_mpi else SeqTrainerManager()
-        trainer_params = TrainerParams(trainer_class=CPUTrainer, optimizer='sgd', epochs=epochs, batch_size=batch_size,
+        trainer_params = TrainerParams(trainer_class=TorchTrainer, optimizer='sgd', epochs=epochs, batch_size=batch_size,
                                        criterion='cel', lr=0.1)
         federated = FederatedLearning(
             trainer_manager=trainer_manager,

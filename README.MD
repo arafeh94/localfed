@@ -39,7 +39,7 @@ from src.federated.protocols import TrainerParams
 from src.federated.federated import FederatedLearning
 
 trainer_manager = SeqTrainerManager()
-trainer_params = TrainerParams(trainer_class=trainers.CPUTrainer, batch_size=50, epochs=20, optimizer='sgd',
+trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=50, epochs=20, optimizer='sgd',
                                criterion='cel', lr=0.1)
 federated = FederatedLearning(
     trainer_manager=trainer_manager,
@@ -179,7 +179,7 @@ from src.federated.protocols import TrainerParams
 
 client_data = {}
 trainer_manager = SeqTrainerManager()
-trainer_params = TrainerParams(trainer_class=trainers.CPUChunkTrainer, batch_size=50, epochs=20, optimizer='sgd',
+trainer_params = TrainerParams(trainer_class=trainers.TorchChunkTrainer, batch_size=50, epochs=20, optimizer='sgd',
                                criterion='cel', lr=0.1)
 federated = FederatedLearning(
     trainer_manager=trainer_manager,

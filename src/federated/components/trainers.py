@@ -13,7 +13,7 @@ from src.federated.federated import FederatedLearning
 from src.federated.protocols import Trainer, TrainerParams
 
 
-class CPUTrainer(Trainer):
+class TorchTrainer(Trainer):
     def __init__(self):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -43,7 +43,7 @@ class CPUTrainer(Trainer):
         return weights, len(train_data)
 
 
-class CPUChunkTrainer(CPUTrainer):
+class TorchChunkTrainer(TorchTrainer):
     def train(self, model: nn.Module, train_data: DataContainer, context: FederatedLearning.Context,
               config: TrainerParams) -> Tuple[any, int]:
         round_id = context.round_id
@@ -53,4 +53,4 @@ class CPUChunkTrainer(CPUTrainer):
         x = train_data.x[int(round_id * round_data_size):int((round_id * round_data_size) + round_data_size)]
         y = train_data.y[int(round_id * round_data_size):int((round_id * round_data_size) + round_data_size)]
         chunk = DataContainer(x, y)
-        return super(CPUChunkTrainer, self).train(model, chunk, round_id, config)
+        return super(TorchChunkTrainer, self).train(model, chunk, round_id, config)

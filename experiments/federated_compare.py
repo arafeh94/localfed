@@ -69,7 +69,7 @@ federated_runs = {}
 
 for name, federated_params in federated_configs.items():
     trainer_manager = SeqTrainerManager()
-    trainer_params = TrainerParams(trainer_class=trainers.CPUTrainer, batch_size=federated_params['batch_size'],
+    trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=federated_params['batch_size'],
                                    epochs=federated_params['epochs'], optimizer=federated_params['optimizer'],
                                    criterion=federated_params['criterion'], lr=federated_params['lr'])
 
