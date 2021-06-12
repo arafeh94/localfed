@@ -1,6 +1,6 @@
 {
   "mnist10k": "https://www.dropbox.com/s/p6zf16hb4pinswr/mnist10k.zip?dl=1",
   "mnist": "https://www.dropbox.com/s/nd25svv30chttln/mnist.zip?dl=1",
-  "femnist": "https://www.dropbox.com/s/pviqeaxpnay9ajp/femnist.zip?dl=01",
+  "femnist": "https://www.dropbox.com/s/pviqeaxpnay9ajp/femnist.zip?dl=1",
   "kdd": "https://www.dropbox.com/s/a8xd8cd2nag7umu/kdd.zip?dl=1"
 }
