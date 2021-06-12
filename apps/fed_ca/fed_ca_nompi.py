@@ -8,8 +8,6 @@ from random import randint
 
 from torch import nn
 
-from libs.model.cv.resnet import resnet56
-from src import tools
 from src.federated import subscribers, fedruns
 from src.federated.components.trainer_manager import SeqTrainerManager
 
@@ -18,7 +16,7 @@ sys.path.append(dirname(__file__) + '../')
 from hp_generator import generate_configs, build_random, calculate_max_rounds
 from src.apis.mpi import Comm
 from src.federated.components import metrics, client_selectors, aggregators, trainers
-from libs.model.cv.cnn import CNN_OriginalFedAvg, CNN_DropOut
+from libs.model.cv.cnn import CNN_OriginalFedAvg
 from libs.model.linear.lr import LogisticRegression
 from libs.model.collection import MLP
 from src.data import data_generator, data_loader
@@ -31,31 +29,29 @@ logger = logging.getLogger('main')
 data_file = "femnist"
 
 logger.info('generating data --Started')
-client_data = data_loader.femnist_1s_5c_2000min_2000max()
-tools.detail(client_data)
+client_data = data_loader.femnist_1shard_62c_200min_2000max()
+
 # building Hyperparameters
 input_shape = 28 * 28
-labels_number = 5
-percentage_nb_client = 0.5
+labels_number = 62
+percentage_nb_client = 62
 
 # number of models that we are using
 initial_models = {
     # 'LR': LogisticRegression(input_shape, labels_number),
     # 'MLP': MLP(input_shape, labels_number)
     'CNN': CNN_OriginalFedAvg(False)
-    # 'CNN': CNN_DropOut(False)
-    #   'ResNet:':  resnet56(labels_number, 1, 28)
 }
 
-# runs = {}
+runs = {}
 
 for model_name, gen_model in initial_models.items():
 
     """
       each params=(min,max,num_value)
     """
-    batch_size = (20, 20, 1)
-    epochs = (5, 100, 1)
+    batch_size = (10, 50, 2)
+    epochs = (5, 20, 2)
     num_rounds = (1000, 1000, 1)
 
     hyper_params = build_random(batch_size=batch_size, epochs=epochs, num_rounds=num_rounds)
@@ -84,7 +80,7 @@ for model_name, gen_model in initial_models.items():
             aggregator=aggregators.AVGAggregator(),
             metrics=metrics.AccLoss(batch_size=batch_size, criterion=nn.CrossEntropyLoss()),
             # client_selector=client_selectors.All(),
-            client_selector=client_selectors.All(),
+            client_selector=client_selectors.Random(percentage_nb_client),
             trainers_data_dict=client_data,
             initial_model=lambda: initial_model,
             # initial_model=lambda: libs.model.collection.MLP(28 * 28, 64, 10),
@@ -105,7 +101,7 @@ for model_name, gen_model in initial_models.items():
         logger.info("start federated")
         logger.info("----------------------")
         federated.start()
-        # runs[model_name] = federated.context
+        runs[model_name] = federated.context
 
-# r = fedruns.FedRuns(runs)
-# r.plot()
+r = fedruns.FedRuns(runs)
+r.plot()
