@@ -9,10 +9,11 @@ matplotlib~=3.4.2
 -f https://download.pytorch.org/whl/torch_stable.html
 torch~=1.8.1
 -f https://download.pytorch.org/whl/torch_stable.html
-torchvision
+torchvision~=0.9.1
 -f https://download.pytorch.org/whl/torch_stable.html
 torchaudio
 scipy~=1.6.3
 Pillow~=8.2.0
-validators
-wget
+validators~=0.18.2
+wget~=3.2
+wandb~=0.10.32
