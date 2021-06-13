@@ -19,6 +19,8 @@ class ModelInfer(ABC):
     def __init__(self, batch_size: int, criterion):
         self.batch_size = batch_size
         self.criterion = criterion
+        if isinstance(criterion, str):
+            self.criterion = params.criterion(criterion)
 
     @abstractmethod
     def infer(self, model: nn.Module, test_data: DataContainer):

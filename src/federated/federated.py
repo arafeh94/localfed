@@ -17,10 +17,8 @@ class FederatedLearning(Broadcaster):
     def __init__(self, trainer_manager: TrainerManager, trainer_config, aggregator: Aggregator,
                  client_selector: ClientSelector, metrics: ModelInfer, trainers_data_dict: Dict[int, DataContainer],
                  initial_model: callable, num_rounds=10, desired_accuracy=0.9, train_ratio=0.8,
-                 ignore_acc_decrease=False, optimizer: str = None,
-                 test_data: DataContainer = None, **kwargs):
+                 ignore_acc_decrease=False, test_data: DataContainer = None, **kwargs):
         super().__init__()
-        self.optimizer = optimizer
         self.trainer_config = trainer_config
         self.trainer_manager = trainer_manager
         self.aggregator = aggregator
@@ -38,6 +36,7 @@ class FederatedLearning(Broadcaster):
         self.context = FederatedLearning.Context()
         self.test_data = test_data
         self.trainers_train = self.trainers_data_dict
+        self.is_finished = False
         if self.test_data is None:
             self.test_data = {}
             self.trainers_train = {}
@@ -46,6 +45,10 @@ class FederatedLearning(Broadcaster):
                 train, test = data.split(train_ratio)
                 self.trainers_train[trainer_id] = train
                 self.test_data[trainer_id] = test
+        self.trainer_manager.trainer_started = lambda trainer_id: \
+            self.broadcast(Events.ET_TRAINER_STARTED, trainer_id=trainer_id)
+        self.trainer_manager.trainer_finished = lambda trainer_id, weights, sample_size: \
+            self.broadcast(Events.ET_TRAINER_FINISHED, trainer_id=trainer_id, weights=weights, sample_size=sample_size)
 
     def start(self):
         self.init()
@@ -61,8 +64,12 @@ class FederatedLearning(Broadcaster):
         self.broadcast(Events.ET_INIT, global_model=self.context.model)
 
     def one_round(self):
+        if self.is_finished:
+            return self.is_finished
         self.broadcast(Events.ET_ROUND_START, round=self.context.round_id)
         trainers_ids = self.client_selector.select(list(self.trainers_data_dict.keys()), self.context)
+        if len(trainers_ids) == 0:
+            Exception('client selected return 0 training for the current rounds')
         self.broadcast(Events.ET_TRAINER_SELECTED, trainers_ids=trainers_ids)
         trainers_train_data = tools.dict_select(trainers_ids, self.trainers_train)
         self.broadcast(Events.ET_TRAIN_START, trainers_data=trainers_train_data)
@@ -77,6 +84,7 @@ class FederatedLearning(Broadcaster):
         self.context.new_round()
         is_done = self.context.stop(accuracy)
         if is_done:
+            self.is_finished = True
             self.broadcast(Events.ET_FED_END, aggregated_model=self.context.model)
         return is_done
 
@@ -126,6 +134,9 @@ class FederatedLearning(Broadcaster):
             return diff
         else:
             return diff, performance_history
+
+    def finished(self):
+        return self.is_finished
 
     def _check_params(self):
         pass

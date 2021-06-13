@@ -11,6 +11,10 @@ from src.federated.protocols import Trainer, TrainerParams
 
 
 class TrainerManager:
+    def __init__(self):
+        self.trainer_started = None
+        self.trainer_finished = None
+
     @abstractmethod
     def train_req(self, trainer_id, model, train_data, context, config: TrainerParams):
         pass
@@ -18,6 +22,14 @@ class TrainerManager:
     @abstractmethod
     def resolve(self):
         pass
+
+    def notify_trainer_started(self, trainer_id):
+        if callable(self.trainer_started):
+            self.trainer_started(trainer_id=trainer_id)
+
+    def notify_trainer_finished(self, trainer_id, weights, sample_size):
+        if callable(self.trainer_finished):
+            self.trainer_finished(trainer_id=trainer_id, weights=weights, sample_size=sample_size)
 
 
 class SeqTrainerManager(TrainerManager):
@@ -27,6 +39,7 @@ class SeqTrainerManager(TrainerManager):
             pass
 
     def __init__(self, trainer_provider: TrainerProvider = None):
+        super().__init__()
         self.train_requests = {}
         self.trainer_provider = trainer_provider
         if trainer_provider is None:
@@ -42,7 +55,9 @@ class SeqTrainerManager(TrainerManager):
         trainers_trained_weights = {}
         trainers_sample_size = {}
         for trainer_id, request in self.train_requests.items():
+            self.notify_trainer_started(trainer_id)
             trained_weights, sample_size = request[0](request[1], request[2], request[3], request[4])
+            self.notify_trainer_finished(trainer_id, trained_weights, sample_size)
             trainers_trained_weights[trainer_id] = trained_weights
             trainers_sample_size[trainer_id] = sample_size
         self.train_requests = {}
@@ -70,6 +85,7 @@ class SharedTrainerProvider(SeqTrainerManager.TrainerProvider):
 class MPITrainerManager(TrainerManager):
 
     def __init__(self):
+        super().__init__()
         self.comm = Comm()
         self.procs = [i + 1 for i in range(self.comm.size() - 1)]
         self.used_procs = []
@@ -78,6 +94,7 @@ class MPITrainerManager(TrainerManager):
     def train_req(self, trainer_id, model, train_data, context, config):
         pid = self.get_proc()
         self.comm.send(pid, (model, train_data, context, config), 1)
+        self.notify_trainer_started(trainer_id)
         req = self.comm.irecv(pid, 2)
         self.requests[trainer_id] = req
 
@@ -97,6 +114,7 @@ class MPITrainerManager(TrainerManager):
         trainers_sample_size = {}
         for trainer_id, req in self.requests.items():
             trained_weights, sample_size = req.wait()
+            self.notify_trainer_finished(trainer_id, trained_weights, sample_size)
             trainers_trained_weights[trainer_id] = trained_weights
             trainers_sample_size[trainer_id] = sample_size
         self.reset()

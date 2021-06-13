@@ -3,6 +3,7 @@ import math
 from collections import defaultdict
 from typing import List, Dict
 
+import numpy as np
 from matplotlib import pyplot as plt
 
 from src.federated.federated import FederatedLearning
@@ -10,13 +11,14 @@ from src.federated.federated import FederatedLearning
 
 class FedRuns:
     def __init__(self, runs: Dict[str, FederatedLearning] or List[FederatedLearning]):
-        self.runs = runs
+        self.runs = {}
         self.logger = logging.getLogger('runs')
         if isinstance(runs, list):
-            new_dict = {}
             for index, run in enumerate(runs):
-                new_dict[f'run{index}'] = run
-            self.runs = new_dict
+                self.append(f'run{index}', run)
+        else:
+            for key, val in runs.items():
+                self.append(key, val)
 
     def append(self, name, run):
         if isinstance(run, FederatedLearning):
@@ -70,6 +72,23 @@ class FedRuns:
             axs[1].set_title('Total Loss')
             axs[1].set_xticks(range(len(loss)))
 
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
+
+    def plot_avg(self):
+        acc_plot = defaultdict(list)
+        loss_plot = defaultdict(list)
+        for name, run in self.runs.items():
+            for round_id, performance in run.history.items():
+                acc_plot[round_id].append(performance['acc'])
+                loss_plot[round_id].append(performance['loss'])
+
+        for round_id in acc_plot:
+            acc_plot[round_id] = np.average(acc_plot[round_id])
+            loss_plot[round_id] = np.average(loss_plot[round_id])
+
+        plot = plt.plot(list(acc_plot.keys()),list(acc_plot.values()))
         plt.legend()
         plt.tight_layout()
         plt.show()

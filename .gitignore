@@ -38,10 +38,10 @@ cifar-10-batches-py
 
 #big pkl files
 *_big*.pkl
-!/experiments/logs/log_viewer.py
-/experiments/logs
-/experiments/logs/*
-/experiments/wandb
+!/apps/experiments/logs/log_viewer.py
+/apps/experiments/logs
+/apps/experiments/logs/*
+/apps/experiments/wandb
 /datasets/pickles/mnist_10shards_100c_400mn_400mx.pkl
 /datasets/pickles/mnist_2shards_70c_600mn_600mx.pkl
 /datasets/pickles/femnist.pkl

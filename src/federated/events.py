@@ -95,9 +95,19 @@ class FederatedEventPlug(Subscriber):
         pass
 
     def on_trainer_start(self, params):
+        """
+
+       :param params: params['trainer_id'], params['context']
+       :return:
+       """
         pass
 
     def on_trainer_end(self, params):
+        """
+
+       :param params: params['trainer_id'], params['weights'], params['sample_size'], params['context']
+       :return:
+       """
         pass
 
     def force(self) -> []:

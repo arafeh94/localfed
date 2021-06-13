@@ -26,7 +26,7 @@ comm = Comm()
 
 if comm.pid() == 0:
     data_file = '../datasets/pickles/mnist_10shards_100c_400mn_400mx.pkl'
-    test_file = '../datasets/pickles/test_data.pkl'
+    test_file = '../../datasets/pickles/test_data.pkl'
 
     logger.info('Generating Data --Started')
     dg = src.data.data_generator.load(data_file)
