@@ -8,7 +8,6 @@ from random import randint
 
 from torch import nn
 
-from src import tools
 from src.federated import subscribers, fedruns
 from src.federated.components.trainer_manager import SeqTrainerManager
 
@@ -27,18 +26,15 @@ from src.federated.protocols import TrainerParams
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-data_file = "EMNIST - balanced"
+data_file = "EMNIST"
 
 logger.info('generating data --Started')
-# client_data = data_loader.femnist_1shard_62c_200min_2000max()
-
-client_data = data_loader.femnist_1shard_62c_2000min_2000max()
-tools.detail(client_data)
+client_data = data_loader.femnist_1shard_62c_200min_2000max()
 
 # building Hyperparameters
 input_shape = 28 * 28
 labels_number = 62
-percentage_nb_client = 62
+percentage_nb_client = 0.1
 
 # number of models that we are using
 initial_models = {
@@ -47,14 +43,14 @@ initial_models = {
     'CNN': CNN_DropOut(False)
 }
 
-# runs = {}
+runs = {}
 
 for model_name, gen_model in initial_models.items():
 
     """
       each params=(min,max,num_value)
     """
-    batch_size = (2000, 2000, 1)
+    batch_size = (20, 20, 2)
     epochs = (100, 100, 1)
     num_rounds = (1000, 1000, 1)
 
@@ -75,7 +71,7 @@ for model_name, gen_model in initial_models.items():
             f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds},'
             f' initial_model={initial_model} ')
         trainer_manager = SeqTrainerManager()
-        trainer_params = TrainerParams(trainer_class=trainers.TorchAllTrainer, batch_size=batch_size,
+        trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=batch_size,
                                        epochs=epochs, optimizer='sgd', criterion='cel', lr=learn_rate)
 
         federated = FederatedLearning(
@@ -105,7 +101,7 @@ for model_name, gen_model in initial_models.items():
         logger.info("start federated")
         logger.info("----------------------")
         federated.start()
-        # runs[model_name] = federated.context
+        runs[model_name] = federated.context
 
-# r = fedruns.FedRuns(runs)
-# r.plot()
+r = fedruns.FedRuns(runs)
+r.plot()
