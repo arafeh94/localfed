@@ -26,7 +26,7 @@ from src.federated.protocols import TrainerParams
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-data_file = "femnist"
+data_file = "EMNIST"
 
 logger.info('generating data --Started')
 client_data = data_loader.femnist_1shard_62c_200min_2000max()
@@ -34,7 +34,7 @@ client_data = data_loader.femnist_1shard_62c_200min_2000max()
 # building Hyperparameters
 input_shape = 28 * 28
 labels_number = 62
-percentage_nb_client = 62
+percentage_nb_client = 0.1
 
 # number of models that we are using
 initial_models = {
