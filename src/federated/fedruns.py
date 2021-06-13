@@ -88,7 +88,15 @@ class FedRuns:
             acc_plot[round_id] = np.average(acc_plot[round_id])
             loss_plot[round_id] = np.average(loss_plot[round_id])
 
-        plot = plt.plot(list(acc_plot.keys()),list(acc_plot.values()))
+        plot = plt.plot(list(acc_plot.keys()), list(acc_plot.values()))
         plt.legend()
         plt.tight_layout()
         plt.show()
+
+
+def plot(runs, avg=False):
+    runs = FedRuns(runs)
+    if avg:
+        runs.plot_avg()
+    else:
+        runs.plot()
