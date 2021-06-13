@@ -16,7 +16,7 @@ sys.path.append(dirname(__file__) + '../')
 from hp_generator import generate_configs, build_random, calculate_max_rounds
 from src.apis.mpi import Comm
 from src.federated.components import metrics, client_selectors, aggregators, trainers
-from libs.model.cv.cnn import CNN_OriginalFedAvg
+from libs.model.cv.cnn import CNN_OriginalFedAvg, CNN_DropOut
 from libs.model.linear.lr import LogisticRegression
 from libs.model.collection import MLP
 from src.data import data_generator, data_loader
@@ -40,7 +40,7 @@ percentage_nb_client = 62
 initial_models = {
     # 'LR': LogisticRegression(input_shape, labels_number),
     # 'MLP': MLP(input_shape, labels_number)
-    'CNN': CNN_OriginalFedAvg(False)
+    'CNN': CNN_DropOut(False)
 }
 
 runs = {}
@@ -50,8 +50,8 @@ for model_name, gen_model in initial_models.items():
     """
       each params=(min,max,num_value)
     """
-    batch_size = (10, 50, 2)
-    epochs = (5, 20, 2)
+    batch_size = (20, 20, 2)
+    epochs = (100, 100, 1)
     num_rounds = (1000, 1000, 1)
 
     hyper_params = build_random(batch_size=batch_size, epochs=epochs, num_rounds=num_rounds)
@@ -65,7 +65,7 @@ for model_name, gen_model in initial_models.items():
         epochs = config['epochs']
         num_rounds = config['num_rounds']
         initial_model = config['initial_model']
-        learn_rate = 0.1
+        learn_rate = 0.001
 
         print(
             f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds},'
