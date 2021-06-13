@@ -41,6 +41,7 @@ if comm.pid() == 0:
 
     logger.info('generating data --Started')
     client_data = data_loader.femnist_1shard_62c_200min_2000max()
+
     # dg = data_generator.load(data_file)
     # client_data = dg.distributed
     # dg.describe()
