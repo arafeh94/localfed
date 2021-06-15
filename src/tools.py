@@ -57,6 +57,7 @@ def train(model, train_data, epochs=10, lr=0.1):
 
     epoch_loss = []
     for epoch in range(epochs):
+        print(f'epoch {epoch} finished')
         batch_loss = []
         for batch_idx, (x, labels) in enumerate(train_data):
             x = x.to(device)
