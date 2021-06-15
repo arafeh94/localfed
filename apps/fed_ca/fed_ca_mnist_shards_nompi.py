@@ -42,7 +42,6 @@ client_data = mnist_2shards_100c_600min_600max()
 tools.detail(client_data)
 
 logger.info('generating data --Started')
-client_data = data_loader.femnist_1shard_62c_200min_2000max()
 
 # dg = data_generator.load(data_file)
 # client_data = dg.distributed
@@ -83,13 +82,12 @@ for model_name, gen_model in initial_models.items():
         print(
             f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds}, '
             f'initial_model={initial_model} ')
-        trainer_manager = SeqTrainerManager()
         trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=batch_size,
                                        epochs=epochs,
                                        optimizer='sgd', criterion='cel', lr=learn_rate)
 
         federated = FederatedLearning(
-            trainer_manager=trainer_manager,
+            trainer_manager=SeqTrainerManager(),
             trainer_config=trainer_params,
             aggregator=aggregators.AVGAggregator(),
             metrics=metrics.AccLoss(batch_size=batch_size, criterion=nn.CrossEntropyLoss()),
