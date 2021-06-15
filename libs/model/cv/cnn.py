@@ -136,9 +136,9 @@ class CNN_DropOut(torch.nn.Module):
 
     def __init__(self, only_digits=True):
         super(CNN_DropOut, self).__init__()
-        self.conv2d_1 = torch.nn.Conv2d(1, 32, kernel_size=3)
+        self.conv2d_1 = torch.nn.Conv2d(1, 32, kernel_size=(3, 3), stride=(1, 1))
         self.max_pooling = nn.MaxPool2d(2, stride=2)
-        self.conv2d_2 = torch.nn.Conv2d(32, 64, kernel_size=3)
+        self.conv2d_2 = torch.nn.Conv2d(32, 64, kernel_size=(3, 3), stride=(1, 1))
         self.dropout_1 = nn.Dropout(0.25)
         self.flatten = nn.Flatten()
         self.linear_1 = nn.Linear(9216, 128)
@@ -148,6 +148,7 @@ class CNN_DropOut(torch.nn.Module):
         self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
+        x = x.view(-1, 28, 28)
         x = torch.unsqueeze(x, 1)
         x = self.conv2d_1(x)
         x = self.conv2d_2(x)
