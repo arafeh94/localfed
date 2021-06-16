@@ -4,7 +4,7 @@ import os
 import pickle
 import sys
 from abc import abstractmethod
-from zipfile import ZipFile
+from zipfile_deflate64 import ZipFile
 
 import wget
 

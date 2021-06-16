@@ -16,3 +16,4 @@ scipy~=1.6.3
 Pillow~=8.2.0
 validators
 wget
+zipfile-deflate64

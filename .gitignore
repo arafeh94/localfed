@@ -63,3 +63,5 @@ cifar-10-batches-py
 /datasets/raw/cars/a7/
 /datasets/raw/cars/a8/
 /datasets/
+/tests/
+/tests/

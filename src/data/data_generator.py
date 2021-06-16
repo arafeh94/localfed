@@ -16,13 +16,16 @@ logger = logging.getLogger('data_generator')
 
 
 class DataGenerator:
-    def __init__(self, data_provider: DataProvider, xtt=None, ytt=None):
+    def __init__(self, data_provider: DataProvider, xtt=None, ytt=None, shuffle=False):
         """
         :param data_provider: instance of data provider
         :param xtt: x tensor type, callable to transform the current type to the desired type, by default float
         :param ytt: y tensor type, callable to transform the current type to the desired type, by default long
         """
-        self.data = data_provider.collect().as_numpy()
+        self.data = data_provider.collect()
+        if shuffle:
+            self.data = self.data.shuffle()
+        self.data = self.data.as_numpy()
         self.distributed = None
         self.xtt = xtt
         self.ytt = ytt
@@ -164,4 +167,3 @@ def load(path) -> DataGenerator:
     file = open(path, 'rb')
     dg = pickle.load(file)
     return dg
-

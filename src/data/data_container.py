@@ -72,3 +72,12 @@ class DataContainer:
         dc = copy.deepcopy(self) if self.is_numpy() else self.as_numpy()
         p = np.random.permutation(len(dc.x))
         return DataContainer(dc.x[p], dc.y[p])
+
+    def filter(self, predictor: typing.Callable):
+        new_x = []
+        new_y = []
+        for x, y in zip(self.x, self.y):
+            if predictor(x, y):
+                new_x.append(x)
+                new_y.append(y)
+        return DataContainer(new_x, new_y)
