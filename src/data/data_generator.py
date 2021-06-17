@@ -80,6 +80,8 @@ class DataGenerator:
             client_y = None
             for shard in selected_shards:
                 rx, ry = grouper.get(shard, int(client_data_size / len(selected_shards)))
+                if len(rx) == 0:
+                    Exception("requested shard do not have anymore data, reduce the min and max size")
                 client_x = rx if client_x is None else np.concatenate((client_x, rx))
                 client_y = ry if client_y is None else np.concatenate((client_y, ry))
             clients_data[client_id] = DataContainer(client_x, client_y).as_tensor(self.xtt, self.ytt)
@@ -106,8 +108,6 @@ class DataGenerator:
 
         def get(self, label, size):
             x = self.grouped[label][self.selected[label]:self.selected[label] + size]
-            if len(x) == 0:
-                print("ad")
             y = [label] * len(x)
             self.selected[label] += size
             return x, y

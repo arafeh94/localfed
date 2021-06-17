@@ -41,7 +41,6 @@ federated.add_subscriber(subscribers.FederatedLogger([
     et.ET_ROUND_FINISHED, et.ET_TRAINER_SELECTED, et.ET_TRAINER_STARTED, et.ET_TRAINER_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
 federated.add_subscriber(subscribers.FedPlot())
-# federated.plug(plugins.CustomModelTestPlug(PickleDataProvider(test_file).collect().as_tensor(), 8))
 
 logger.info("----------------------")
 logger.info("start federated 1")

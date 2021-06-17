@@ -7,14 +7,14 @@ from src.federated.protocols import Trainer, Aggregator
 
 # noinspection PyTypeChecker
 class AVGAggregator(Aggregator):
-    def aggregate(self, models_dict: Dict[int, nn.ModuleDict], sample_dict: Dict[int, int],
+    def aggregate(self, trainers_models_weight_dict: Dict[int, nn.ModuleDict], sample_size: Dict[int, int],
                   round_id: int) -> nn.ModuleDict:
         model_list = []
         training_num = 0
 
-        for idx in models_dict.keys():
-            model_list.append((sample_dict[idx], copy.deepcopy(models_dict[idx])))
-            training_num += sample_dict[idx]
+        for idx in trainers_models_weight_dict.keys():
+            model_list.append((sample_size[idx], copy.deepcopy(trainers_models_weight_dict[idx])))
+            training_num += sample_size[idx]
 
         (num0, averaged_params) = model_list[0]
         for k in averaged_params.keys():

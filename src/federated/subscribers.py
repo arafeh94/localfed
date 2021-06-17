@@ -15,6 +15,7 @@ from src.federated.federated import FederatedLearning
 
 
 class Timer(FederatedEventPlug):
+    TRAINER = 'trainer'
     FEDERATED = 'federated'
     ROUND = 'round'
     TRAINING = 'training'
@@ -48,23 +49,29 @@ class Timer(FederatedEventPlug):
         self.tick('federated', False)
 
     def on_federated_ended(self, params):
-        self.tick('federated', True)
+        self.tick(self.FEDERATED, True)
 
     def on_training_start(self, params):
-        self.tick('training', False)
+        self.tick(self.TRAINING, False)
 
     def on_training_end(self, params):
-        self.tick('training', True)
-        self.tick('aggregation', False)
+        self.tick(self.TRAINING, True)
+        self.tick(self.AGGREGATION, False)
 
     def on_round_start(self, params):
-        self.tick('round', False)
+        self.tick(self.ROUND, False)
 
     def on_round_end(self, params):
-        self.tick('round', True)
+        self.tick(self.ROUND, True)
 
     def on_aggregation_end(self, params):
-        self.tick('aggregation', True)
+        self.tick(self.AGGREGATION, True)
+
+    def on_trainer_start(self, params):
+        self.tick(self.TRAINER, False)
+
+    def on_trainer_end(self, params):
+        self.tick(self.TRAINER, True)
 
     def force(self) -> []:
         return [Events.ET_FED_START, Events.ET_TRAINER_FINISHED, Events.ET_TRAINER_STARTED, Events.ET_TRAIN_START,

@@ -103,7 +103,6 @@ def infer(model, test_data):
     with torch.no_grad():
         for batch_idx, (x, target) in enumerate(test_data):
             pred = model(x)
-            print(pred.cpu().numpy())
             loss = criterion(pred, target)
             _, predicted = torch.max(pred, -1)
             correct = predicted.eq(target).sum()

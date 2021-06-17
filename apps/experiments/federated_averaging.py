@@ -14,14 +14,14 @@ from src.federated import subscribers
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
-from src.federated.components.trainer_manager import SeqTrainerManager
+from src.federated.components.trainer_manager import SeqTrainerManager, SharedTrainerProvider
 from src.federated.subscribers import Timer
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
 logger.info('Generating Data --Started')
-client_data = data_loader.femnist_100c_2000min_2000max()
+client_data = data_loader.mnist_10shards_100c_400min_400max()
 tools.detail(client_data)
 logger.info('Generating Data --Ended')
 
@@ -40,11 +40,10 @@ federated = FederatedLearning(
     desired_accuracy=0.99,
 )
 
+
 federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
 federated.add_subscriber(subscribers.FedPlot())
-# federated.plug(plugins.FedSave())
-# federated.plug(plugins.WandbLogger(config={'num_rounds': 10}))
 
 logger.info("----------------------")
 logger.info("start federated 1")
