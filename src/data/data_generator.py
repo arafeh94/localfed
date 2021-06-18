@@ -76,14 +76,14 @@ class DataGenerator:
             client_data_size = random.randint(min_size, max_size)
             selected_shards = grouper.groups(shards_per_client)
             logging.getLogger('distribute_shards').info(f'generating data for {client_id}-{selected_shards}')
-            client_x = None
-            client_y = None
+            client_x = []
+            client_y = []
             for shard in selected_shards:
                 rx, ry = grouper.get(shard, int(client_data_size / len(selected_shards)))
                 if len(rx) == 0:
                     Exception("requested shard do not have anymore data, reduce the min and max size")
-                client_x = rx if client_x is None else np.concatenate((client_x, rx))
-                client_y = ry if client_y is None else np.concatenate((client_y, ry))
+                client_x = rx if len(client_x) == 0 else np.concatenate((client_x, rx))
+                client_y = ry if len(client_y) == 0 else np.concatenate((client_y, ry))
             clients_data[client_id] = DataContainer(client_x, client_y).as_tensor(self.xtt, self.ytt)
         self.distributed = clients_data
         return clients_data

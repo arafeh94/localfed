@@ -69,6 +69,20 @@ def femnist_100c_2000min_2000max():
         return client_data
 
 
+def femnist_2shards_100c_2000min_2000max():
+    file_path = manifest.DATA_PATH + "femnist_2shards_100c_2000min_2000max.pkl"
+    if os.path.exists(file_path):
+        logger.info(f'distributed data file exists, loading from {file_path}...')
+        return src.data.data_generator.load(file_path).get_distributed_data()
+    else:
+        logger.info(f'distributed data file does not exists, distributing into {file_path}...')
+        data_provider = PickleDataProvider(urls['femnist'])
+        data_generator = DataGenerator(data_provider)
+        client_data = data_generator.distribute_shards(100, 2, 2000, 2000)
+        data_generator.save(file_path)
+        return client_data
+
+
 def kdd_100c_400min_400max():
     file_path = manifest.DATA_PATH + "kdd_100c_400min_400max.pkl"
     if os.path.exists(file_path):
