@@ -27,12 +27,8 @@ from src.federated.protocols import TrainerParams
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-data_file = "EMNIST - balanced"
-
-logger.info('generating data --Started')
-# client_data = data_loader.femnist_1shard_62c_200min_2000max()
-
-client_data = data_loader.femnist_1shard_62c_2000min_2000max()
+data_file = "femnist_62s_62c_2000min_2000max"
+client_data = data_loader.femnist_62s_62c_2000min_2000max()
 tools.detail(client_data)
 
 # building Hyperparameters
@@ -75,7 +71,7 @@ for model_name, gen_model in initial_models.items():
             f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds},'
             f' initial_model={initial_model} ')
         trainer_manager = SeqTrainerManager()
-        trainer_params = TrainerParams(trainer_class=trainers.TorchAllTrainer, batch_size=batch_size,
+        trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=batch_size,
                                        epochs=epochs, optimizer='sgd', criterion='cel', lr=learn_rate)
 
         federated = FederatedLearning(
