@@ -40,7 +40,7 @@ federated = FederatedLearning(
     desired_accuracy=0.99,
 )
 
-
+federated.add_subscriber(subscribers.Resumable('agv', federated))
 federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
 federated.add_subscriber(subscribers.FedPlot())

@@ -4,10 +4,12 @@ import os
 import pickle
 import time
 from collections import defaultdict
+from datetime import datetime
 
 import matplotlib.pyplot as plt
+from typing.io import IO
 
-from src import tools
+from src import tools, manifest
 from src.apis.mpi import Comm
 from src.data.data_container import DataContainer
 from src.federated.events import FederatedEventPlug, Events
@@ -282,3 +284,37 @@ class MPIStopPlug(FederatedEventPlug):
 
     def on_federated_ended(self, params):
         Comm().stop()
+
+
+class Resumable(FederatedEventPlug):
+    def __init__(self, tag, federated: FederatedLearning, verbose=1):
+        super().__init__()
+        os.makedirs(manifest.ROOT_PATH + "/checkpoints", exist_ok=True)
+        self.federated = federated
+        self.file_name = manifest.ROOT_PATH + "/checkpoints" + "/run_" + tag + ".fed"
+        self.verbose = verbose
+
+    def on_init(self, params):
+        if os.path.exists(self.file_name):
+            self.log('found a checkpoint, loading...')
+            file = open(self.file_name, 'rb')
+            loaded = pickle.load(file)
+            context = loaded['context']
+            is_finished = loaded['is_finished']
+            self.federated.context = context
+            self.federated.is_finished = is_finished
+            file.close()
+
+    def on_round_end(self, params):
+        file = open(self.file_name, 'wb')
+        to_save = {
+            'context': self.federated.context,
+            'is_finished': self.federated.is_finished,
+        }
+        self.log('saving checkpoint...')
+        pickle.dump(to_save, file)
+        file.close()
+
+    def log(self, msg):
+        if self.verbose == 1:
+            logging.getLogger('resumable').info(msg)

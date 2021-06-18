@@ -143,15 +143,21 @@ class FederatedLearning(Broadcaster):
 
     def configs(self):
         named = {
-            "trainer": self.trainer_manager,
-            "aggregator": self.aggregator,
-            "client_selector": self.client_selector,
-            "ignore_acc_decrease": self.ignore_acc_decrease,
-            "trainers_data_dict": self.trainers_data_dict,
-            "desired_accuracy": self.desired_accuracy,
-            "create_model": self.initial_model,
-            "train_ratio": self.train_ratio,
-            "num_rounds": self.num_rounds
+            'trainer_config': self.trainer_config,
+            'trainer_manager': self.trainer_manager,
+            'aggregator': self.aggregator,
+            'client_selector': self.client_selector,
+            'metrics': self.metrics,
+            'ignore_acc_decrease': self.ignore_acc_decrease,
+            'trainers_data_dict': self.trainers_data_dict,
+            'desired_accuracy': self.desired_accuracy,
+            'initial_model': self.initial_model,
+            'train_ratio': self.train_ratio,
+            'num_rounds': self.num_rounds,
+            'context': self.context,
+            'test_data': self.test_data,
+            'trainers_train': self.trainers_train,
+            'is_finished': self.is_finished,
         }
         return reduce(lambda x, y: dict(x, **y), (named, self.args))
 
