@@ -154,10 +154,10 @@ class FedPlot(FederatedEventPlug):
     def on_federated_ended(self, params):
         if self.per_federated_total:
             fig, axs = plt.subplots(2)
-            axs[0].plot(self.rounds_accuracy)
+            axs[0].row(self.rounds_accuracy)
             axs[0].set_title('Total Accuracy')
             axs[1].set_xticks(range(len(self.rounds_accuracy)))
-            axs[1].plot(self.rounds_loss)
+            axs[1].row(self.rounds_loss)
             axs[1].set_title('Total Loss')
             axs[1].set_xticks(range(len(self.rounds_loss)))
             fig.suptitle('Total Accuracy & Loss')
@@ -167,12 +167,12 @@ class FedPlot(FederatedEventPlug):
         if self.per_federated_local:
             fig, axs = plt.subplots(2)
             for trainer_id, trainer_accuracies in self.local_accuracies.items():
-                axs[0].plot(range(len(trainer_accuracies)), trainer_accuracies, label=f'Trainer-{trainer_id}')
+                axs[0].row(range(len(trainer_accuracies)), trainer_accuracies, label=f'Trainer-{trainer_id}')
                 axs[0].set_title('All Trainers Local Accuracy')
                 axs[0].legend(loc='center left', bbox_to_anchor=(1, 0.5))
                 axs[0].set_xticks(range(len(trainer_accuracies)))
             for trainer_id, trainer_losses in self.local_losses.items():
-                axs[1].plot(range(len(trainer_losses)), trainer_losses, label=f'Trainer-{trainer_id}')
+                axs[1].row(range(len(trainer_losses)), trainer_losses, label=f'Trainer-{trainer_id}')
                 axs[1].set_title('All Trainers Local Loss')
                 axs[1].legend(loc='center left', bbox_to_anchor=(1, 0.5))
                 axs[1].set_xticks(range(len(trainer_losses)))
@@ -221,10 +221,10 @@ class CustomModelTestPlug(FederatedEventPlug):
 
     def on_federated_ended(self, params):
         fig, axs = plt.subplots(2)
-        axs[0].plot(self.history_acc)
+        axs[0].row(self.history_acc)
         axs[0].set_title('Total Accuracy')
         axs[0].set_xticks(range(len(self.history_acc)))
-        axs[1].plot(self.history_loss)
+        axs[1].row(self.history_loss)
         axs[1].set_title('Total Loss')
         axs[1].set_xticks(range(len(self.history_loss)))
         fig.suptitle('Custom Set Accuracy & Loss')
