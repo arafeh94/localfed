@@ -6,6 +6,7 @@ import platform
 import sys
 from os.path import dirname
 
+import matplotlib.pyplot as plt
 from torch import nn
 
 from src import tools
@@ -24,7 +25,7 @@ from src.federated.components.trainer_manager import MPITrainerManager, SeqTrain
 from hp_generator import generate_configs, build_random, calculate_max_rounds
 from src.apis.mpi import Comm
 from src.federated.components import metrics, client_selectors, aggregators, trainers
-from libs.model.cv.cnn import CNN_OriginalFedAvg
+from libs.model.cv.cnn import CNN_OriginalFedAvg, CNN_DropOut
 from libs.model.linear.lr import LogisticRegression
 from libs.model.collection import MLP
 from src.data import data_generator, data_loader
@@ -34,29 +35,32 @@ from src.federated.protocols import TrainerParams
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-# data_file = "../datasets/pickles/10_1000_big_ca.pkl"
+# data_file = "../../datasets/pickles/femnist_1shard_10c_1000min_1000max.pkl"
+# data_file = "../../datasets/pickles/10_1000_big_ca.pkl"
 # data_file = "../datasets/pickles/10_2400_3000_big_imbalanced_ca.pkl"
 
-data_file = 'mnist_2shards_100c_600min_600max'
-client_data = mnist_2shards_100c_600min_600max()
+data_file = "femnist_1s_62c_2000min_2000max"
+client_data = data_loader.femnist_1s_62c_2000min_2000max()
 tools.detail(client_data)
 
 logger.info('generating data --Started')
 
 # dg = data_generator.load(data_file)
 # client_data = dg.distributed
+
 # dg.describe()
 
 # building Hyperparameters
 input_shape = 28 * 28
-labels_number = 10
-percentage_nb_client = 0.1
+labels_number = 62
+percentage_nb_client = 6
 
 # number of models that we are using
 initial_models = {
     # 'LR': LogisticRegression(input_shape, labels_number),
     # 'MLP': MLP(input_shape, labels_number)
-    'CNN': CNN_OriginalFedAvg()
+    # 'CNN': CNN_OriginalFedAvg(False)
+    'CNN':CNN_DropOut(False)
 }
 
 for model_name, gen_model in initial_models.items():
@@ -64,8 +68,8 @@ for model_name, gen_model in initial_models.items():
     """
       each params=(min,max,num_value)
     """
-    batch_size = (10, 50, 2)
-    epochs = (5, 20, 2)
+    batch_size = (50, 50, 1)
+    epochs = (150, 20, 1)
     num_rounds = (1000, 1000, 1)
 
     hyper_params = build_random(batch_size=batch_size, epochs=epochs, num_rounds=num_rounds)
