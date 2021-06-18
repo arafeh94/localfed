@@ -15,6 +15,7 @@ else:
     # windows
     sys.path.append(dirname(__file__) + '../../')
 
+
 from src.federated import subscribers
 from src.federated.components.trainer_manager import MPITrainerManager
 
