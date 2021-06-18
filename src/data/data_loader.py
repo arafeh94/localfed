@@ -41,20 +41,6 @@ def mnist_2shards_100c_600min_600max():
         return client_data
 
 
-def mnist_1shards_100c_600min_600max():
-    file_path = manifest.DATA_PATH + "mnist_1shards_100c_600mn_600mx.pkl"
-    if os.path.exists(file_path):
-        logger.info('distributed data file exists, loading...')
-        return src.data.data_generator.load(file_path).get_distributed_data()
-    else:
-        logger.info('distributed data file does not exists, distributing...')
-        data_provider = PickleDataProvider(urls['mnist'])
-        data_generator = DataGenerator(data_provider)
-        client_data = data_generator.distribute_shards(100, 1, 600, 600)
-        data_generator.save(file_path)
-        return client_data
-
-
 def femnist_2shards_100c_600min_600max():
     file_path = manifest.DATA_PATH + "femnist_2shards_100c_600mn_600mx.pkl"
     if os.path.exists(file_path):
@@ -65,6 +51,34 @@ def femnist_2shards_100c_600min_600max():
         data_provider = PickleDataProvider(urls['femnist'])
         data_generator = DataGenerator(data_provider)
         client_data = data_generator.distribute_shards(100, 2, 600, 600)
+        data_generator.save(file_path)
+        return client_data
+
+
+def femnist_100c_2000min_2000max():
+    file_path = manifest.DATA_PATH + "femnist_100c_2000min_2000max.pkl"
+    if os.path.exists(file_path):
+        logger.info(f'distributed data file exists, loading from {file_path}...')
+        return src.data.data_generator.load(file_path).get_distributed_data()
+    else:
+        logger.info(f'distributed data file does not exists, distributing into {file_path}...')
+        data_provider = PickleDataProvider(urls['femnist'])
+        data_generator = DataGenerator(data_provider)
+        client_data = data_generator.distribute_size(100, 2000, 2000)
+        data_generator.save(file_path)
+        return client_data
+
+
+def femnist_2shards_100c_2000min_2000max():
+    file_path = manifest.DATA_PATH + "femnist_2shards_100c_2000min_2000max.pkl"
+    if os.path.exists(file_path):
+        logger.info(f'distributed data file exists, loading from {file_path}...')
+        return src.data.data_generator.load(file_path).get_distributed_data()
+    else:
+        logger.info(f'distributed data file does not exists, distributing into {file_path}...')
+        data_provider = PickleDataProvider(urls['femnist'])
+        data_generator = DataGenerator(data_provider)
+        client_data = data_generator.distribute_shards(100, 2, 2000, 2000)
         data_generator.save(file_path)
         return client_data
 
@@ -151,33 +165,6 @@ def femnist_10shards_100c_600min_600max():
         data_generator.save(file_path)
         return client_data
 
-def femnist_1shard_31c_1000min_1000max():
-    file_path = manifest.DATA_PATH + "femnist_1s_31c_1000min_1000max.pkl"
-    if os.path.exists(file_path):
-        logger.info(f'distributed data file exists, loading from {file_path}...')
-        return src.data.data_generator.load(file_path).get_distributed_data()
-    else:
-        logger.info(f'distributed data file does not exists, distributing into {file_path}...')
-        data_provider = PickleDataProvider(urls['femnist'])
-        data_generator = DataGenerator(data_provider)
-        client_data = data_generator.distribute_continuous(31, 1000, 1000)
-        data_generator.save(file_path)
-        return client_data
-
-
-def femnist_1s_5c_2000min_2000max():
-    file_path = manifest.DATA_PATH + "femnist_1s_5c_2000min_2000max.pkl"
-    if os.path.exists(file_path):
-        logger.info(f'distributed data file exists, loading from {file_path}...')
-        return src.data.data_generator.load(file_path).get_distributed_data()
-    else:
-        logger.info(f'distributed data file does not exists, distributing into {file_path}...')
-        data_provider = PickleDataProvider(urls['femnist'])
-        data_generator = DataGenerator(data_provider)
-        client_data = data_generator.distribute_continuous(5, 2000, 2000)
-        data_generator.save(file_path)
-        return client_data
-
 
 def femnist_62shards_62c_600min_600max():
     file_path = manifest.DATA_PATH + "femnist_62shards_62c_600min_600max.pkl"
@@ -207,8 +194,8 @@ def femnist_62shards_62c_2000min_2000max():
         return client_data
 
 
-def femnist_62s_62c_1500min_1500max():
-    file_path = manifest.DATA_PATH + "femnist_62s_62c_1500min_1500max.pkl"
+def femnist_1s_62c_2000min_2000max():
+    file_path = manifest.DATA_PATH + "femnist_1s_62c_2000min_2000max.pkl"
     if os.path.exists(file_path):
         logger.info(f'distributed data file exists, loading from {file_path}...')
         return src.data.data_generator.load(file_path).get_distributed_data()
@@ -216,7 +203,7 @@ def femnist_62s_62c_1500min_1500max():
         logger.info(f'distributed data file does not exists, distributing into {file_path}...')
         data_provider = PickleDataProvider(urls['femnist'])
         data_generator = DataGenerator(data_provider)
-        client_data = data_generator.distribute_shards(62, 62, 1500, 1500)
+        client_data = data_generator.distribute_continuous(62, 2000, 2000)
         data_generator.save(file_path)
         return client_data
 
