@@ -57,7 +57,7 @@ def train(model, train_data, epochs=10, lr=0.1):
 
     epoch_loss = []
     for epoch in range(epochs):
-        print(f'epoch {epoch} finished')
+        print(f'epoch {epoch} started')
         batch_loss = []
         for batch_idx, (x, labels) in enumerate(train_data):
             x = x.to(device)
@@ -70,8 +70,11 @@ def train(model, train_data, epochs=10, lr=0.1):
             batch_loss.append(loss.item())
         if len(batch_loss) > 0:
             epoch_loss.append(sum(batch_loss) / len(batch_loss))
+        print(f'epoch {epoch} finished')
+
 
     weights = model.cpu().state_dict()
+
     return weights
 
 
