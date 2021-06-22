@@ -9,6 +9,7 @@ from datetime import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
+import torch
 from typing.io import IO
 
 from src import tools, manifest
@@ -200,6 +201,23 @@ class FedPlot(FederatedEventPlug):
             loss_y = [trainer_losses for trainer_id, trainer_losses in self.local_losses.items()]
             self.show_acc_loss(acc_y, 'Local Accuracy', loss_y, 'Local Loss', 'Local AccLoss')
 
+    def show_acc_loss(self, acc_y, acc_title, loss_y, loss_title, big_title):
+        config = []
+        if self.show_acc:
+            config.append(self.PlotParams(acc_y, acc_title))
+        if self.show_loss:
+            config.append(self.PlotParams(loss_y, loss_title))
+        self.show(config, big_title)
+
+    def on_federated_ended(self, params):
+        if self.show_global:
+            self.show_acc_loss(self.rounds_accuracy, 'Accuracy', self.rounds_loss, 'Loss', 'Federated Results')
+
+        if self.show_local:
+            acc_y = [trainer_accuracies for trainer_id, trainer_accuracies in self.local_accuracies.items()]
+            loss_y = [trainer_losses for trainer_id, trainer_losses in self.local_losses.items()]
+            self.show_acc_loss(acc_y, 'Local Accuracy', loss_y, 'Local Loss', 'Local AccLoss')
+
     def on_round_end(self, params):
         self.rounds_accuracy.append(params['accuracy'])
         self.rounds_loss.append(params['loss'])
@@ -263,7 +281,10 @@ class FedSave(FederatedEventPlug):
             all_runs[self.tag] = []
         all_runs[self.tag].append(context)
         with open(self.path(), 'wb') as file:
-            pickle.dump(all_runs, file)
+            try:
+                pickle.dump(all_runs, file)
+            except Exception as e:
+                raise Exception(f'used federated model cannot be saved because: {e}')
 
     def is_old_exists(self):
         return os.path.exists(path=self.path())
@@ -272,7 +293,10 @@ class FedSave(FederatedEventPlug):
         runs = {}
         if self.is_old_exists():
             with open(self.path(), 'rb') as file:
-                runs = pickle.load(file)
+                try:
+                    runs = pickle.load(file)
+                except:
+                    runs = {}
         return runs
 
     def path(self):
@@ -338,3 +362,46 @@ class Resumable(FederatedEventPlug):
     def log(self, msg):
         if self.verbose == 1:
             logging.getLogger('resumable').info(msg)
+
+
+class ShowWeightDivergence(FederatedEventPlug):
+    def __init__(self, show_plot=True):
+        super().__init__()
+        self.logger = logging.getLogger('weights_divergence')
+        self.show_plot = show_plot
+
+    def on_training_end(self, params):
+        trainers_weights = params['trainers_weights']
+        ids = list(trainers_weights.keys())
+        heatmap = np.zeros((len(trainers_weights), len(trainers_weights)))
+        id_mapper = lambda id: ids.index(id)
+        for trainer_id, weights in trainers_weights.items():
+            for trainer_id_1, weights_1 in trainers_weights.items():
+                keys = weights.keys()
+                for key in keys:
+                    if key == 'linear.weight':
+                        heatmap[id_mapper(trainer_id)][id_mapper(trainer_id_1)] = torch.var(
+                            torch.subtract(weights[key], weights_1[key]))
+        self.logger.info(heatmap)
+        if self.show_plot:
+            self.show_map(heatmap)
+
+    def show_map(self, data):
+        fig, ax = plt.subplots()
+        im = ax.imshow(data)
+
+        ax.set_xticks(np.arange(len(data)))
+        ax.set_yticks(np.arange(len(data)))
+
+        # Rotate the tick labels and set their alignment.
+        plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
+                 rotation_mode="anchor")
+
+        # Loop over data dimensions and create text annotations.
+        for i in range(len(data)):
+            for j in range(len(data)):
+                text = ax.text(j, i, f'{i}-{j}', ha="center", va="center", color="w")
+
+        ax.set_title("Weight Divergence")
+        fig.tight_layout()
+        plt.show()
