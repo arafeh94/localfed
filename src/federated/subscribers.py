@@ -3,10 +3,12 @@ import logging
 import os
 import pickle
 import time
+import typing
 from collections import defaultdict
 from datetime import datetime
 
 import matplotlib.pyplot as plt
+import numpy as np
 from typing.io import IO
 
 from src import tools, manifest
@@ -142,42 +144,61 @@ class FederatedLogger(FederatedEventPlug):
 
 
 class FedPlot(FederatedEventPlug):
-    def __init__(self, per_rounds=False, per_federated_local=False, per_federated_total=True):
+    def __init__(self, plot_each_round=False, show_local=False, show_global=True, show_acc=True, show_loss=True):
         super().__init__()
         self.rounds_accuracy = []
         self.rounds_loss = []
         self.local_accuracies = defaultdict(lambda: [])
         self.local_losses = defaultdict(lambda: [])
+        self.plot_each_round = plot_each_round
+        self.show_local = show_local
+        self.show_global = show_global
+        self.show_acc = show_acc
+        self.show_loss = show_loss
         plt.interactive(False)
-        self.per_rounds = per_rounds
-        self.per_federated_local = per_federated_local
-        self.per_federated_total = per_federated_total
+
+    class PlotParams:
+        def __init__(self, y, title, x=None):
+            self.title = title
+            self.y = y
+            self.x = x
+            if self.x is None:
+                step = 1 if len(y) < 20 else 5
+                self.x = range(0, len(y), step)
+
+    def show(self, params: typing.List[PlotParams], title=None):
+        fig, axs = plt.subplots(len(params))
+        axs = [axs] if len(params) == 1 else axs
+        for ax, param in zip(axs, params):
+            if len(param.y) > 0 and isinstance(param.y[0], list):
+                for y1 in param.y:
+                    ax.plot(y1)
+            else:
+                ax.plot(param.y)
+            ax.set_title(param.title)
+            ax.set_xticks(param.x)
+
+        if title is not None:
+            fig.suptitle(title)
+        fig.tight_layout()
+        plt.show()
+
+    def show_acc_loss(self, acc_y, acc_title, loss_y, loss_title, big_title):
+        config = []
+        if self.show_acc:
+            config.append(self.PlotParams(acc_y, acc_title))
+        if self.show_loss:
+            config.append(self.PlotParams(loss_y, loss_title))
+        self.show(config, big_title)
 
     def on_federated_ended(self, params):
-        if self.per_federated_total:
-            fig, axs = plt.subplots(2)
-            axs[0].plot(self.rounds_accuracy)
-            axs[0].set_title('Total Accuracy')
-            axs[1].plot(self.rounds_loss)
-            axs[1].set_title('Total Loss')
-            fig.suptitle('Total Accuracy & Loss')
-            fig.tight_layout()
-            plt.show()
+        if self.show_global:
+            self.show_acc_loss(self.rounds_accuracy, 'Accuracy', self.rounds_loss, 'Loss', 'Federated Results')
 
-        if self.per_federated_local:
-            fig, axs = plt.subplots(2)
-            for trainer_id, trainer_accuracies in self.local_accuracies.items():
-                axs[0].plot(range(len(trainer_accuracies)), trainer_accuracies, label=f'Trainer-{trainer_id}')
-                axs[0].set_title('All Trainers Local Accuracy')
-                axs[0].legend(loc='center left', bbox_to_anchor=(1, 0.5))
-                axs[0].set_xticks(range(len(trainer_accuracies)))
-            for trainer_id, trainer_losses in self.local_losses.items():
-                axs[1].plot(range(len(trainer_losses)), trainer_losses, label=f'Trainer-{trainer_id}')
-                axs[1].set_title('All Trainers Local Loss')
-                axs[1].legend(loc='center left', bbox_to_anchor=(1, 0.5))
-                axs[1].set_xticks(range(len(trainer_losses)))
-            fig.tight_layout()
-            plt.show()
+        if self.show_local:
+            acc_y = [trainer_accuracies for trainer_id, trainer_accuracies in self.local_accuracies.items()]
+            loss_y = [trainer_losses for trainer_id, trainer_losses in self.local_losses.items()]
+            self.show_acc_loss(acc_y, 'Local Accuracy', loss_y, 'Local Loss', 'Local AccLoss')
 
     def on_round_end(self, params):
         self.rounds_accuracy.append(params['accuracy'])
@@ -188,16 +209,8 @@ class FedPlot(FederatedEventPlug):
             self.local_accuracies[trainer_id].append(accuracy)
         for trainer_id, loss in local_loss.items():
             self.local_losses[trainer_id].append(loss)
-        if self.per_rounds:
-            fig, axs = plt.subplots(2)
-            axs[0].bar(local_accuracy.keys(), local_accuracy.values())
-            axs[0].set_title('Local Round Accuracy')
-            axs[0].set_xticks(range(len(self.local_accuracies)))
-            axs[1].bar(local_loss.keys(), local_loss.values())
-            axs[1].set_title('Local Round Loss')
-            axs[1].set_xticks(range(len(self.local_losses)))
-            fig.tight_layout()
-            plt.show()
+        if self.plot_each_round:
+            self.show_acc_loss(self.rounds_accuracy, f'Round Acc', self.rounds_loss, f'Round Loss', 'Per Round')
 
 
 class CustomModelTestPlug(FederatedEventPlug):
@@ -233,26 +246,30 @@ class CustomModelTestPlug(FederatedEventPlug):
 
 
 class FedSave(FederatedEventPlug):
-    def __init__(self, folder_name="./logs/"):
+    def __init__(self, tag, folder_name="./logs/"):
         super().__init__()
         self.folder_name = folder_name
         self.file_name = "fedruns.pkl"
+        self.tag = tag
+        os.makedirs(folder_name, exist_ok=True)
 
     def force(self) -> []:
         return [Events.ET_FED_END]
 
     def on_federated_ended(self, params):
         context = params['context']
-        all = self.old_runs()
-        all.append(context)
+        all_runs = self.old_runs()
+        if self.tag not in all_runs:
+            all_runs[self.tag] = []
+        all_runs[self.tag].append(context)
         with open(self.path(), 'wb') as file:
-            pickle.dump(all, file)
+            pickle.dump(all_runs, file)
 
     def is_old_exists(self):
         return os.path.exists(path=self.path())
 
     def old_runs(self):
-        runs = []
+        runs = {}
         if self.is_old_exists():
             with open(self.path(), 'rb') as file:
                 runs = pickle.load(file)
@@ -260,6 +277,10 @@ class FedSave(FederatedEventPlug):
 
     def path(self):
         return self.folder_name + self.file_name
+
+    @staticmethod
+    def unpack(file_path) -> typing.Dict[str, FederatedLearning.Context]:
+        return pickle.load(open(file_path, 'rb'))
 
 
 class WandbLogger(FederatedEventPlug):
@@ -285,15 +306,16 @@ class MPIStopPlug(FederatedEventPlug):
 
 
 class Resumable(FederatedEventPlug):
-    def __init__(self, tag, federated: FederatedLearning, verbose=1):
+    def __init__(self, tag, federated: FederatedLearning, verbose=1, flush=False):
         super().__init__()
         os.makedirs(manifest.ROOT_PATH + "/checkpoints", exist_ok=True)
         self.federated = federated
         self.file_name = manifest.ROOT_PATH + "/checkpoints" + "/run_" + tag + ".fed"
         self.verbose = verbose
+        self.flush = flush
 
     def on_init(self, params):
-        if os.path.exists(self.file_name):
+        if os.path.exists(self.file_name) and not self.flush:
             self.log('found a checkpoint, loading...')
             file = open(self.file_name, 'rb')
             loaded = pickle.load(file)

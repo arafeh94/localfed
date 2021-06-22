@@ -1,5 +1,6 @@
 import copy
 import math
+import time
 from collections import defaultdict
 from functools import reduce
 from typing import Dict
@@ -172,6 +173,7 @@ class FederatedLearning(Broadcaster):
             self.num_rounds = None
             self.desired_accuracy = None
             self.history = {}
+            self.timestamp = time.time()
 
         def new_round(self):
             self.round_id += 1
@@ -193,3 +195,6 @@ class FederatedLearning(Broadcaster):
             if self.round_id not in self.history:
                 self.history[self.round_id] = {}
             self.history[self.round_id] = tools.Dict.concat(self.history[self.round_id], kwargs)
+
+        def describe(self):
+            return f"created at {self.timestamp}"

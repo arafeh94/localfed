@@ -69,6 +69,34 @@ class CNN_OriginalFedAvg(torch.nn.Module):
         return x
 
 
+class CNN(torch.nn.Module):
+    def __init__(self, output_dim=62, reshape=None):
+        super(CNN, self).__init__()
+        self.conv2d_1 = torch.nn.Conv2d(1, 32, kernel_size=5, padding=2)
+        self.max_pooling = nn.MaxPool2d(2, stride=2)
+        self.conv2d_2 = torch.nn.Conv2d(32, 64, kernel_size=5, padding=2)
+        self.flatten = nn.Flatten()
+        self.linear_1 = nn.Linear(3136, 512)
+        self.linear_2 = nn.Linear(512, output_dim)
+        self.relu = nn.ReLU()
+        self.softmax = nn.Softmax(dim=1)
+        self.reshape = reshape
+        if self.reshape is None:
+            self.reshape = lambda x: x.view(-1, 28, 28)
+
+    def forward(self, x):
+        x = self.reshape(x)
+        x = torch.unsqueeze(x, 1)
+        x = self.conv2d_1(x)
+        x = self.max_pooling(x)
+        x = self.conv2d_2(x)
+        x = self.max_pooling(x)
+        x = self.flatten(x)
+        x = self.relu(self.linear_1(x))
+        x = self.softmax(self.linear_2(x))
+        return x
+
+
 class CNN_DropOut(torch.nn.Module):
     """
     Recommended model by "Adaptive Federated Optimization" (https://arxiv.org/pdf/2003.00295.pdf)
