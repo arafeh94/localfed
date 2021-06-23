@@ -27,8 +27,14 @@ from src.federated.protocols import TrainerParams
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-data_file = "femnist_1shard_62c_200min_2000max"
-client_data = data_loader.femnist_1shard_62c_200min_2000max()
+dataset_name = 'mnist'
+clients_nb = 10
+min_samples = 1000
+max_samples = 3000
+shards_nb = 0
+client_data = data_loader.pickle_distribute_continuous(dataset_name, clients_nb, min_samples, max_samples)
+# dataset_used = str(dataset_name + "_" + clients_nb + "c_" + min_samples + "mn_" + max_samples + "mx.pkl")
+dataset_used = ''
 tools.detail(client_data)
 
 # building Hyperparameters
@@ -93,7 +99,7 @@ for model_name, gen_model in initial_models.items():
         federated.add_subscriber(subscribers.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
         federated.add_subscriber(
             subscribers.WandbLogger(config={'lr': learn_rate, 'batch_size': batch_size, 'epochs': epochs,
-                                            'num_rounds': num_rounds, 'data_file': data_file,
+                                            'num_rounds': num_rounds, 'data_file': dataset_used,
                                             'model': model_name, 'os': platform.system() + '',
                                             'selected_clients': percentage_nb_client}))
 
