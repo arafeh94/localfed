@@ -27,8 +27,8 @@ from src.federated.protocols import TrainerParams
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-data_file = "femnist_62s_62c_1500min_1500max"
-client_data = data_loader.femnist_62s_62c_1500min_1500max()
+data_file = "femnist_1shard_62c_200min_2000max"
+client_data = data_loader.femnist_1shard_62c_200min_2000max()
 tools.detail(client_data)
 
 # building Hyperparameters
