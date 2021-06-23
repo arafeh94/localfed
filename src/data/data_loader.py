@@ -15,6 +15,15 @@ logger = logging.getLogger('data_loader')
 
 
 def preload(name, dataset, distributor: typing.Callable[[DataGenerator], None]):
+    """
+    Args:
+        name: file name without prefix
+        dataset: dataset used, should be exists inside urls
+        distributor: distribution function, dg.distribute_shards or dg.distribute_size ...
+
+    Returns:
+
+    """
     file_path = manifest.DATA_PATH + name + ".pkl"
     if os.path.exists(file_path):
         logger.info('distributed data file exists, loading...')
