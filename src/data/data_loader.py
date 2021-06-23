@@ -6,6 +6,7 @@ import src
 from src import manifest
 import logging
 
+from src.data.data_container import DataContainer
 from src.data.data_generator import DataGenerator
 from src.data.data_provider import PickleDataProvider
 
@@ -14,14 +15,14 @@ urls = json.load(open(manifest.DATA_PATH + "urls.json", 'r'))
 logger = logging.getLogger('data_loader')
 
 
-def preload(name, dataset, distributor: typing.Callable[[DataGenerator], None]):
+def preload(name, dataset, distributor: typing.Callable[[DataGenerator], None]) -> typing.Dict[int, DataContainer]:
     """
     Args:
-        name: file name without prefix
+        name: file name without postfix (file type, auto-filled with .pkl)
         dataset: dataset used, should be exists inside urls
         distributor: distribution function, dg.distribute_shards or dg.distribute_size ...
 
-    Returns:
+    Returns: clients data of type typing.Dict[int, DataContainer]
 
     """
     file_path = manifest.DATA_PATH + name + ".pkl"
