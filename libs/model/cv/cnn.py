@@ -80,8 +80,6 @@ class CNN(torch.nn.Module):
         self.linear_2 = nn.Linear(512, output_dim)
         self.relu = nn.ReLU()
         self.softmax = nn.Softmax(dim=1)
-        if self.reshape is None:
-            self.reshape = lambda x: x.view(-1, 28, 28)
 
     def forward(self, x):
         x = torch.unsqueeze(x, 1)

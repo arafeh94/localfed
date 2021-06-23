@@ -5,8 +5,8 @@ import numpy as np
 from src.data.data_container import DataContainer
 
 
-def r28c28(_, val: DataContainer):
-    return val.map(lambda x, y: (np.reshape(x, (28, 28)), y))
+def r28c28(x, y):
+    return np.reshape(x, (28, 28)), y
 
 
 def as_numpy(_, val: DataContainer):
