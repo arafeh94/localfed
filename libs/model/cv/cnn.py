@@ -70,7 +70,7 @@ class CNN_OriginalFedAvg(torch.nn.Module):
 
 
 class CNN(torch.nn.Module):
-    def __init__(self, output_dim=62, reshape=None):
+    def __init__(self, output_dim):
         super(CNN, self).__init__()
         self.conv2d_1 = torch.nn.Conv2d(1, 32, kernel_size=5, padding=2)
         self.max_pooling = nn.MaxPool2d(2, stride=2)
@@ -80,12 +80,10 @@ class CNN(torch.nn.Module):
         self.linear_2 = nn.Linear(512, output_dim)
         self.relu = nn.ReLU()
         self.softmax = nn.Softmax(dim=1)
-        self.reshape = reshape
         if self.reshape is None:
             self.reshape = lambda x: x.view(-1, 28, 28)
 
     def forward(self, x):
-        x = self.reshape(x)
         x = torch.unsqueeze(x, 1)
         x = self.conv2d_1(x)
         x = self.max_pooling(x)

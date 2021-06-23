@@ -9,6 +9,7 @@ import pickle
 
 from libs.data_distribute import non_iid_partition_with_dirichlet_distribution
 from src import tools, manifest
+from src.apis.extentions import Dict
 from src.data.data_container import DataContainer
 from src.data.data_provider import DataProvider, PickleDataProvider
 
@@ -153,7 +154,7 @@ class DataGenerator:
         if self.distributed is None:
             logging.getLogger('data_generator').error('you have to distribute first')
             return None
-        return self.distributed
+        return Dict(self.distributed)
 
     def save(self, path):
         obj = copy.deepcopy(self)

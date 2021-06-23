@@ -5,8 +5,11 @@ import numpy as np
 import torch
 from torch import Tensor
 
+from src.apis.extentions import Functional
 
-class DataContainer:
+
+class DataContainer(Functional):
+
     def __init__(self, x, y):
         self.x = x
         self.y = y
@@ -89,4 +92,27 @@ class DataContainer:
             nx, ny = mapper(x, y)
             new_x.append(nx)
             new_y.append(ny)
+        return DataContainer(new_x, new_y)
+
+    def for_each(self, func: typing.Callable):
+        for x, y in zip(self.x, self.y):
+            func(x, y)
+
+    def reduce(self, func: typing.Callable):
+        first = None
+        for x, y in zip(self.x, self.y):
+            first = func(first, (x, y))
+        return first
+
+    def select(self, keys):
+        new_x = []
+        new_y = []
+        for key in keys:
+            new_x.append(self.x[key])
+            new_y.append(self.y[key])
+        return DataContainer(new_x, new_y)
+
+    def concat(self, other):
+        new_x = other.x if self.is_empty() else np.concatenate((self.x, other.x))
+        new_y = other.y if self.is_empty() else np.concatenate((self.y, other.y))
         return DataContainer(new_x, new_y)
