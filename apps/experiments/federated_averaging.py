@@ -33,10 +33,10 @@ federated = FederatedLearning(
     trainer_config=trainer_params,
     aggregator=aggregators.AVGAggregator(),
     metrics=metrics.AccLoss(batch_size=50, criterion=nn.CrossEntropyLoss()),
-    client_selector=client_selectors.Random(5),
+    client_selector=client_selectors.Random(0.5),
     trainers_data_dict=client_data,
-    initial_model=lambda: LogisticRegression(28 * 28, 10),
-    num_rounds=5,
+    initial_model=lambda: LogisticRegression(28 * 28, 62),
+    num_rounds=0,
     desired_accuracy=0.99,
 )
 

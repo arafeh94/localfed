@@ -190,6 +190,6 @@ def detail(client_data: {int: DataContainer}, selection=None, display: typing.Ca
             for item in data.y:
                 if item == unique:
                     unique_count += 1
-            unique_count = unique_count / len(data.y) * 100
-            unique_count = int(unique_count)
-            display(f"labels_{unique}= {unique_count}%")
+            percentage = unique_count / len(data.y) * 100
+            percentage = int(percentage)
+            display(f"labels_{unique}= {percentage}% - {unique_count}")

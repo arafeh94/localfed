@@ -81,3 +81,12 @@ class DataContainer:
                 new_x.append(x)
                 new_y.append(y)
         return DataContainer(new_x, new_y)
+
+    def map(self, mapper: typing.Callable):
+        new_x = []
+        new_y = []
+        for x, y in zip(self.x, self.y):
+            nx, ny = mapper(x, y)
+            new_x.append(nx)
+            new_y.append(ny)
+        return DataContainer(new_x, new_y)

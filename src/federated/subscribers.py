@@ -365,13 +365,25 @@ class Resumable(FederatedEventPlug):
 
 
 class ShowWeightDivergence(FederatedEventPlug):
-    def __init__(self, show_plot=True):
+    def __init__(self, show_log=True, include_global_weights=False):
         super().__init__()
         self.logger = logging.getLogger('weights_divergence')
-        self.show_plot = show_plot
+        self.show_log = show_log
+        self.include_global_weights = include_global_weights
+        self.trainers_weights = None
+        self.global_weights = None
 
     def on_training_end(self, params):
-        trainers_weights = params['trainers_weights']
+        self.trainers_weights = params['trainers_weights']
+
+    def on_aggregation_end(self, params):
+        self.global_weights = params['global_weights']
+
+    def on_round_end(self, params):
+        acc = params['accuracy']
+        trainers_weights = self.trainers_weights
+        if self.include_global_weights:
+            trainers_weights[len(trainers_weights)] = self.global_weights
         ids = list(trainers_weights.keys())
         heatmap = np.zeros((len(trainers_weights), len(trainers_weights)))
         id_mapper = lambda id: ids.index(id)
@@ -382,26 +394,20 @@ class ShowWeightDivergence(FederatedEventPlug):
                     if key == 'linear.weight':
                         heatmap[id_mapper(trainer_id)][id_mapper(trainer_id_1)] = torch.var(
                             torch.subtract(weights[key], weights_1[key]))
-        self.logger.info(heatmap)
-        if self.show_plot:
-            self.show_map(heatmap)
+        self.show_map(heatmap, round(acc, 4))
+        if self.show_log:
+            self.logger.info(heatmap)
 
-    def show_map(self, data):
+    def show_map(self, data, acc):
         fig, ax = plt.subplots()
-        im = ax.imshow(data)
-
+        ax.imshow(data)
         ax.set_xticks(np.arange(len(data)))
         ax.set_yticks(np.arange(len(data)))
-
-        # Rotate the tick labels and set their alignment.
-        plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
-                 rotation_mode="anchor")
-
-        # Loop over data dimensions and create text annotations.
+        plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
         for i in range(len(data)):
             for j in range(len(data)):
-                text = ax.text(j, i, f'{i}-{j}', ha="center", va="center", color="w")
-
-        ax.set_title("Weight Divergence")
+                ax.text(j, i, '', ha="center", va="center", color="w")
+        ax.set_title(f"Weight Divergence")
+        ax.set_xlabel(f'Acc {acc}')
         fig.tight_layout()
         plt.show()

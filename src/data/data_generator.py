@@ -69,7 +69,7 @@ class DataGenerator:
         self.distributed = clients_data
         return clients_data
 
-    def distribute_shards(self, num_clients, shards_per_client, min_size, max_size, verbose=0):
+    def distribute_shards(self, num_clients, shards_per_client, min_size, max_size):
         clients_data = defaultdict(list)
         grouper = self.Grouper(self.data.x, self.data.y)
         for client_id in range(num_clients):
