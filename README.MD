@@ -326,7 +326,7 @@ fr.plot()  # a single plot that show the improvement of accuracy over rounds.
 ## Support for functional programming
 
 ```python
-from src.apis.functionals import r28c28, dict21dc, as_numpy
+from src.apis.functionals import r28c28, dict2dc, as_numpy
 from src.data import data_loader
 from src.data.data_container import DataContainer
 
@@ -334,7 +334,7 @@ from src.data.data_container import DataContainer
 # convert distributed client data into one DataContainer contains all the data of each client
 # additionally convert shape of feature to image of 28*28
 clients_data = data_loader.mnist_10shards_100c_400min_400max()
-all_in_one: DataContainer = clients_data.select([1, 3]).map(as_numpy).reduce(dict21dc).map(r28c28)
+all_in_one: DataContainer = clients_data.select([1, 3]).map(as_numpy).reduce(dict2dc).map(r28c28)
 all_in_one = all_in_one.select([1]).as_tensor()
 all_in_one.for_each(lambda x, y: print(x))
 
@@ -344,7 +344,7 @@ from libs.model.cv.cnn import CNN
 from src import tools
 
 clients_data = data_loader.mnist_10shards_100c_400min_400max()
-all_data = clients_data.reduce(dict21dc).map(r28c28).as_tensor()
+all_data = clients_data.reduce(dict2dc).map(r28c28).as_tensor()
 model = CNN(10)
 tools.train(model, all_data.batch(10), epochs=1)
 print(model)
