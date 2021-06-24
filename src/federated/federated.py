@@ -4,7 +4,8 @@ import time
 from collections import defaultdict
 from functools import reduce
 from typing import Dict
-
+import src.apis.extensions as extensions
+import src
 from src import tools
 from src.apis.broadcaster import Broadcaster
 from src.data.data_container import DataContainer
@@ -172,7 +173,7 @@ class FederatedLearning(Broadcaster):
             self.model = None
             self.num_rounds = None
             self.desired_accuracy = None
-            self.history = {}
+            self.history = src.apis.extensions.Dict()
             self.timestamp = time.time()
 
         def new_round(self):

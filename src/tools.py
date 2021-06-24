@@ -7,6 +7,7 @@ import typing
 import numpy
 import numpy as np
 import torch
+import tqdm
 from sklearn import decomposition
 from torch import nn, device
 import logging
@@ -56,7 +57,7 @@ def train(model, train_data, epochs=10, lr=0.1):
     criterion = nn.CrossEntropyLoss()
 
     epoch_loss = []
-    for epoch in range(epochs):
+    for epoch in tqdm.tqdm(range(epochs), 'training'):
         batch_loss = []
         for batch_idx, (x, labels) in enumerate(train_data):
             x = x.to(device)
@@ -101,7 +102,7 @@ def infer(model, test_data):
     test_loss = test_acc = test_total = 0.
     criterion = nn.CrossEntropyLoss()
     with torch.no_grad():
-        for batch_idx, (x, target) in enumerate(test_data):
+        for batch_idx, (x, target) in tqdm.tqdm(enumerate(test_data), 'inferring'):
             pred = model(x)
             loss = criterion(pred, target)
             _, predicted = torch.max(pred, -1)
@@ -175,9 +176,12 @@ class Dict:
         return new_dict
 
 
-def detail(client_data: {int: DataContainer}, selection=None, display: typing.Callable = None):
+def detail(client_data: typing.Union[typing.Dict[int, DataContainer], DataContainer], selection=None,
+           display: typing.Callable = None):
     if display is None:
         display = lambda x: logger.info(x)
+    if isinstance(client_data, DataContainer):
+        client_data = {0: client_data}
     display("<--clients_labels-->")
     for client_id, data in client_data.items():
         if selection is not None:

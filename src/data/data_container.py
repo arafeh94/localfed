@@ -5,7 +5,8 @@ import numpy as np
 import torch
 from torch import Tensor
 
-from src.apis.extentions import Functional
+import src
+from src.apis.extensions import Functional
 
 
 class DataContainer(Functional):
@@ -41,7 +42,7 @@ class DataContainer(Functional):
         return type(self.x) == np.ndarray
 
     def as_tensor(self, convert_x: typing.Callable[[torch.Tensor], torch.Tensor] = None,
-                  convert_y: typing.Callable[[torch.Tensor], torch.Tensor] = None) -> (Tensor, Tensor):
+                  convert_y: typing.Callable[[torch.Tensor], torch.Tensor] = None) -> 'DataContainer':
         if convert_x is None:
             convert_x = lambda d: d.float()
         if convert_y is None:
@@ -55,14 +56,21 @@ class DataContainer(Functional):
             convert_y(torch.from_numpy(np.asarray(self.y)))
         )
 
-    def as_numpy(self, dtype=None):
+    def as_numpy(self, dtype=None) -> 'DataContainer':
         if self.is_tensor():
             return DataContainer(self.x.numpy(), self.y.numpy())
         if self.is_numpy():
             return self
         return DataContainer(np.asarray(self.x, dtype=dtype), np.asarray(self.y, dtype=dtype))
 
-    def split(self, train_freq):
+    def as_list(self) -> 'DataContainer':
+        if self.is_numpy():
+            return DataContainer(self.x.tolist(), self.y.tolist())
+        if self.is_tensor():
+            return DataContainer(self.x.numpy().tolist(), self.y.numpy().tolist())
+        return self
+
+    def split(self, train_freq) -> ('DataContainer', 'DataContainer'):
         total_size = len(self)
         train_size = int(total_size * train_freq)
         x_train = self.x[0:train_size]
@@ -76,7 +84,7 @@ class DataContainer(Functional):
         p = np.random.permutation(len(dc.x))
         return DataContainer(dc.x[p], dc.y[p])
 
-    def filter(self, predictor: typing.Callable):
+    def filter(self, predictor: typing.Callable) -> 'DataContainer':
         new_x = []
         new_y = []
         for x, y in zip(self.x, self.y):
@@ -85,7 +93,7 @@ class DataContainer(Functional):
                 new_y.append(y)
         return DataContainer(new_x, new_y)
 
-    def map(self, mapper: typing.Callable):
+    def map(self, mapper: typing.Callable) -> 'DataContainer':
         new_x = []
         new_y = []
         for x, y in zip(self.x, self.y):
@@ -98,13 +106,13 @@ class DataContainer(Functional):
         for x, y in zip(self.x, self.y):
             func(x, y)
 
-    def reduce(self, func: typing.Callable):
+    def reduce(self, func: typing.Callable) -> 'DataContainer':
         first = None
         for x, y in zip(self.x, self.y):
             first = func(first, (x, y))
         return first
 
-    def select(self, keys):
+    def select(self, keys) -> 'DataContainer':
         new_x = []
         new_y = []
         for key in keys:
@@ -112,7 +120,11 @@ class DataContainer(Functional):
             new_y.append(self.y[key])
         return DataContainer(new_x, new_y)
 
-    def concat(self, other):
+    def concat(self, other) -> 'DataContainer':
         new_x = other.x if self.is_empty() else np.concatenate((self.x, other.x))
         new_y = other.y if self.is_empty() else np.concatenate((self.y, other.y))
         return DataContainer(new_x, new_y)
+
+    def distributor(self):
+        from src.data.data_distributor import Distributor
+        return Distributor(self)
