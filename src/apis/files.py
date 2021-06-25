@@ -9,7 +9,10 @@ def save(obj, file_path):
 
 def load(file_path):
     if os.path.exists(file_path):
-        return pickle.load(open(file_path, 'rb'))
+        try:
+            return pickle.load(open(file_path, 'rb'))
+        except EOFError:
+            return None
     return None
 
 

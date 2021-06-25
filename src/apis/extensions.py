@@ -8,22 +8,27 @@ import tqdm
 from sklearn import decomposition
 from torch import nn
 
+T = typing.TypeVar('T')
+B = typing.TypeVar('B')
+K = typing.TypeVar('K')
+V = typing.TypeVar('V')
 
-class Functional:
+
+class Functional(typing.Generic[T]):
     @abstractmethod
-    def for_each(self, func: typing.Callable):
+    def for_each(self, func: typing.Callable[[T], typing.NoReturn]):
         pass
 
     @abstractmethod
-    def filter(self, predicate: typing.Callable):
+    def filter(self, predicate: typing.Callable[[T], bool]):
         pass
 
     @abstractmethod
-    def map(self, func: typing.Callable):
+    def map(self, func: typing.Callable[[T], T]):
         pass
 
     @abstractmethod
-    def reduce(self, func: typing.Callable):
+    def reduce(self, func: typing.Callable[[B, T], B]):
         pass
 
     @abstractmethod
@@ -35,78 +40,77 @@ class Functional:
         pass
 
 
-class Dict(dict, Functional):
-    def __init__(self, iter_map: typing.Dict = {}):
+class Dict(typing.Dict[K, V], Functional):
+
+    def __init__(self, iter_map: typing.Dict[K, V] = {}):
         super().__init__(iter_map)
 
-    def for_each(self, func: typing.Callable):
-        new_dict = Dict()
+    def for_each(self, func: typing.Callable) -> typing.NoReturn:
         for key, val in self.items():
-            new_dict[key] = func(key, val)
-        return new_dict
+            func(key, val)
 
-    def concat(self, other):
+    def concat(self, other) -> 'Dict[K, V]':
         new_dict = copy.deepcopy(self)
         for item, val in other.items():
             new_dict[item] = val
         return new_dict
 
-    def select(self, keys):
+    def select(self, keys) -> 'Dict[K, V]':
         return Dict({key: self[key] for key in keys})
 
-    def filter(self, predicate: typing.Callable):
+    def filter(self, predicate: typing.Callable[[K, V], bool]) -> 'Dict[K, V]':
         new_dict = Dict()
         for key, val in self.items():
             if predicate(key, val):
                 new_dict[key] = self[key]
         return new_dict
 
-    def map(self, func: typing.Callable):
+    def map(self, func: typing.Callable[[K, V], V]) -> 'Dict[K, V]':
         new_dict = Dict()
         for key, val in self.items():
             new_val = func(key, val)
             new_dict[key] = new_val
         return new_dict
 
-    def reduce(self, func: typing.Callable):
+    def reduce(self, func: typing.Callable[[B, K, V], B]) -> 'B':
         first = None
         for key, val in self.items():
             first = func(first, key, val)
         return first
 
 
-class Array(list, Functional):
+class Array(typing.List[V], Functional):
     def __init__(self, iter_):
         super().__init__(iter_)
 
-    def for_each(self, func: typing.Callable):
+    def for_each(self, func: typing.Callable[[V], None]) -> typing.NoReturn:
         for item in self:
             func(item)
 
-    def filter(self, predicate: typing.Callable):
+    def filter(self, predicate: typing.Callable[[V], bool]) -> 'Array[V]':
         new_a = []
         for item in self:
             if predicate(item):
                 new_a.append(item)
 
-    def map(self, func: typing.Callable):
+    def map(self, func: typing.Callable[[V], V]) -> 'Array[V]':
         new_a = []
         for item in self:
             na = func(item)
             new_a.append(na)
 
-    def reduce(self, func: typing.Callable):
+    def reduce(self, func: typing.Callable[[B, V], B]) -> 'B':
         first = None
         for item in self:
             first = func(first, item)
         return first
 
-    def select(self, indexes):
+    def select(self, indexes: typing.List[V]) -> 'Array[V]':
         new_a = []
         for index in indexes:
             new_a.append(self[index])
 
-    def concat(self, other):
+    def concat(self, other: 'Array[V]') -> 'Array[V]':
         return self.copy().extend(other)
 
 
@@ -115,6 +119,20 @@ class TorchModel:
         self.model = model
 
     def train(self, batched, **kwargs):
+        r"""
+        Args:
+            batched:
+            **kwargs:
+                epochs (int)
+                lr (float)
+                momentum (float)
+                optimizer (Optimizer)
+                criterion (_WeightedLoss)
+                samira
+
+        Returns:
+
+        """
         model = self.model
         epochs = kwargs.get('epochs', 10)
         learn_rate = kwargs.get('lr', 0.003)

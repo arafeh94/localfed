@@ -84,7 +84,7 @@ class DataContainer(Functional):
         p = np.random.permutation(len(dc.x))
         return DataContainer(dc.x[p], dc.y[p])
 
-    def filter(self, predictor: typing.Callable) -> 'DataContainer':
+    def filter(self, predictor: typing.Callable[[typing.List, float], bool]) -> 'DataContainer':
         new_x = []
         new_y = []
         for x, y in zip(self.x, self.y):
@@ -93,7 +93,7 @@ class DataContainer(Functional):
                 new_y.append(y)
         return DataContainer(new_x, new_y)
 
-    def map(self, mapper: typing.Callable) -> 'DataContainer':
+    def map(self, mapper: typing.Callable[[typing.List, int], typing.Tuple[typing.List, int]]) -> 'DataContainer':
         new_x = []
         new_y = []
         for x, y in zip(self.x, self.y):
@@ -102,14 +102,14 @@ class DataContainer(Functional):
             new_y.append(ny)
         return DataContainer(new_x, new_y)
 
-    def for_each(self, func: typing.Callable):
+    def for_each(self, func: typing.Callable[[typing.List, float], typing.NoReturn]):
         for x, y in zip(self.x, self.y):
             func(x, y)
 
-    def reduce(self, func: typing.Callable) -> 'DataContainer':
+    def reduce(self, func: typing.Callable[[typing.Any, typing.List, float], typing.Any]) -> 'DataContainer':
         first = None
         for x, y in zip(self.x, self.y):
-            first = func(first, (x, y))
+            first = func(first, x, y)
         return first
 
     def select(self, keys) -> 'DataContainer':
@@ -125,6 +125,9 @@ class DataContainer(Functional):
         new_y = other.y if self.is_empty() else np.concatenate((self.y, other.y))
         return DataContainer(new_x, new_y)
 
-    def distributor(self):
+    def distributor(self, verbose=0):
         from src.data.data_distributor import Distributor
-        return Distributor(self)
+        return Distributor(self, verbose)
+
+    def __repr__(self):
+        return f'Size:{len(self)}, Unique:{np.unique(self.y)}, Features:{len(self.x[0])}'

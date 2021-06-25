@@ -77,17 +77,7 @@ class FedRuns:
         plt.show()
 
     def plot_avg(self):
-        acc_plot = defaultdict(list)
-        loss_plot = defaultdict(list)
-        for name, run in self.runs.items():
-            for round_id, performance in run.history.items():
-                acc_plot[round_id].append(performance['acc'])
-                loss_plot[round_id].append(performance['loss'])
-
-        for round_id in acc_plot:
-            acc_plot[round_id] = np.average(acc_plot[round_id])
-            loss_plot[round_id] = np.average(loss_plot[round_id])
-
+        acc_plot, loss_plot = self.avg()
         plt.plot(list(acc_plot.keys()), list(acc_plot.values()))
         plt.legend()
         plt.tight_layout()

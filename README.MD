@@ -326,7 +326,7 @@ fr.plot()  # a single plot that show the improvement of accuracy over rounds.
 ## Support for functional programming
 
 ```python
-from src.apis.functionals import r28c28, dict2dc, as_numpy
+from src.apis.lambdas import r28c28, dict2dc, as_numpy
 from src.data import data_loader
 from src.data.data_container import DataContainer
 

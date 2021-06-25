@@ -184,7 +184,7 @@ class FederatedLearning(Broadcaster):
 
         def build(self, federated):
             self.reset()
-            self.model = federated.initial_model()
+            self.model = federated.initial_model() if callable(federated.initial_model) else federated.initial_model
             self.num_rounds = federated.num_rounds
             self.desired_accuracy = federated.desired_accuracy
 

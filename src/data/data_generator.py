@@ -2,7 +2,9 @@ import copy
 import logging
 import os
 import random
+import typing
 from collections import defaultdict
+from typing import NewType, Union
 
 import numpy as np
 import pickle
@@ -31,11 +33,11 @@ class DataGenerator:
         self.xtt = xtt
         self.ytt = ytt
 
-    def distribute_dirichlet(self, num_clients, num_labels, skewness=0.5) -> {int: DataContainer}:
+    def distribute_dirichlet(self, num_clients, num_labels, skewness=0.5) -> Dict:
         self.distributed = self.data.distributor().distribute_dirichlet(num_clients, num_labels, skewness)
         return self.distributed
 
-    def distribute_percentage(self, num_clients, percentage=0.8, min_size=10, max_size=100) -> {int: DataContainer}:
+    def distribute_percentage(self, num_clients, percentage=0.8, min_size=10, max_size=100) -> Dict:
         self.distributed = self.data.distributor().distribute_percentage(num_clients, percentage, min_size, max_size)
         return self.distributed
 
