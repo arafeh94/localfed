@@ -130,4 +130,4 @@ class DataContainer(Functional):
         return Distributor(self, verbose)
 
     def __repr__(self):
-        return f'Size:{len(self)}, Unique:{np.unique(self.y)}, Features:{len(self.x[0])}'
+        return f'Size:{len(self)}, Unique:{np.unique(self.y)}, Features:{None if self.is_empty() else len(self.x[0])}'
