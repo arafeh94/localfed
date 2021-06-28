@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
 logger.info('Generating Data --Started')
-client_data = data_loader.mnist_1shards_100c_600min_600max()
+client_data = data_loader.mnist_10shards_100c_400min_400max()
 logger.info('Generating Data --Ended')
 
 trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=50, epochs=1, optimizer='sgd',
@@ -33,19 +33,15 @@ federated = FederatedLearning(
     trainer_config=trainer_params,
     aggregator=aggregators.AVGAggregator(),
     metrics=metrics.AccLoss(batch_size=50, criterion=nn.CrossEntropyLoss()),
-    client_selector=client_selectors.Random(0.5),
+    client_selector=client_selectors.Random(0.1),
     trainers_data_dict=client_data,
-    initial_model=lambda: LogisticRegression(28 * 28, 62),
-    num_rounds=0,
+    initial_model=lambda: LogisticRegression(28 * 28, 10),
+    num_rounds=5,
     desired_accuracy=0.99,
 )
 
-# federated.add_subscriber(subscribers.Resumable('agv', federated, flush=True))
 federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
-# federated.add_subscriber(subscribers.FedPlot())
-# federated.add_subscriber(subscribers.FedSave('avgs'))
-federated.add_subscriber(subscribers.ShowWeightDivergence())
 logger.info("----------------------")
 logger.info("start federated 1")
 logger.info("----------------------")
