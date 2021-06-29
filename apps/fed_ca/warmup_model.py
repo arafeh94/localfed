@@ -17,4 +17,6 @@ model = LogisticRegression(28 * 28, 10)
 trainer = TorchModel(model)
 trainer.train(train.batch(50))
 acc, loss = trainer.infer(test.batch(50))
+
 pickle.dump(model, open("./model.pkl", 'wb'))
+
