@@ -20,6 +20,8 @@ logger.info('Generating Data --Started')
 
 train, test = PickleDataProvider("../../datasets/pickles/femnist.pkl").collect().shuffle().as_tensor().split(0.8)
 
+tools.detail(train)
+
 # model = CNN_OriginalFedAvg(False)
 model = resnet56(62, 1, 28)
 

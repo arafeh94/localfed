@@ -1,26 +1,20 @@
 import logging
+import platform
 import sys
 from os.path import dirname
-
 from torch import nn
 
+sys.path.append(dirname(__file__) + '../')
+from apps.fed_ca.utilities.load_dataset import LoadData
+from src import tools
 from src.federated import subscribers
 from src.federated.components.trainer_manager import MPITrainerManager
-
-sys.path.append(dirname(__file__) + '../')
-
-import libs.model.collection
 from src.apis.mpi import Comm
 from src.federated.components import metrics, client_selectors, aggregators, trainers
 from libs.model.cv.cnn import CNN_OriginalFedAvg
 from libs.model.linear.lr import LogisticRegression
-from src.data import data_generator
-from src.data.data_generator import DataGenerator
-from src.data.data_provider import LocalMnistDataProvider, PickleDataProvider
 from src.federated.federated import Events, FederatedLearning
 from src.federated.protocols import TrainerParams
-
-import numpy as np
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
@@ -29,15 +23,13 @@ comm = Comm()
 
 if comm.pid() == 0:
 
-    data_file = "../datasets/pickles/10_6000_big_ca.pkl"
-    # custom test file contains only 20 samples from each client
-    # custom_test_file = '../datasets/pickles/test_data.pkl'
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger('main')
 
-    logger.info('generating data --Started')
-
-    dg = data_generator.load(data_file)
-    client_data = dg.distributed
-    dg.describe()
+    ld = LoadData(dataset_name='mnist', shards_nb=0, clients_nb=10, min_samples=1000, max_samples=1000)
+    dataset_used = ld.filename
+    client_data = ld.pickle_distribute_shards()
+    tools.detail(client_data)
 
     # # setting hyper parameters
     batch_size = 100
@@ -70,10 +62,13 @@ if comm.pid() == 0:
     # federated.plug(plugins.FedPlot())
 
     # federated.plug(plugins.FL_CA())
-    federated.add_subscriber(
-        subscribers.WandbLogger(config={'lr': learn_rate, 'batch_size': batch_size, 'epochs': epochs,
-                                        'num_rounds': num_rounds, 'data_file': data_file,
-                                        'model': 'CNN'}))
+    federated.add_subscriber(subscribers.WandbLogger(config={
+        'lr': learn_rate, 'batch_size': batch_size,
+        'epochs': epochs,
+        'num_rounds': num_rounds, 'data_file': dataset_used,
+        'model': 'CNN', 'os': platform.system(),
+        'selected_clients': 'All'
+    }))
 
     logger.info("----------------------")
     logger.info("start federated")

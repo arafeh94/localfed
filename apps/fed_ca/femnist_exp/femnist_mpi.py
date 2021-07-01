@@ -1,32 +1,27 @@
 # to run MPI, u wull first need to change the terminal current working directory to D:\Github\my_repository\localfed\experiments>
-# windows: mpiexec -n 63 python fed_ca.py
-# ubuntu: mpirun -np 11 --hostfile hosts python ./fed_ca.py
+# windows: mpiexec -n 63 python femnist_mpi.py
 import logging
 import platform
 import sys
 from os.path import dirname
-
 from torch import nn
 
-if platform.system() == 'Linux':
-    # Linux
-    sys.path.append(dirname(__file__) + './')
-else:
-    # windows
-    sys.path.append(dirname(__file__) + '../../')
+# windows
+sys_path = sys.path.append(dirname(__file__) + '../../../')
+print(dirname(__file__))
 
+from src import tools
 from src.federated import subscribers
 from src.federated.components.trainer_manager import MPITrainerManager
-
-from hp_generator import generate_configs, build_random, calculate_max_rounds
+from apps.fed_ca.utilities.hp_generator import generate_configs, build_random, calculate_max_rounds
 from src.apis.mpi import Comm
 from src.federated.components import metrics, client_selectors, aggregators, trainers
 from libs.model.cv.cnn import CNN_OriginalFedAvg
 from libs.model.linear.lr import LogisticRegression
 from libs.model.collection import MLP
-from src.data import data_generator, data_loader
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
+from apps.fed_ca.utilities.load_dataset import LoadData
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
@@ -34,22 +29,15 @@ logger = logging.getLogger('main')
 comm = Comm()
 if comm.pid() == 0:
 
-    # data_file = "../datasets/pickles/10_1000_big_ca.pkl"
-    # data_file = "../datasets/pickles/10_2400_3000_big_imbalanced_ca.pkl"
-
-    data_file = "femnist"
-
-    logger.info('generating data --Started')
-    client_data = data_loader.femnist_1shard_62c_200min_2000max()
-
-    # dg = data_generator.load(data_file)
-    # client_data = dg.distributed
-    # dg.describe()
+    ld = LoadData(dataset_name='femnist', shards_nb=0, clients_nb=62, min_samples=200, max_samples=200)
+    dataset_used = ld.filename
+    client_data = ld.pickle_distribute_continuous()
+    tools.detail(client_data)
 
     # building Hyperparameters
     input_shape = 28 * 28
     labels_number = 62
-    percentage_nb_client = 62
+    percentage_nb_client = 0.4
 
     # number of models that we are using
     initial_models = {
@@ -63,7 +51,7 @@ if comm.pid() == 0:
         """
           each params=(min,max,num_value)
         """
-        batch_size = (10, 50, 2)
+        batch_size = (10, 50, 1)
         epochs = (1, 1, 1)
         num_rounds = (1000, 1000, 1)
 
@@ -103,7 +91,7 @@ if comm.pid() == 0:
             federated.add_subscriber(subscribers.WandbLogger(config={
                 'lr': learn_rate, 'batch_size': batch_size,
                 'epochs': epochs,
-                'num_rounds': num_rounds, 'data_file': data_file,
+                'num_rounds': num_rounds, 'data_file': dataset_used,
                 'model': model_name, 'os': platform.system(),
                 'selected_clients': percentage_nb_client
             }))
