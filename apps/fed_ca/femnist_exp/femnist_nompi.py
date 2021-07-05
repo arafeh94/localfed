@@ -28,7 +28,7 @@ from src.federated.protocols import TrainerParams
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-ld = LoadData(dataset_name='femnist', shards_nb=0, clients_nb=62, min_samples=31_000, max_samples=31_000)
+ld = LoadData(dataset_name='femnist', shards_nb=0, clients_nb=62, min_samples=60_000, max_samples=60_000)
 dataset_used = ld.filename
 client_data = ld.pickle_distribute_continuous()
 tools.detail(client_data)
@@ -54,7 +54,7 @@ for model_name, gen_model in initial_models.items():
     """
       each params=(min,max,num_value)
     """
-    batch_size = (0.2, 0.2, 1)
+    batch_size = (1000, 0.2, 1)
     epochs = (5, 5, 1)
     num_rounds = (1000, 1000, 1)
 
