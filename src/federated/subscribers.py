@@ -13,6 +13,8 @@ import torch
 from typing.io import IO
 
 from src import tools, manifest
+from src.apis import plots
+from src.apis.extensions import Dict
 from src.apis.mpi import Comm
 from src.data.data_container import DataContainer
 from src.federated.events import FederatedEventPlug, Events
@@ -364,14 +366,50 @@ class Resumable(FederatedEventPlug):
             logging.getLogger('resumable').info(msg)
 
 
+class ShowDataDistribution(FederatedEventPlug):
+    def __init__(self, label_count, per_round=False, save_dir=None):
+        super().__init__()
+        self.label_count = label_count
+        self.per_round = per_round
+        self.save_dir = save_dir
+        self.round_id = -1
+        if save_dir is not None:
+            os.makedirs(save_dir, exist_ok=True)
+
+    def on_federated_started(self, params):
+        clients_data: Dict[int, DataContainer] = params['trainers_data_dict']
+        self.plot(clients_data)
+
+    def on_training_start(self, params):
+        self.round_id = params['context'].round_id
+        if self.per_round:
+            clients_data = params['trainers_data']
+            self.plot(clients_data)
+
+    def plot(self, clients_data):
+        ids = list(clients_data.keys())
+        id_mapper = lambda id: ids.index(id)
+
+        client_label_count = np.zeros((len(clients_data), self.label_count))
+        for client_id, data in clients_data.items():
+            for y in data.y:
+                client_label_count[id_mapper(client_id)][y] += 1
+        save_dir = f"./{self.save_dir}/round_{self.round_id}_dd.png" if self.save_dir is not None else None
+        plots.heatmap(client_label_count, 'Clients Data Distribution', 'x:Client - y:Class', save_dir)
+
+
 class ShowWeightDivergence(FederatedEventPlug):
-    def __init__(self, show_log=True, include_global_weights=False):
+    def __init__(self, show_log=False, include_global_weights=False, save_dir=None):
         super().__init__()
         self.logger = logging.getLogger('weights_divergence')
         self.show_log = show_log
         self.include_global_weights = include_global_weights
         self.trainers_weights = None
         self.global_weights = None
+        self.save_dir = save_dir
+        self.round_id = 0
+        if self.save_dir is not None:
+            os.makedirs(self.save_dir, exist_ok=True)
 
     def on_training_end(self, params):
         self.trainers_weights = params['trainers_weights']
@@ -380,6 +418,7 @@ class ShowWeightDivergence(FederatedEventPlug):
         self.global_weights = params['global_weights']
 
     def on_round_end(self, params):
+        self.round_id = params['context'].round_id
         acc = params['accuracy']
         trainers_weights = self.trainers_weights
         if self.include_global_weights:
@@ -394,20 +433,7 @@ class ShowWeightDivergence(FederatedEventPlug):
                     if key == 'linear.weight':
                         heatmap[id_mapper(trainer_id)][id_mapper(trainer_id_1)] = torch.var(
                             torch.subtract(weights[key], weights_1[key]))
-        self.show_map(heatmap, round(acc, 4))
+        save_dir = f"./{self.save_dir}/round_{self.round_id}_wd.png" if self.save_dir is not None else None
+        plots.heatmap(heatmap, 'Weight Divergence', f'Acc {round(acc, 4)}', save_dir)
         if self.show_log:
             self.logger.info(heatmap)
-
-    def show_map(self, data, acc):
-        fig, ax = plt.subplots()
-        ax.imshow(data)
-        ax.set_xticks(np.arange(len(data)))
-        ax.set_yticks(np.arange(len(data)))
-        plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
-        for i in range(len(data)):
-            for j in range(len(data)):
-                ax.text(j, i, '', ha="center", va="center", color="w")
-        ax.set_title(f"Weight Divergence")
-        ax.set_xlabel(f'Acc {acc}')
-        fig.tight_layout()
-        plt.show()
