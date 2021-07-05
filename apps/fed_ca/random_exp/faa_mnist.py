@@ -1,19 +1,23 @@
 import logging
-from collections import defaultdict
+import platform
+
+import torchvision.models as models
+from scipy.stats import entropy
+import pandas as pd
 from numpy import random
 import matplotlib.pyplot as plt
 import seaborn as sns
 import torch
+from torchsummary import summary
 from torch import nn
 
-import libs.model.collection
-from libs.model.cv.cnn import CNN_OriginalFedAvg
-from libs.model.cv.resnet import resnet56
-from libs.model.linear.lr import LogisticRegression
 from src import tools
 from src.data import data_loader
-from src.data.data_generator import load
-from src.data.data_provider import LocalMnistDataProvider, PickleDataProvider
+from src.federated import subscribers
+from src.federated.components import aggregators, metrics, client_selectors, trainers
+from src.federated.components.trainer_manager import SeqTrainerManager
+from src.federated.federated import FederatedLearning
+from src.federated.protocols import TrainerParams
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
@@ -30,6 +34,7 @@ tools.detail(client_data)
 
 ui = []
 ei = []
+x = []
 for trainer_id, data in client_data.items():
     data = data.shuffle().as_tensor()
     train, test = data.split(0.8)
@@ -39,19 +44,66 @@ for trainer_id, data in client_data.items():
 
     mean_value = torch.mean(train.x).numpy().max()
     variance_value = torch.var(train.x, unbiased=False).numpy().max()
-    x = random.normal(loc=mean_value, scale=variance_value, size=(1, 1000))
+    # number of samples 1000
+    nd = random.normal(loc=mean_value, scale=variance_value, size=(1, 1000))
+    x.append(nd)
+    # sns.distplot(nd, hist=False)
+    # plt.show()
+    # exit(0)
 
-    sns.distplot(x, hist=False)
-    plt.show()
+y = []
 
+# creating a dataset from the guassian distrubition and the labels,
+# D = [xi = x, yi = y]
+for i in range(len(x)):
+    y.append(i)
 
+data = [1, 2, 2, 3, 3, 3]
 
+pd_series = pd.Series(data)
+counts = pd_series.value_counts()
+entropy = entropy(counts)
 
+# print(entropy)
 
-# model = CNN_OriginalFedAvg(False)
-#
-#
-#
-# tools.train(model, train_data=train.batch(20), epochs=3)
-# acc, loss = tools.infer(model, test.batch(20))
-# print(acc, loss)
+vgg16 = models.vgg16().cuda()
+summary(vgg16, (3, 224, 224))
+
+# # setting hyper parameters
+batch_size = 64
+epochs = 100
+num_rounds = 80
+learn_rate = 0.001
+#  momentum 0.9
+momentum = 0.9
+optimizer = 'sgd'
+criterion = 'cel'
+print(f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds}')
+trainer_manager = SeqTrainerManager()
+trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=batch_size, epochs=epochs,
+                               optimizer=optimizer, criterion=criterion, lr=learn_rate, momentum=momentum)
+
+federated = FederatedLearning(
+    trainer_manager=trainer_manager,
+    trainer_config=trainer_params,
+    aggregator=aggregators.AVGAggregator(),
+    metrics=metrics.AccLoss(batch_size=batch_size, criterion=nn.CrossEntropyLoss()),
+    client_selector=client_selectors.Random(0.2),
+    trainers_data_dict=client_data,
+    initial_model=lambda: vgg16,
+    num_rounds=num_rounds,
+    desired_accuracy=0.99
+)
+
+federated.add_subscriber(subscribers.WandbLogger(config={
+    'lr': learn_rate, 'batch_size': batch_size,
+    'epochs': epochs,
+    'num_rounds': num_rounds, 'data_file': dataset_used,
+    'model': 'VGG16', 'os': platform.system(),
+    'selected_clients': 'ALL'
+}))
+
+logger.info("----------------------")
+logger.info("start federated")
+logger.info("----------------------")
+federated.start()

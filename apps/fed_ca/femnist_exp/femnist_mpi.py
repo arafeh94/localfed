@@ -29,7 +29,7 @@ logger = logging.getLogger('main')
 comm = Comm()
 if comm.pid() == 0:
 
-    ld = LoadData(dataset_name='femnist', shards_nb=0, clients_nb=62, min_samples=200, max_samples=200)
+    ld = LoadData(dataset_name='femnist', shards_nb=0, clients_nb=62, min_samples=60000, max_samples=60000)
     dataset_used = ld.filename
     client_data = ld.pickle_distribute_continuous()
     tools.detail(client_data)
@@ -51,8 +51,8 @@ if comm.pid() == 0:
         """
           each params=(min,max,num_value)
         """
-        batch_size = (10, 50, 1)
-        epochs = (1, 1, 1)
+        batch_size = (64, 64, 1)
+        epochs = (5, 5, 1)
         num_rounds = (1000, 1000, 1)
 
         hyper_params = build_random(batch_size=batch_size, epochs=epochs, num_rounds=num_rounds)

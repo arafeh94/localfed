@@ -28,7 +28,7 @@ from src.federated.protocols import TrainerParams
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-ld = LoadData(dataset_name='femnist', shards_nb=0, clients_nb=62, min_samples=1400, max_samples=1400)
+ld = LoadData(dataset_name='femnist', shards_nb=0, clients_nb=62, min_samples=31_000, max_samples=31_000)
 dataset_used = ld.filename
 client_data = ld.pickle_distribute_continuous()
 tools.detail(client_data)
@@ -36,7 +36,7 @@ tools.detail(client_data)
 # building Hyperparameters
 input_shape = 28 * 28
 labels_number = 62
-percentage_nb_client = 0.4
+percentage_nb_client = 0.2
 
 # number of models that we are using
 initial_models = {
@@ -54,8 +54,8 @@ for model_name, gen_model in initial_models.items():
     """
       each params=(min,max,num_value)
     """
-    batch_size = (20, 20, 1)
-    epochs = (5, 100, 1)
+    batch_size = (0.2, 0.2, 1)
+    epochs = (5, 5, 1)
     num_rounds = (1000, 1000, 1)
 
     hyper_params = build_random(batch_size=batch_size, epochs=epochs, num_rounds=num_rounds)
