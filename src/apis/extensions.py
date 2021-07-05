@@ -1,6 +1,7 @@
 import copy
 import typing
 from abc import abstractmethod
+from collections import defaultdict
 
 import numpy as np
 import torch
@@ -80,7 +81,8 @@ class Dict(typing.Dict[K, V], Functional):
 
 
 class Array(typing.List[V], Functional):
-    def __init__(self, iter_):
+    def __init__(self, iter_=None):
+        iter_ = iter_ if iter_ is not None else []
         super().__init__(iter_)
 
     def for_each(self, func: typing.Callable[[V], None]) -> typing.NoReturn:
@@ -88,16 +90,18 @@ class Array(typing.List[V], Functional):
             func(item)
 
     def filter(self, predicate: typing.Callable[[V], bool]) -> 'Array[V]':
-        new_a = []
+        new_a = Array()
         for item in self:
             if predicate(item):
                 new_a.append(item)
+        return new_a
 
     def map(self, func: typing.Callable[[V], V]) -> 'Array[V]':
-        new_a = []
+        new_a = Array()
         for item in self:
             na = func(item)
             new_a.append(na)
+        return new_a
 
     def reduce(self, func: typing.Callable[[B, V], B]) -> 'B':
         first = None
@@ -106,12 +110,13 @@ class Array(typing.List[V], Functional):
         return first
 
     def select(self, indexes: typing.List[V]) -> 'Array[V]':
-        new_a = []
+        new_a = Array()
         for index in indexes:
             new_a.append(self[index])
+        return new_a
 
     def concat(self, other: 'Array[V]') -> 'Array[V]':
-        return self.copy().extend(other)
+        return Array(self.copy().extend(other))
 
 
 class TorchModel:
@@ -198,3 +203,5 @@ class TorchModel:
         pca.fit(weights)
         weights = pca.transform(weights)
         return weights.flatten()
+
+

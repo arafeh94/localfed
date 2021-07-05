@@ -33,15 +33,16 @@ federated = FederatedLearning(
     trainer_config=trainer_params,
     aggregator=aggregators.AVGAggregator(),
     metrics=metrics.AccLoss(batch_size=50, criterion=nn.CrossEntropyLoss()),
-    client_selector=client_selectors.Random(0.1),
+    client_selector=client_selectors.Random(0.2),
     trainers_data_dict=client_data,
     initial_model=lambda: LogisticRegression(28 * 28, 10),
-    num_rounds=5,
+    num_rounds=50,
     desired_accuracy=0.99,
 )
-
+federated.add_subscriber(subscribers.ShowDataDistribution(10, per_round=True, save_dir='./pct'))
 federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
+federated.add_subscriber(subscribers.ShowWeightDivergence(save_dir="./pct"))
 logger.info("----------------------")
 logger.info("start federated 1")
 logger.info("----------------------")

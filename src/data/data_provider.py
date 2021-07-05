@@ -68,7 +68,8 @@ class PickleDataProvider(DataProvider):
         try:
             logger.info(f'downloading file into {downloaded_file_path}')
             wget.download(url, downloaded_file_path, bar=self._bar_progress)
-            logger.info('\nextracting...')
+            print()
+            logger.info('extracting...')
             with ZipFile(downloaded_file_path, 'r') as zipObj:
                 zipObj.extractall(manifest.DATA_PATH)
             logger.info('loading...')

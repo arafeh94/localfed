@@ -12,6 +12,7 @@ from src.data.data_container import DataContainer
 from src import tools
 
 
+# noinspection PyTypeChecker
 class Distributor:
     def __init__(self, data_container: DataContainer, verbose=0):
         self.data = data_container
@@ -102,13 +103,23 @@ class Distributor:
             self.label_cursor = (self.label_cursor + 1) % len(self.all_labels)
             return self.all_labels[temp]
 
-        def get(self, label, size):
+        def get(self, label, size=0):
+            if size == 0:
+                size = len(self.grouped[label])
             x = self.grouped[label][self.selected[label]:self.selected[label] + size]
             y = [label] * len(x)
             self.selected[label] += size
             if len(x) == 0:
                 del self.all_labels[self.all_labels.index(label)]
             return x, y
+
+    def distribute_labels(self):
+        group = self.Grouper(self.data.x, self.data.y)
+        clients_data = Dict()
+        for index, label in enumerate(group.groups()):
+            x, y = group.get(label)
+            clients_data[index] = DataContainer(x, y).as_tensor()
+        return clients_data
 
     def distribute_continuous(self, num_clients, min_size, max_size) -> Dict:
         self.data = self.data.as_list()
