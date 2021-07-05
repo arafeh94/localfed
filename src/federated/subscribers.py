@@ -19,6 +19,7 @@ from src.apis.mpi import Comm
 from src.data.data_container import DataContainer
 from src.federated.events import FederatedEventPlug, Events
 from src.federated.federated import FederatedLearning
+from src.manifest import WandbAuth
 
 
 class Timer(FederatedEventPlug):
@@ -313,8 +314,8 @@ class WandbLogger(FederatedEventPlug):
     def __init__(self, config=None):
         super().__init__()
         import wandb
-        wandb.login(key='18de3183a3487d875345d2ee7948376df2a31c39')
-        wandb.init(project='fedavg', entity='arafeh', config=config)
+        wandb.login(key=WandbAuth.key)
+        wandb.init(project=WandbAuth.project, entity=WandbAuth.entity, config=config)
         self.wandb = wandb
         atexit.register(lambda: self.wandb.finish())
 
