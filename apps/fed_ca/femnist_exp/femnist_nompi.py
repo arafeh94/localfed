@@ -31,12 +31,12 @@ logger = logging.getLogger('main')
 ld = LoadData(dataset_name='femnist', shards_nb=0, clients_nb=62, min_samples=60_000, max_samples=60_000)
 dataset_used = ld.filename
 client_data = ld.pickle_distribute_continuous()
-tools.detail(client_data)
+# tools.detail(client_data)
 
 # building Hyperparameters
 input_shape = 28 * 28
 labels_number = 62
-percentage_nb_client = 0.2
+percentage_nb_client = 0.4
 
 # number of models that we are using
 initial_models = {
@@ -54,7 +54,7 @@ for model_name, gen_model in initial_models.items():
     """
       each params=(min,max,num_value)
     """
-    batch_size = (1000, 0.2, 1)
+    batch_size = (1000, 2000, 1)
     epochs = (5, 5, 1)
     num_rounds = (1000, 1000, 1)
 
@@ -88,6 +88,10 @@ for model_name, gen_model in initial_models.items():
             num_rounds=num_rounds,
             desired_accuracy=0.99
         )
+        # show weight divergence in each round
+        # federated.add_subscriber(subscribers.ShowWeightDivergence(save_dir='./pics'))
+        # show data distrubition of each clients
+        # federated.add_subscriber(subscribers.ShowDataDistribution(label_count=62, save_dir='./pics'))
 
         federated.add_subscriber(subscribers.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
         federated.add_subscriber(

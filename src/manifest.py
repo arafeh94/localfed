@@ -10,9 +10,9 @@ __urls_datasets_links_ = None
 
 
 class WandbAuth:
-    key = ''
-    project = ''
-    entity = ''
+    key = '24db2a5612aaf7311dd29a5178f252a1c0a351a9'
+    project = 'localfed_ca01'
+    entity = 'mwazzeh'
 
 
 def dataset_urls(dataset: str):

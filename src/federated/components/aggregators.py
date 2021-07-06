@@ -27,3 +27,9 @@ class AVGAggregator(Aggregator):
                     averaged_params[k] += local_model_params[k] * w
 
         return averaged_params
+
+# extends aggregator
+class WazzehAggregator(Aggregator):
+    def aggregate(self, trainers_models_weight_dict: Dict[int, nn.ModuleDict], sample_size: Dict[int, int],
+                  round_id: int) -> nn.ModuleDict:
+        pass
