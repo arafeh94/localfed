@@ -5,7 +5,7 @@ import numpy as np
 from src.data.data_container import DataContainer
 
 
-def reshape(shape: typing.Tuple):
+def reshape(shape: typing.Tuple) -> typing.Callable:
     def _inner(a, b):
         if isinstance(b, DataContainer):
             return b.map(lambda x, y: _inner(x, y))
@@ -14,11 +14,11 @@ def reshape(shape: typing.Tuple):
     return _inner
 
 
-def clients_features(nb_features):
+def clients_features(nb_features) -> typing.Callable:
     return lambda cid, data: DataContainer(data.x[:, 0:nb_features], data.y)
 
 
-def empty(key, value):
+def empty(_, value):
     return len(value) > 0
 
 

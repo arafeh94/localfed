@@ -19,19 +19,15 @@ logger = logging.getLogger('data_generator')
 
 
 class DataGenerator:
-    def __init__(self, data_provider: DataProvider, xtt=None, ytt=None, shuffle=False):
+    def __init__(self, data_provider: DataProvider, shuffle=False):
         """
         :param data_provider: instance of data provider
-        :param xtt: x tensor type, callable to transform the current type to the desired type, by default float
-        :param ytt: y tensor type, callable to transform the current type to the desired type, by default long
         """
         self.data = data_provider.collect()
         if shuffle:
             self.data = self.data.shuffle()
         self.data = self.data.as_numpy()
         self.distributed = None
-        self.xtt = xtt
-        self.ytt = ytt
 
     def distribute_dirichlet(self, num_clients, num_labels, skewness=0.5) -> Dict:
         self.distributed = self.data.distributor().distribute_dirichlet(num_clients, num_labels, skewness)
@@ -55,7 +51,7 @@ class DataGenerator:
 
     def describe(self, selection=None):
         if self.distributed is None:
-            logging.getLogger(self).error('you have to distribute first')
+            logging.getLogger('data_generator').error('you have to distribute first')
             return
         tools.detail(self.distributed, selection)
 

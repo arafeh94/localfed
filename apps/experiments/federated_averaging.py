@@ -23,6 +23,7 @@ logger = logging.getLogger('main')
 
 logger.info('Generating Data --Started')
 client_data = data_loader.mnist_10shards_100c_400min_400max()
+
 logger.info('Generating Data --Ended')
 
 trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=50, epochs=1, optimizer='sgd',

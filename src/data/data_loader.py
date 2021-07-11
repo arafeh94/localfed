@@ -44,8 +44,16 @@ def mnist_10shards_100c_400min_400max() -> Dict[int, DataContainer]:
     return preload('mnist_10shards_100c_400min_400max', 'mnist', lambda dg: dg.distribute_shards(100, 10, 400, 400))
 
 
+def cifar10_10shards_100c_400min_400max() -> Dict[int, DataContainer]:
+    return preload('cifar10_10shards_100c_400min_400max', 'cifar10', lambda dg: dg.distribute_shards(100, 10, 400, 400))
+
+
 def mnist_2shards_100c_600min_600max() -> Dict[int, DataContainer]:
     return preload('mnist_2shards_100c_600min_600max', 'mnist', lambda dg: dg.distribute_shards(100, 2, 600, 600))
+
+
+def cifar10_2shards_100c_600min_600max() -> Dict[int, DataContainer]:
+    return preload('cifar10_2shards_100c_600min_600max', 'cifar10', lambda dg: dg.distribute_shards(100, 2, 600, 600))
 
 
 def mnist_1shards_100c_600min_600max() -> Dict[int, DataContainer]:
