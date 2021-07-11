@@ -9,6 +9,7 @@ from torch import nn
 
 from apps.fed_ca.utilities.load_dataset import LoadData
 from libs.model.collection import CNNCifar
+from libs.model.cv.cnn import CNN_DropOut
 from libs.model.cv.resnet import resnet56
 from src import tools
 from src.federated import subscribers
@@ -38,9 +39,8 @@ percentage_nb_client = 0.2
 initial_models = {
     # 'LR': LogisticRegression(input_shape, labels_number),
     # 'MLP': MLP(input_shape, labels_number)
-    # 'CNN_Cifar10': CNN_Cifar10()
     'CNNCifar':CNNCifar(labels_number)
-    # 'CNN': CNN_DropOut(False)
+    #  'CNN': CNN_DropOut(False)
     #   'ResNet:':  resnet56(labels_number, 1, 28)
 }
 

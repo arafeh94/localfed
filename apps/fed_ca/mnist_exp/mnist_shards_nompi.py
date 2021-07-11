@@ -39,7 +39,7 @@ tools.detail(client_data)
 
 # building Hyperparameters
 input_shape = 28 * 28
-labels_number = 62
+labels_number = 10
 percentage_nb_client = 6
 
 # number of models that we are using

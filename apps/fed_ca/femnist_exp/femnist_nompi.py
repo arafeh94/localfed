@@ -28,7 +28,7 @@ from src.federated.protocols import TrainerParams
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-ld = LoadData(dataset_name='femnist', shards_nb=0, clients_nb=62, min_samples=300, max_samples=300)
+ld = LoadData(dataset_name='femnist', shards_nb=0, clients_nb=62, min_samples=60_000, max_samples=60_000)
 dataset_used = ld.filename
 client_data = ld.pickle_distribute_continuous()
 # tools.detail(client_data)
@@ -40,11 +40,11 @@ percentage_nb_client = 0.4
 
 # number of models that we are using
 initial_models = {
-    # 'LR': LogisticRegression(input_shape, labels_number),
-    # 'MLP': MLP(input_shape, labels_number)
-    'CNN': CNN_OriginalFedAvg(False)
-    # 'CNN': CNN_DropOut(False)
-    #   'ResNet:':  resnet56(labels_number, 1, 28)
+    'LR': LogisticRegression(input_shape, labels_number),
+    # 'MLP': MLP( input_shape, labels_number)
+    # 'CNN_OriginalFedAvg': CNN_OriginalFedAvg(False)
+    # 'CNN_DropOut': CNN_DropOut(False)
+      # 'ResNet':  resnet56(labels_number, 1, 28)
 }
 
 # runs = {}
@@ -54,7 +54,7 @@ for model_name, gen_model in initial_models.items():
     """
       each params=(min,max,num_value)
     """
-    batch_size = (1000, 2000, 1)
+    batch_size = (64, 2000, 1)
     epochs = (5, 5, 1)
     num_rounds = (1000, 1000, 1)
 
@@ -108,3 +108,5 @@ for model_name, gen_model in initial_models.items():
 
 # r = fedruns.FedRuns(runs)
 # r.plot()
+
+exit(0)
