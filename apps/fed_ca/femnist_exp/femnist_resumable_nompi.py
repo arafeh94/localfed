@@ -4,6 +4,7 @@ import sys
 from os.path import dirname
 from torch import nn
 from apps.fed_ca.utilities.load_dataset import LoadData
+from libs.model.collection import MLP
 from src import tools
 from src.federated import subscribers
 from src.federated.components.trainer_manager import SeqTrainerManager
@@ -30,7 +31,8 @@ percentage_nb_client = 0.2
 
 # number of models that we are using
 initial_models = {
-    'CNN': CNN_OriginalFedAvg(False)
+    # 'CNN': CNN_OriginalFedAvg(False)
+    'MLP': MLP(input_shape, labels_number)
 }
 
 for model_name, gen_model in initial_models.items():

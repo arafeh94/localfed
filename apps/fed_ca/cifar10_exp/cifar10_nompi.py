@@ -1,48 +1,45 @@
-# mpiexec -n 11 python femnist_mpi.py
+# mpiexec -n 11 python cifar10_nompi.py
 
 import logging
 import platform
 import sys
 from os.path import dirname
-from random import randint
 
 from torch import nn
 
 from apps.fed_ca.utilities.load_dataset import LoadData
+from libs.model.collection import CNNCifar
 from libs.model.cv.resnet import resnet56
 from src import tools
-from src.federated import subscribers, fedruns
+from src.federated import subscribers
 from src.federated.components.trainer_manager import SeqTrainerManager
 
 sys.path.append(dirname(__file__) + '../')
 
 from apps.fed_ca.utilities.hp_generator import generate_configs, build_random, calculate_max_rounds
 from src.federated.components import metrics, client_selectors, aggregators, trainers
-from libs.model.cv.cnn import CNN_OriginalFedAvg, CNN_DropOut
-from libs.model.linear.lr import LogisticRegression
-from libs.model.collection import MLP
-from src.data import data_generator, data_loader
 from src.federated.federated import Events, FederatedLearning
 from src.federated.protocols import TrainerParams
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-ld = LoadData(dataset_name='femnist', shards_nb=0, clients_nb=62, min_samples=300, max_samples=300)
+ld = LoadData(dataset_name='cifar10', shards_nb=0, clients_nb=10, min_samples=6000, max_samples=6000)
 dataset_used = ld.filename
 client_data = ld.pickle_distribute_continuous()
-# tools.detail(client_data)
+tools.detail(client_data)
 
 # building Hyperparameters
-input_shape = 28 * 28
-labels_number = 62
-percentage_nb_client = 0.4
+input_shape = 32 * 32
+labels_number = 10
+percentage_nb_client = 0.2
 
 # number of models that we are using
 initial_models = {
     # 'LR': LogisticRegression(input_shape, labels_number),
     # 'MLP': MLP(input_shape, labels_number)
-    'CNN': CNN_OriginalFedAvg(False)
+    # 'CNN_Cifar10': CNN_Cifar10()
+    'CNNCifar':CNNCifar(labels_number)
     # 'CNN': CNN_DropOut(False)
     #   'ResNet:':  resnet56(labels_number, 1, 28)
 }
@@ -54,7 +51,7 @@ for model_name, gen_model in initial_models.items():
     """
       each params=(min,max,num_value)
     """
-    batch_size = (1000, 2000, 1)
+    batch_size = (64, 64, 1)
     epochs = (5, 5, 1)
     num_rounds = (1000, 1000, 1)
 
@@ -108,3 +105,5 @@ for model_name, gen_model in initial_models.items():
 
 # r = fedruns.FedRuns(runs)
 # r.plot()
+
+
