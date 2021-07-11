@@ -51,10 +51,7 @@ class DataContainer(Functional):
             return self
         if self.is_numpy():
             return DataContainer(convert_x(torch.from_numpy(self.x)), convert_y(torch.from_numpy(self.y)))
-        return DataContainer(
-            convert_x(torch.from_numpy(np.asarray(self.x))),
-            convert_y(torch.from_numpy(np.asarray(self.y)))
-        )
+        return DataContainer(torch.from_numpy(np.asarray(self.x)), torch.from_numpy(np.asarray(self.y)))
 
     def as_numpy(self, dtype=None) -> 'DataContainer':
         if self.is_tensor():

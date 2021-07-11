@@ -1,10 +1,13 @@
 import json
 import os
+import typing
 
 import src
 from src import manifest
 import logging
 
+from src.apis.extensions import Dict
+from src.data.data_container import DataContainer
 from src.data.data_generator import DataGenerator
 from src.data.data_provider import PickleDataProvider
 
@@ -13,56 +16,70 @@ urls = json.load(open(manifest.DATA_PATH + "urls.json", 'r'))
 logger = logging.getLogger('data_loader')
 
 
-def pickle_distribute_continuous(dataset_name, clients_nb, min_samples, max_samples):
-    file_path = generate_dataset_filename(dataset_name, '', clients_nb, min_samples, max_samples)
-    if is_path_exists(file_path):
-        return src.data.data_generator.load(file_path).get_distributed_data()
-    else:
-        data_provider = PickleDataProvider(urls[dataset_name])
-        data_generator = DataGenerator(data_provider)
-        client_data = data_generator.distribute_continuous(clients_nb, min_samples, max_samples)
-        data_generator.save(file_path)
-        return client_data
+def preload(name, dataset, distributor: typing.Callable[[DataGenerator], Dict[int, DataContainer]]) \
+        -> Dict[int, DataContainer]:
+    """
+    Args:
+        name: file name without postfix (file type, auto-filled with .pkl)
+        dataset: dataset used, should be exists inside urls
+        distributor: distribution function, dg.distribute_shards or dg.distribute_size ...
 
+    Returns: clients data of type typing.Dict[int, DataContainer]
 
-def pickle_distribute_shards(dataset_name, shards_nb, clients_nb, min_samples, max_samples):
-    file_path = generate_dataset_filename(dataset_name, shards_nb, clients_nb, min_samples, max_samples)
-    if is_path_exists(file_path):
-        return src.data.data_generator.load(file_path).get_distributed_data()
-    else:
-        data_provider = PickleDataProvider(urls[dataset_name])
-        data_generator = DataGenerator(data_provider)
-        client_data = data_generator.distribute_shards(clients_nb, shards_nb, min_samples, max_samples)
-        data_generator.save(file_path)
-        return client_data
-
-
-def pickle_distribute_size(dataset_name, clients_nb, min_samples, max_samples):
-    file_path = generate_dataset_filename(dataset_name, '', clients_nb, min_samples, max_samples)
-    if is_path_exists(file_path):
-        return src.data.data_generator.load(file_path).get_distributed_data()
-    else:
-        data_provider = PickleDataProvider(urls[dataset_name])
-        data_generator = DataGenerator(data_provider)
-        client_data = data_generator.distribute_size(clients_nb, min_samples, max_samples)
-        data_generator.save(file_path)
-        return client_data
-
-
-def generate_dataset_filename(dataset_name, shards_nb='', clients_nb=10, min_samples=1000, max_samples=1000):
-    file_path = manifest.DATA_PATH
-    shards_keywords = ''
-    if shards_nb != '':
-        shards_keywords = str(shards_nb) + "shards_"
-    file_name = dataset_name + "_" + shards_keywords + str(clients_nb) + "c_" + str(min_samples) + "mn_" + str(max_samples) + "mx.pkl"
-    dataset_filename = file_path + file_name
-    return dataset_filename
-
-
-def is_path_exists(file_path):
+    """
+    file_path = manifest.DATA_PATH + name + ".pkl"
     if os.path.exists(file_path):
-        logger.info(f'distributed data file exists, loading from {file_path}...')
-        return True
+        logger.info('distributed data file exists, loading...')
+        return src.data.data_generator.load(file_path).get_distributed_data()
     else:
-        logger.info(f'distributed data file does not exists, distributing into {file_path}...')
-        return False
+        logger.info('distributed data file does not exists, distributing...')
+        data_provider = PickleDataProvider(urls[dataset])
+        data_generator = DataGenerator(data_provider)
+        client_data = distributor(data_generator)
+        data_generator.save(file_path)
+        return client_data
+
+
+def mnist_10shards_100c_400min_400max() -> Dict[int, DataContainer]:
+    return preload('mnist_10shards_100c_400min_400max', 'mnist', lambda dg: dg.distribute_shards(100, 10, 400, 400))
+
+
+def cifar10_10shards_100c_400min_400max() -> Dict[int, DataContainer]:
+    return preload('cifar10_10shards_100c_400min_400max', 'cifar10', lambda dg: dg.distribute_shards(100, 10, 400, 400))
+
+
+def mnist_2shards_100c_600min_600max() -> Dict[int, DataContainer]:
+    return preload('mnist_2shards_100c_600min_600max', 'mnist', lambda dg: dg.distribute_shards(100, 2, 600, 600))
+
+
+def cifar10_2shards_100c_600min_600max() -> Dict[int, DataContainer]:
+    return preload('cifar10_2shards_100c_600min_600max', 'cifar10', lambda dg: dg.distribute_shards(100, 2, 600, 600))
+
+
+def mnist_1shards_100c_600min_600max() -> Dict[int, DataContainer]:
+    return preload('mnist_1shards_100c_600min_600max', 'mnist', lambda dg: dg.distribute_shards(100, 1, 600, 600))
+
+
+def femnist_2shards_100c_600min_600max() -> Dict[int, DataContainer]:
+    return preload('femnist_2shards_100c_600min_600max', 'femnist', lambda dg: dg.distribute_shards(100, 2, 600, 600))
+
+
+def femnist_100c_2000min_2000max() -> Dict[int, DataContainer]:
+    return preload('femnist_100c_2000min_2000max', 'femnist', lambda dg: dg.distribute_size(100, 2000, 2000))
+
+
+def femnist_2shards_100c_2000min_2000max() -> Dict[int, DataContainer]:
+    return preload('femnist_2shards_100c_2000min_2000max', 'femnist',
+                   lambda dg: dg.distribute_shards(100, 2, 2000, 2000))
+
+
+def kdd_100c_400min_400max() -> Dict[int, DataContainer]:
+    return preload('kdd_100c_400min_400max', 'kdd', lambda dg: dg.distribute_size(100, 400, 400))
+
+
+def femnist_1shard_62c_2000min_2000max() -> Dict[int, DataContainer]:
+    return preload('femnist_1shard_62c_2000min_2000max', 'femnist', lambda dg: dg.distribute_continuous(62, 2000, 2000))
+
+
+def femnist_1shard_62c_200min_2000max() -> Dict[int, DataContainer]:
+    return preload('femnist_1shard_62c_200min_2000max', 'femnist', lambda dg: dg.distribute_continuous(62, 200, 2000))
