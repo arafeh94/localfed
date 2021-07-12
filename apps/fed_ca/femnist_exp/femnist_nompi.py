@@ -43,7 +43,7 @@ initial_models = {
     'LR': LogisticRegression(input_shape, labels_number),
     # 'MLP': MLP( input_shape, labels_number)
     # 'CNN_OriginalFedAvg': CNN_OriginalFedAvg(False)
-    # 'CNN_DropOut': CNN_DropOut(False)
+    # 'CNN': CNN_DropOut(False)
       # 'ResNet':  resnet56(labels_number, 1, 28)
 }
 

@@ -5,6 +5,7 @@ from os.path import dirname
 from torch import nn
 from apps.fed_ca.utilities.load_dataset import LoadData
 from libs.model.collection import MLP
+from libs.model.linear.lr import LogisticRegression
 from src import tools
 from src.federated import subscribers
 from src.federated.components.trainer_manager import SeqTrainerManager
@@ -12,7 +13,7 @@ from src.federated.components.trainer_manager import SeqTrainerManager
 # sys.path.append(dirname(__file__) + '../')
 from apps.fed_ca.utilities.hp_generator import generate_configs, build_random, calculate_max_rounds
 from src.federated.components import metrics, client_selectors, aggregators, trainers
-from libs.model.cv.cnn import CNN_OriginalFedAvg
+from libs.model.cv.cnn import CNN_OriginalFedAvg, CNN_DropOut
 from src.federated.federated import Events, FederatedLearning
 from src.federated.protocols import TrainerParams
 
@@ -27,12 +28,12 @@ tools.detail(client_data)
 # building Hyperparameters
 input_shape = 28 * 28
 labels_number = 62
-percentage_nb_client = 0.2
-
+percentage_nb_client = 62
 # number of models that we are using
 initial_models = {
-    # 'CNN': CNN_OriginalFedAvg(False)
-    'MLP': MLP(input_shape, labels_number)
+    'CNN': CNN_DropOut(False)
+    # 'LR': LogisticRegression(input_shape, labels_number),
+    # 'MLP': MLP(input_shape, labels_number)
 }
 
 for model_name, gen_model in initial_models.items():
@@ -40,9 +41,9 @@ for model_name, gen_model in initial_models.items():
     """
       each params=(min,max,num_value)
     """
-    batch_size = (1000, 1000, 1)
+    batch_size = (128, 128, 1)
     epochs = (5, 5, 1)
-    num_rounds = (1000, 1000, 1)
+    num_rounds = (100_000, 100_000, 1)
 
     hyper_params = build_random(batch_size=batch_size, epochs=epochs, num_rounds=num_rounds)
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
@@ -76,7 +77,7 @@ for model_name, gen_model in initial_models.items():
         )
         # use flush=True if you don't want to continue from the last round
         federated.add_subscriber(
-            subscribers.Resumable('femnist_62c_60000mn_60000mx.pkl', federated, flush=True))
+            subscribers.Resumable('femnist_62c_60000mn_60000mx_lr100_000.pkl', federated, flush=True))
 
         federated.add_subscriber(subscribers.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
         federated.add_subscriber(
@@ -89,3 +90,5 @@ for model_name, gen_model in initial_models.items():
         logger.info("start federated")
         logger.info("----------------------")
         federated.start()
+
+exit(0)
