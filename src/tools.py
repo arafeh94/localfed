@@ -197,3 +197,5 @@ def detail(client_data: typing.Union[typing.Dict[int, DataContainer], DataContai
             percentage = unique_count / len(data.y) * 100
             percentage = int(percentage)
             display(f"labels_{unique}= {percentage}% - {unique_count}")
+
+

@@ -41,17 +41,12 @@ class DataContainer(Functional):
     def is_numpy(self):
         return type(self.x) == np.ndarray
 
-    def as_tensor(self, convert_x: typing.Callable[[torch.Tensor], torch.Tensor] = None,
-                  convert_y: typing.Callable[[torch.Tensor], torch.Tensor] = None) -> 'DataContainer':
-        if convert_x is None:
-            convert_x = lambda d: d.float()
-        if convert_y is None:
-            convert_y = lambda d: d.long()
+    def as_tensor(self) -> 'DataContainer':
         if self.is_tensor():
             return self
         if self.is_numpy():
-            return DataContainer(convert_x(torch.from_numpy(self.x)), convert_y(torch.from_numpy(self.y)))
-        return DataContainer(torch.from_numpy(np.asarray(self.x)), torch.from_numpy(np.asarray(self.y)))
+            return DataContainer(torch.from_numpy(self.x), torch.from_numpy(self.y))
+        return DataContainer(torch.tensor(self.x), torch.tensor(self.y))
 
     def as_numpy(self, dtype=None) -> 'DataContainer':
         if self.is_tensor():
@@ -82,22 +77,35 @@ class DataContainer(Functional):
         return DataContainer(dc.x[p], dc.y[p])
 
     def filter(self, predictor: typing.Callable[[typing.List, float], bool]) -> 'DataContainer':
+        current = self.as_list()
         new_x = []
         new_y = []
-        for x, y in zip(self.x, self.y):
+        for x, y in zip(current.x, current.y):
             if predictor(x, y):
                 new_x.append(x)
                 new_y.append(y)
-        return DataContainer(new_x, new_y)
+        return self._from_list(new_x, new_y)
 
     def map(self, mapper: typing.Callable[[typing.List, int], typing.Tuple[typing.List, int]]) -> 'DataContainer':
+        current = self.as_list()
         new_x = []
         new_y = []
-        for x, y in zip(self.x, self.y):
+        for x, y in zip(current.x, current.y):
             nx, ny = mapper(x, y)
             new_x.append(nx)
             new_y.append(ny)
-        return DataContainer(new_x, new_y)
+        return self._from_list(new_x, new_y)
+
+    def reshape(self, shape):
+        return DataContainer(np.reshape(self.x, shape), self.y)
+
+    def _from_list(self, x, y):
+        new_dt = DataContainer(x, y)
+        if self.is_numpy():
+            return new_dt.as_numpy()
+        if self.is_tensor():
+            return new_dt.as_tensor()
+        return new_dt
 
     def for_each(self, func: typing.Callable[[typing.List, float], typing.NoReturn]):
         for x, y in zip(self.x, self.y):
@@ -110,12 +118,13 @@ class DataContainer(Functional):
         return first
 
     def select(self, keys) -> 'DataContainer':
+        current = self.as_list()
         new_x = []
         new_y = []
         for key in keys:
-            new_x.append(self.x[key])
-            new_y.append(self.y[key])
-        return DataContainer(new_x, new_y)
+            new_x.append(current.x[key])
+            new_y.append(current.y[key])
+        return self._from_list(new_x, new_y)
 
     def concat(self, other) -> 'DataContainer':
         new_x = other.x if self.is_empty() else np.concatenate((self.x, other.x))
