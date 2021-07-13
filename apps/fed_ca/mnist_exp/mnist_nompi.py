@@ -1,65 +1,48 @@
-# to run MPI, u wull first need to change the terminal current working directory to D:\Github\my_repository\localfed\experiments>
-# windows: mpiexec -n 11 python mnist_shards_mpi.py
 import logging
-import platform
-import sys
-from os.path import dirname
 
 from torch import nn
-
 from apps.fed_ca.utilities.load_dataset import LoadData
 from src import tools
-
-if platform.system() == 'Linux':
-    # Linux
-    sys.path.append(dirname(__file__) + './')
-else:
-    # windows
-    sys.path.append(dirname(__file__) + '../../')
-
 from src.federated import subscribers
-from src.federated.components.trainer_manager import MPITrainerManager, SeqTrainerManager
-
+from src.federated.components.trainer_manager import SeqTrainerManager
 from apps.fed_ca.utilities.hp_generator import generate_configs, build_random, calculate_max_rounds
-from src.apis.mpi import Comm
 from src.federated.components import metrics, client_selectors, aggregators, trainers
-from libs.model.cv.cnn import CNN_OriginalFedAvg, CNN_DropOut
-from libs.model.linear.lr import LogisticRegression
-from libs.model.collection import MLP
+from libs.model.cv.cnn import CNN_OriginalFedAvg
+from src.federated.events import Events
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-ld = LoadData(dataset_name='mnist', shards_nb=2, clients_nb=10, min_samples=1000, max_samples=1000)
-dataset_used = ld.filename
+# ld = LoadData(dataset_name='mnist', shards_nb=10, clients_nb=100, min_samples=600, max_samples=600)
+# client_data = ld.pickle_distribute_shards(
+
+ld = LoadData(dataset_name='mnist', shards_nb=200, clients_nb=100, min_samples=300, max_samples=300)
 client_data = ld.pickle_distribute_shards()
+
+# ld = LoadData(dataset_name='mnist', shards_nb=10, clients_nb=100, min_samples=600, max_samples=600)
+# client_data = ld.pickle_distribute_shards()
+
+dataset_used = ld.filename
 tools.detail(client_data)
 
 # building Hyperparameters
 input_shape = 28 * 28
 labels_number = 10
-percentage_nb_client = 2
+percentage_nb_client = 0.1
 
 # number of models that we are using
 initial_models = {
     # 'LR': LogisticRegression(input_shape, labels_number),
     # 'MLP': MLP(input_shape, labels_number)
-    'CNN': CNN_OriginalFedAvg()
+    'CNN_OriginalFedAvg': CNN_OriginalFedAvg()
     # 'CNN': CNN_DropOut(False)
 }
-
 for model_name, gen_model in initial_models.items():
 
-    """
-      each params=(min,max,num_value)
-    """
-    batch_size = (50, 50, 1)
-    epochs = (150, 20, 1)
-    num_rounds = (1000, 1000, 1)
+    hyper_params = {'batch_size': [10, 50, 1000], 'epochs': [1, 5, 20], 'num_rounds': [1000]}
 
-    hyper_params = build_random(batch_size=batch_size, epochs=epochs, num_rounds=num_rounds)
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 
     logger.info(calculate_max_rounds(hyper_params))
@@ -91,11 +74,12 @@ for model_name, gen_model in initial_models.items():
             desired_accuracy=0.99
         )
 
+        federated.add_subscriber(subscribers.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
         federated.add_subscriber(subscribers.WandbLogger(config={
             'lr': learn_rate, 'batch_size': batch_size,
             'epochs': epochs,
             'num_rounds': num_rounds, 'data_file': dataset_used,
-            'model': model_name, 'os': platform.system(),
+            'model': model_name,
             'selected_clients': percentage_nb_client
         }))
 
@@ -103,9 +87,3 @@ for model_name, gen_model in initial_models.items():
         logger.info("start federated")
         logger.info("----------------------")
         federated.start()
-        # name = f"-{randint(0, 999)}"
-        # runs[name] = federated.context
-
-    # runs = fedruns.FedRuns(runs)
-    # runs.compare_all()
-    # runs.plot()

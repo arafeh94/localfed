@@ -3,7 +3,6 @@ import sys
 
 from torch import nn
 
-from libs.model.cv.cnn import CNN32
 from libs.model.cv.resnet import ResNet, resnet56
 from src.apis import lambdas
 from src.data.data_provider import PickleDataProvider
