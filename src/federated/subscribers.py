@@ -320,7 +320,7 @@ class WandbLogger(FederatedEventPlug):
         atexit.register(lambda: self.wandb.finish())
 
     def on_round_end(self, params):
-        self.wandb.log({'acc': params['accuracy'], 'loss': params['loss']})
+        self.wandb.log({'acc': params['accuracy'], 'loss': params['loss'], 'last_round':params['round']+1})
 
     def on_federated_ended(self, params):
         self.wandb.finish()

@@ -15,11 +15,11 @@ from src.federated.protocols import TrainerParams
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-# ld = LoadData(dataset_name='mnist', shards_nb=10, clients_nb=100, min_samples=600, max_samples=600)
-# client_data = ld.pickle_distribute_shards(
-
-ld = LoadData(dataset_name='mnist', shards_nb=200, clients_nb=100, min_samples=300, max_samples=300)
+ld = LoadData(dataset_name='mnist', shards_nb=10, clients_nb=100, min_samples=600, max_samples=600)
 client_data = ld.pickle_distribute_shards()
+
+# ld = LoadData(dataset_name='mnist', shards_nb=2, clients_nb=100, min_samples=300, max_samples=300)
+# client_data = ld.pickle_distribute_shards()
 
 # ld = LoadData(dataset_name='mnist', shards_nb=10, clients_nb=100, min_samples=600, max_samples=600)
 # client_data = ld.pickle_distribute_shards()
@@ -41,7 +41,7 @@ initial_models = {
 }
 for model_name, gen_model in initial_models.items():
 
-    hyper_params = {'batch_size': [10, 50, 1000], 'epochs': [1, 5, 20], 'num_rounds': [1000]}
+    hyper_params = {'batch_size': [10, 50, 1000], 'epochs': [1, 5, 20], 'num_rounds': [1200]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 
@@ -56,6 +56,7 @@ for model_name, gen_model in initial_models.items():
         print(
             f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds}, '
             f'initial_model={initial_model} ')
+
         trainer_manager = SeqTrainerManager()
         trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=batch_size,
                                        epochs=epochs,
@@ -75,6 +76,7 @@ for model_name, gen_model in initial_models.items():
         )
 
         federated.add_subscriber(subscribers.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
+
         federated.add_subscriber(subscribers.WandbLogger(config={
             'lr': learn_rate, 'batch_size': batch_size,
             'epochs': epochs,
