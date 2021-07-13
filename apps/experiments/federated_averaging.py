@@ -3,7 +3,7 @@ import sys
 
 from torch import nn
 
-from libs.model.cv.cnn import CNN32
+from libs.model.cv.cnn import CNN32, CNN_OriginalFedAvg
 from libs.model.cv.resnet import ResNet, resnet56
 from src.apis import lambdas
 from src.data.data_provider import PickleDataProvider
@@ -24,7 +24,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
 logger.info('Generating Data --Started')
-client_data = data_loader.cifar10_10shards_100c_400min_400max()
+client_data = data_loader.mnist_10shards_100c_400min_400max()
 logger.info('Generating Data --Ended')
 
 trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=50, epochs=1, optimizer='sgd',
@@ -37,14 +37,12 @@ federated = FederatedLearning(
     metrics=metrics.AccLoss(batch_size=50, criterion=nn.CrossEntropyLoss()),
     client_selector=client_selectors.Random(0.2),
     trainers_data_dict=client_data,
-    initial_model=lambda: resnet56(10, 3, 32),
+    initial_model=lambda: CNN_OriginalFedAvg(),
     num_rounds=50,
     desired_accuracy=0.99,
 )
-federated.add_subscriber(subscribers.ShowDataDistribution(10, per_round=True, save_dir='./exp_pct2'))
 federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
-federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND, Timer.TRAINER]))
-federated.add_subscriber(subscribers.ShowWeightDivergence(save_dir="./exp_pct2"))
+federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
 logger.info("----------------------")
 logger.info("start federated 1")
 logger.info("----------------------")
