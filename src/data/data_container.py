@@ -45,8 +45,8 @@ class DataContainer(Functional):
         if self.is_tensor():
             return self
         if self.is_numpy():
-            return DataContainer(torch.from_numpy(self.x), torch.from_numpy(self.y))
-        return DataContainer(torch.tensor(self.x), torch.tensor(self.y))
+            return DataContainer(torch.from_numpy(self.x).float(), torch.from_numpy(self.y).long())
+        return DataContainer(torch.tensor(self.x).float(), torch.tensor(self.y).long())
 
     def as_numpy(self, dtype=None) -> 'DataContainer':
         if self.is_tensor():
