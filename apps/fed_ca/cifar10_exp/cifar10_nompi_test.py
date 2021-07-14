@@ -10,7 +10,7 @@ from torch import nn
 from apps.fed_ca.utilities.load_dataset import LoadData
 from libs.model.collection import CNNCifar
 from libs.model.cv.cnn import CNN_DropOut
-from libs.model.cv.resnet import resnet56
+from libs.model.cv.resnet import resnet56, Cifar10, CNN_Cifar10
 from src import tools
 from src.apis import lambdas
 from src.federated import subscribers
@@ -26,11 +26,13 @@ from src.federated.protocols import TrainerParams
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-ld = LoadData(dataset_name='cifar10', shards_nb=0, clients_nb=10, min_samples=600, max_samples=600)
+ld = LoadData(dataset_name='cifar10', shards_nb=0, clients_nb=10, min_samples=6000, max_samples=6000)
 dataset_used = ld.filename
 client_data = ld.pickle_distribute_continuous()
 # client_data = client_data.map(lambdas.reshape())
 tools.detail(client_data)
+client_data = client_data.map(lambdas.reshape((-1, 32, 32, 3))).map(lambdas.transpose((0, 3, 1, 2)))
+
 
 # building Hyperparameters
 input_shape = 32 * 32
@@ -43,14 +45,16 @@ initial_models = {
     # 'MLP': MLP(input_shape, labels_number)
     # 'CNNCifar':CNNCifar(labels_number)
     #  'CNN': CNN_DropOut(False)
-    'ResNet': resnet56(labels_number, 3, 32)
+    # 'ResNet': resnet56(labels_number, 3, 32)
+    # 'Cifar10': Cifar10()
+    'Cifar10': CNN_Cifar10()
 }
 
 # runs = {}
 
 for model_name, gen_model in initial_models.items():
 
-    hyper_params = {'batch_size': [10, 100], 'epochs': [1, 5], 'num_rounds': [500]}
+    hyper_params = {'batch_size': [10], 'epochs': [1], 'num_rounds': [500]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 

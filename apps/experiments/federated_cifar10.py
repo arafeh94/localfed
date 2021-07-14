@@ -1,9 +1,10 @@
 import logging
 import sys
 
+from matplotlib import pyplot as plt
 from torch import nn
 
-from libs.model.cv.resnet import ResNet, resnet56
+from libs.model.cv.resnet import ResNet, resnet56, Cifar10
 from src.apis import lambdas
 from src.data.data_provider import PickleDataProvider
 
@@ -24,6 +25,12 @@ logger = logging.getLogger('main')
 
 logger.info('Generating Data --Started')
 client_data = data_loader.cifar10_10shards_100c_400min_400max()
+
+client_data = client_data.map(lambdas.reshape((-1, 32, 32, 3))).map(lambdas.transpose((0, 3, 1, 2)))
+# image = client_data[0].x[0]
+# plt.imshow(image[0])
+# plt.show()
+
 logger.info('Generating Data --Ended')
 
 trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=50, epochs=1, optimizer='sgd',
@@ -36,7 +43,8 @@ federated = FederatedLearning(
     metrics=metrics.AccLoss(batch_size=50, criterion=nn.CrossEntropyLoss()),
     client_selector=client_selectors.Random(0.2),
     trainers_data_dict=client_data,
-    initial_model=lambda: resnet56(10, 3, 32),
+    # initial_model=lambda: resnet56(10, 3, 32),
+    initial_model=lambda: Cifar10(),
     num_rounds=50,
     desired_accuracy=0.99,
 )
