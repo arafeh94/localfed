@@ -99,6 +99,9 @@ class DataContainer(Functional):
     def reshape(self, shape):
         return DataContainer(np.reshape(self.x, shape), self.y)
 
+    def transpose(self, shape):
+        return DataContainer(np.transpose(self.x, shape), self.y)
+
     def _from_list(self, x, y):
         new_dt = DataContainer(x, y)
         if self.is_numpy():
