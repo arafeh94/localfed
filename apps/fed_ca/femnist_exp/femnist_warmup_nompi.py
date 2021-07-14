@@ -14,29 +14,23 @@ from src import tools
 from src.federated import subscribers, fedruns
 from src.federated.components.trainer_manager import SeqTrainerManager
 
-sys.path.append(dirname(__file__) + '../')
-
-from apps.fed_ca.utilities.hp_generator import generate_configs, build_random, calculate_max_rounds
-from src.apis.mpi import Comm
+from apps.fed_ca.utilities.hp_generator import generate_configs, calculate_max_rounds
 from src.federated.components import metrics, client_selectors, aggregators, trainers
 from libs.model.cv.cnn import CNN_OriginalFedAvg, CNN_DropOut
-from libs.model.linear.lr import LogisticRegression
-from libs.model.collection import MLP
-from src.data import data_generator, data_loader
 from src.federated.federated import Events, FederatedLearning
 from src.federated.protocols import TrainerParams
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-ld = LoadData(dataset_name='femnist', shards_nb=0, clients_nb=62, min_samples=150, max_samples=1400)
+ld = LoadData(dataset_name='femnist', shards_nb=0, clients_nb=62, min_samples=2000, max_samples=2000)
 dataset_used = ld.filename
 client_data = ld.pickle_distribute_continuous()
 tools.detail(client_data)
 
 
 def load_warmup():
-    model = pickle.load(open("../utilities/warmup_model.pkl", 'rb'))
+    model = pickle.load(open("../utilities/warmup_model_femnist200.pkl", 'rb'))
     return model
 
 
@@ -49,20 +43,14 @@ percentage_nb_client = 0.4
 initial_models = {
     # 'LR': LogisticRegression(input_shape, labels_number),
     # 'MLP': MLP(input_shape, labels_number)
-    'CNN': CNN_DropOut(False)
+     'CNN': CNN_DropOut(False),
+    # 'CNN_OriginalFedAvg': CNN_OriginalFedAvg(False)
 }
 
 # runs = {}
 for model_name, gen_model in initial_models.items():
 
-    """
-      each params=(min,max,num_value)
-    """
-    batch_size = (64, 64, 1)
-    epochs = (1, 1, 1)
-    num_rounds = (100_000, 100_000, 1)
-
-    hyper_params = build_random(batch_size=batch_size, epochs=epochs, num_rounds=num_rounds)
+    hyper_params = {'batch_size': [10], 'epochs': [5], 'num_rounds': [100_000]}
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 
     logger.info(calculate_max_rounds(hyper_params))
@@ -75,7 +63,7 @@ for model_name, gen_model in initial_models.items():
 
         print(
             f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds},'
-            f' initial_model={initial_model} ')
+            f' initial_model={model_name} ')
         trainer_manager = SeqTrainerManager()
         trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=batch_size,
                                        epochs=epochs, optimizer='sgd', criterion='cel', lr=learn_rate)
@@ -93,7 +81,7 @@ for model_name, gen_model in initial_models.items():
             desired_accuracy=0.99
         )
 
-        federated.add_subscriber(subscribers.Resumable('warmup_femnist', federated, flush=False))
+        federated.add_subscriber(subscribers.Resumable('warmup_femnist200', federated, flush=False))
 
         federated.add_subscriber(subscribers.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
         federated.add_subscriber(

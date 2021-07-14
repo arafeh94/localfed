@@ -11,6 +11,7 @@ import torch
 from torchsummary import summary
 from torch import nn
 
+from apps.fed_ca.utilities.load_dataset import LoadData
 from src import tools
 from src.data import data_loader
 from src.federated import subscribers
@@ -23,14 +24,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
 logger.info('Generating Data --Started')
-dataset_name = 'mnist'
-clients_nb = 10
-min_samples = 1000
-max_samples = 1000
-shards_nb = 0
-client_data = data_loader.pickle_distribute_continuous(dataset_name, clients_nb, min_samples, max_samples)
-dataset_used = dataset_name + "_" + str(clients_nb) + "c_" + str(min_samples) + "mn_" + str(max_samples) + "mx.pkl"
+
+ld = LoadData(dataset_name='mnist', shards_nb=0, clients_nb=10, min_samples=1000, max_samples=1000)
+dataset_used = ld.filename
+client_data = ld.pickle_distribute_continuous()
 tools.detail(client_data)
+
 
 ui = []
 ei = []
@@ -68,6 +67,8 @@ entropy = entropy(counts)
 
 vgg16 = models.vgg16().cuda()
 summary(vgg16, (3, 224, 224))
+
+
 
 # # setting hyper parameters
 batch_size = 64

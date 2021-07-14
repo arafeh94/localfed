@@ -20,7 +20,7 @@ train, test = clients_data.reduce(lambdas.dict2dc).shuffle().as_tensor().split(0
 model = CNN_OriginalFedAvg(False)
 
 trainer = TorchModel(model)
-trainer.train(train.batch(64), lr=0.1, epochs=150)
-acc, loss = trainer.infer(test.batch(64))
+trainer.train(train.batch(10), lr=0.1, epochs=600)
+acc, loss = trainer.infer(test.batch(10))
 print(acc, loss)
-pickle.dump(model, open("warmup_model.pkl", 'wb'))
+pickle.dump(model, open("warmup_model_femnist200.pkl", 'wb'))
