@@ -14,6 +14,15 @@ def reshape(shape: typing.Tuple) -> typing.Callable:
     return _inner
 
 
+def transpose(shape: typing.Tuple) -> typing.Callable:
+    def _inner(a, b):
+        if isinstance(b, DataContainer):
+            return b.map(lambda x, y: _inner(x, y))
+        return np.transpose(a, shape), b
+
+    return _inner
+
+
 def clients_features(nb_features) -> typing.Callable:
     return lambda cid, data: DataContainer(data.x[:, 0:nb_features], data.y)
 
