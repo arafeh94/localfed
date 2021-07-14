@@ -25,7 +25,7 @@ from src.federated.protocols import TrainerParams
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-ld = LoadData(dataset_name='cifar10', shards_nb=0, clients_nb=10, min_samples=6000, max_samples=6000)
+ld = LoadData(dataset_name='cifar10', shards_nb=0, clients_nb=10, min_samples=600, max_samples=600)
 dataset_used = ld.filename
 client_data = ld.pickle_distribute_continuous()
 tools.detail(client_data)
@@ -39,23 +39,17 @@ percentage_nb_client = 0.2
 initial_models = {
     # 'LR': LogisticRegression(input_shape, labels_number),
     # 'MLP': MLP(input_shape, labels_number)
-    'CNNCifar':CNNCifar(labels_number)
+    # 'CNNCifar':CNNCifar(labels_number)
     #  'CNN': CNN_DropOut(False)
-    #   'ResNet:':  resnet56(labels_number, 1, 28)
+    'ResNet': resnet56(labels_number, 3, 32)
 }
 
 # runs = {}
 
 for model_name, gen_model in initial_models.items():
 
-    """
-      each params=(min,max,num_value)
-    """
-    batch_size = (64, 64, 1)
-    epochs = (5, 5, 1)
-    num_rounds = (1000, 1000, 1)
+    hyper_params = {'batch_size': [10, 100], 'epochs': [1, 5], 'num_rounds': [500]}
 
-    hyper_params = build_random(batch_size=batch_size, epochs=epochs, num_rounds=num_rounds)
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 
     logger.info(calculate_max_rounds(hyper_params))
@@ -66,9 +60,12 @@ for model_name, gen_model in initial_models.items():
         initial_model = config['initial_model']
         learn_rate = 0.1
 
+        print("------------------------------------------------------------------------------------------------")
         print(
             f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds},'
-            f' initial_model={initial_model} ')
+            f' initial_model={model_name} ')
+        print("------------------------------------------------------------------------------------------------")
+
         trainer_manager = SeqTrainerManager()
         trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=batch_size,
                                        epochs=epochs, optimizer='sgd', criterion='cel', lr=learn_rate)
@@ -105,5 +102,3 @@ for model_name, gen_model in initial_models.items():
 
 # r = fedruns.FedRuns(runs)
 # r.plot()
-
-
