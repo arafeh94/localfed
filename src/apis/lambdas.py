@@ -8,7 +8,7 @@ from src.data.data_container import DataContainer
 def reshape(shape: typing.Tuple) -> typing.Callable:
     def _inner(a, b):
         if isinstance(b, DataContainer):
-            return b.map(lambda x, y: _inner(x, y))
+            return b.reshape(shape)
         return np.reshape(a, shape), b
 
     return _inner
@@ -17,7 +17,7 @@ def reshape(shape: typing.Tuple) -> typing.Callable:
 def transpose(shape: typing.Tuple) -> typing.Callable:
     def _inner(a, b):
         if isinstance(b, DataContainer):
-            return b.map(lambda x, y: _inner(x, y))
+            return b.transpose(shape)
         return np.transpose(a, shape), b
 
     return _inner
