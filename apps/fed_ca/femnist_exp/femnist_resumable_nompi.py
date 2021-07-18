@@ -20,9 +20,9 @@ from src.federated.protocols import TrainerParams
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-ld = LoadData(dataset_name='femnist', shards_nb=0, clients_nb=62, min_samples=60_000, max_samples=60_000)
+ld = LoadData(dataset_name='femnist', shards_nb=62, clients_nb=62, min_samples=60_000, max_samples=60_000)
 dataset_used = ld.filename
-client_data = ld.pickle_distribute_continuous()
+client_data = ld.pickle_distribute_shards()
 tools.detail(client_data)
 
 # building Hyperparameters
@@ -31,21 +31,15 @@ labels_number = 62
 percentage_nb_client = 62
 # number of models that we are using
 initial_models = {
-    'CNN': CNN_DropOut(False)
+    # 'CNN': CNN_DropOut(False)
     # 'LR': LogisticRegression(input_shape, labels_number),
     # 'MLP': MLP(input_shape, labels_number)
+    'CNN_OriginalFedAvg':CNN_OriginalFedAvg(False)
 }
 
 for model_name, gen_model in initial_models.items():
 
-    """
-      each params=(min,max,num_value)
-    """
-    batch_size = (128, 128, 1)
-    epochs = (5, 5, 1)
-    num_rounds = (100_000, 100_000, 1)
-
-    hyper_params = build_random(batch_size=batch_size, epochs=epochs, num_rounds=num_rounds)
+    hyper_params = {'batch_size': [128], 'epochs': [1], 'num_rounds': [100_000]}
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 
     logger.info(calculate_max_rounds(hyper_params))
@@ -58,7 +52,8 @@ for model_name, gen_model in initial_models.items():
 
         print(
             f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds},'
-            f' initial_model={initial_model} ')
+            f' initial_model={model_name} ')
+
         trainer_manager = SeqTrainerManager()
         trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=batch_size,
                                        epochs=epochs, optimizer='sgd', criterion='cel', lr=learn_rate)
@@ -77,7 +72,7 @@ for model_name, gen_model in initial_models.items():
         )
         # use flush=True if you don't want to continue from the last round
         federated.add_subscriber(
-            subscribers.Resumable('femnist_62c_60000mn_60000mx_lr100_000.pkl', federated, flush=True))
+            subscribers.Resumable('femnist_62shards_62c_60000mn_60000mx_lr100_000.pkl', federated, flush=True))
 
         federated.add_subscriber(subscribers.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
         federated.add_subscriber(

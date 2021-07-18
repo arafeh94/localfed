@@ -10,7 +10,7 @@ from torch import nn
 from apps.fed_ca.utilities.load_dataset import LoadData
 from libs.model.collection import CNNCifar
 from libs.model.cv.cnn import CNN_DropOut
-from libs.model.cv.resnet import resnet56, Cifar10, CNN_Cifar10
+from libs.model.cv.resnet import resnet56, Cifar10, CNN_Cifar10, MLP_cifar10, CNN_batch_norm_cifar10
 from src import tools
 from src.apis import lambdas
 from src.federated import subscribers
@@ -37,7 +37,7 @@ client_data = client_data.map(lambdas.reshape((-1, 32, 32, 3))).map(lambdas.tran
 # building Hyperparameters
 input_shape = 32 * 32
 labels_number = 10
-percentage_nb_client = 0.2
+percentage_nb_client = 10
 
 # number of models that we are using
 initial_models = {
@@ -47,14 +47,14 @@ initial_models = {
     #  'CNN': CNN_DropOut(False)
     # 'ResNet': resnet56(labels_number, 3, 32)
     # 'Cifar10': Cifar10()
-    'Cifar10': CNN_Cifar10()
+    'Cifar10': CNN_batch_norm_cifar10()
 }
 
 # runs = {}
 
 for model_name, gen_model in initial_models.items():
 
-    hyper_params = {'batch_size': [10], 'epochs': [1], 'num_rounds': [500]}
+    hyper_params = {'batch_size': [128], 'epochs': [5], 'num_rounds': [500]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 
