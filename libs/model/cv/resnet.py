@@ -410,3 +410,4 @@ class CNN_batch_norm_cifar10(nn.Module):
         x = self.fc_layer(x)
 
         return x
+

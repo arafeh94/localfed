@@ -9,9 +9,10 @@ from torch import nn
 
 from apps.fed_ca.utilities.load_dataset import LoadData
 from libs.model.collection import CNNCifar
-from libs.model.cv.cnn import CNN_DropOut
-from libs.model.cv.resnet import resnet56
+from libs.model.cv.cnn import CNN_DropOut, SimpleCNN
+from libs.model.cv.resnet import resnet56, CNN_batch_norm_cifar10
 from src import tools
+from src.apis import lambdas
 from src.federated import subscribers
 from src.federated.components.trainer_manager import SeqTrainerManager
 
@@ -25,15 +26,16 @@ from src.federated.protocols import TrainerParams
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-ld = LoadData(dataset_name='cifar10', shards_nb=0, clients_nb=10, min_samples=600, max_samples=600)
+ld = LoadData(dataset_name='cifar10', shards_nb=0, clients_nb=10, min_samples=6000, max_samples=6000)
 dataset_used = ld.filename
 client_data = ld.pickle_distribute_continuous()
 tools.detail(client_data)
+client_data = client_data.map(lambdas.reshape((-1, 32, 32, 3))).map(lambdas.transpose((0, 3, 1, 2)))
 
 # building Hyperparameters
 input_shape = 32 * 32
 labels_number = 10
-percentage_nb_client = 0.2
+percentage_nb_client = 10
 
 # number of models that we are using
 initial_models = {
@@ -41,14 +43,16 @@ initial_models = {
     # 'MLP': MLP(input_shape, labels_number)
     # 'CNNCifar':CNNCifar(labels_number)
     #  'CNN': CNN_DropOut(False)
-    'ResNet': resnet56(labels_number, 3, 32)
+    # 'ResNet': resnet56(labels_number, 3, 32)
+    # 'SimpleCNN': SimpleCNN(input_dim=(16 * 5 * 5), hidden_dims=[120, 84], output_dim=10)
+    'Cifar10': CNN_batch_norm_cifar10()
 }
 
 # runs = {}
 
 for model_name, gen_model in initial_models.items():
 
-    hyper_params = {'batch_size': [10, 100], 'epochs': [1, 5], 'num_rounds': [500]}
+    hyper_params = {'batch_size': [64], 'epochs': [10], 'num_rounds': [10000]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 
@@ -58,7 +62,7 @@ for model_name, gen_model in initial_models.items():
         epochs = config['epochs']
         num_rounds = config['num_rounds']
         initial_model = config['initial_model']
-        learn_rate = 0.1
+        learn_rate = 0.01
 
         print("------------------------------------------------------------------------------------------------")
         print(
@@ -82,6 +86,11 @@ for model_name, gen_model in initial_models.items():
             num_rounds=num_rounds,
             desired_accuracy=0.99
         )
+
+        # use flush=True if you don't want to continue from the last round
+        federated.add_subscriber(
+            subscribers.Resumable('cifar10_batch_normalization_test_10c_6000.pkl', federated, flush=True))
+
         # show weight divergence in each round
         # federated.add_subscriber(subscribers.ShowWeightDivergence(save_dir='./pics'))
         # show data distrubition of each clients

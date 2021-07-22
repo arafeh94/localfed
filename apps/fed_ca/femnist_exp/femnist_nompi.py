@@ -18,7 +18,7 @@ sys.path.append(dirname(__file__) + '../')
 
 from apps.fed_ca.utilities.hp_generator import generate_configs, build_random, calculate_max_rounds
 from src.federated.components import metrics, client_selectors, aggregators, trainers
-from libs.model.cv.cnn import CNN_OriginalFedAvg, CNN_DropOut
+from libs.model.cv.cnn import CNN_OriginalFedAvg, CNN_DropOut, Cnn_net_femnist
 from libs.model.linear.lr import LogisticRegression
 from libs.model.collection import MLP
 from src.data import data_generator, data_loader
@@ -36,7 +36,7 @@ client_data = ld.pickle_distribute_continuous()
 # building Hyperparameters
 input_shape = 28 * 28
 labels_number = 62
-percentage_nb_client = 62
+percentage_nb_client = 0.5
 
 # number of models that we are using
 initial_models = {

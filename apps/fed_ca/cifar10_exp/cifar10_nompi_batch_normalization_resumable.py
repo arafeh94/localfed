@@ -8,7 +8,7 @@ from os.path import dirname
 from torch import nn
 
 from apps.fed_ca.utilities.load_dataset import LoadData
-from libs.model.collection import CNNCifar
+from libs.model.collection import CNNCifar, MLP
 from libs.model.cv.cnn import CNN_DropOut
 from libs.model.cv.resnet import resnet56, Cifar10, CNN_Cifar10, MLP_cifar10, CNN_batch_norm_cifar10
 from src import tools
@@ -54,7 +54,7 @@ initial_models = {
 
 for model_name, gen_model in initial_models.items():
 
-    hyper_params = {'batch_size': [128], 'epochs': [1], 'num_rounds': [500]}
+    hyper_params = {'batch_size': [128], 'epochs': [1], 'num_rounds': [10_000]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 
@@ -91,7 +91,7 @@ for model_name, gen_model in initial_models.items():
 
         # use flush=True if you don't want to continue from the last round
         federated.add_subscriber(
-            subscribers.Resumable('cifar10_batch_normalization_test_4c_1000.pkl', federated, flush=True))
+            subscribers.Resumable('cifar10_batch_normalization_test_4c_1000.pkl', federated, flush=False))
 
         # show weight divergence in each round
         # federated.add_subscriber(subscribers.ShowWeightDivergence(save_dir='./pics'))
