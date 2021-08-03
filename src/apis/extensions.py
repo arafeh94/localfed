@@ -133,8 +133,6 @@ class TorchModel:
                 momentum (float)
                 optimizer (Optimizer)
                 criterion (_WeightedLoss)
-                samira
-
         Returns:
 
         """
