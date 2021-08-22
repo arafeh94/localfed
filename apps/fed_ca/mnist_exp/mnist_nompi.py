@@ -15,8 +15,8 @@ from src.federated.protocols import TrainerParams
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-ld = LoadData(dataset_name='mnist', shards_nb=10, clients_nb=100, min_samples=600, max_samples=600)
-client_data = ld.pickle_distribute_shards()
+ld = LoadData(dataset_name='mnist', shards_nb=0, clients_nb=10, min_samples=600, max_samples=600)
+client_data = ld.pickle_distribute_continuous()
 
 # ld = LoadData(dataset_name='mnist', shards_nb=2, clients_nb=100, min_samples=300, max_samples=300)
 # client_data = ld.pickle_distribute_shards()
