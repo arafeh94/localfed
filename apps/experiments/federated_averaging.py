@@ -3,9 +3,6 @@ import sys
 
 from torch import nn
 
-from libs.model.cv.cnn import CNN32, CNN_OriginalFedAvg
-from libs.model.cv.resnet import ResNet, resnet56
-from src.apis import lambdas
 from src.data.data_provider import PickleDataProvider
 
 sys.path.append('../../')
@@ -37,12 +34,16 @@ federated = FederatedLearning(
     metrics=metrics.AccLoss(batch_size=50, criterion=nn.CrossEntropyLoss()),
     client_selector=client_selectors.Random(0.2),
     trainers_data_dict=client_data,
-    initial_model=lambda: CNN_OriginalFedAvg(),
+    initial_model=lambda: LogisticRegression(28 * 28, 10),
     num_rounds=50,
     desired_accuracy=0.99,
 )
+
+# federated.add_subscriber(subscribers.ShowDataDistribution(10, per_round=True, save_dir='./pct'))
 federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
+federated.add_subscriber(subscribers.FedPlot(plot_each_round=True))
+# federated.add_subscriber(subscribers.ShowWeightDivergence(save_dir="./pct", plot_type='matrix'))
 logger.info("----------------------")
 logger.info("start federated 1")
 logger.info("----------------------")

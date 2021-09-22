@@ -199,3 +199,6 @@ class FederatedLearning(Broadcaster):
 
         def describe(self):
             return f"created at {self.timestamp}"
+
+        def describe(self):
+            return f"created at {self.timestamp}"

@@ -61,12 +61,14 @@ class Distributor:
             clients_data[i] = DataContainer(client_x, client_y).as_tensor()
         return Dict(clients_data)
 
-    def distribute_shards(self, num_clients, shards_per_client, min_size, max_size) -> Dict[int, DataContainer]:
+    def distribute_shards(self, num_clients, shards_per_client, min_size, max_size, is_random=False) -> Dict[
+        int, DataContainer]:
         self.data = self.data.as_numpy()
         clients_data = defaultdict(list)
         grouper = self.Grouper(self.data.x, self.data.y)
         for client_id in range(num_clients):
             client_data_size = random.randint(min_size, max_size)
+            shards_per_client = random.randint(1, shards_per_client) if is_random else shards_per_client
             selected_shards = grouper.groups(shards_per_client)
             self.log(f'generating data for {client_id}-{selected_shards}')
             client_x = []

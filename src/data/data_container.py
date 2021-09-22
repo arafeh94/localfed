@@ -71,9 +71,12 @@ class DataContainer(Functional):
         y_test = self.y[train_size:total_size]
         return DataContainer(x_train, y_train), DataContainer(x_test, y_test)
 
-    def shuffle(self):
+    def shuffle(self, seed=None):
         dc = copy.deepcopy(self) if self.is_numpy() else self.as_numpy()
-        p = np.random.permutation(len(dc.x))
+        permutation = np.random
+        if seed is not None and isinstance(seed, int):
+            permutation = permutation.RandomState(seed=seed)
+        p = permutation.permutation(len(dc.x))
         return DataContainer(dc.x[p], dc.y[p])
 
     def filter(self, predictor: typing.Callable[[typing.List, float], bool]) -> 'DataContainer':

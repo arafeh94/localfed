@@ -14,7 +14,8 @@ class Random(ClientSelector):
 
     def select(self, trainer_ids: List[int], round_id: int) -> List[int]:
         select_size = self.num
-        if self.num < 1:
+        if self.num <= 1:
             select_size = int(self.num * len(trainer_ids))
+        select_size = 3 if select_size < 3 else select_size
         selected_trainers = random.sample(trainer_ids, select_size)
         return selected_trainers

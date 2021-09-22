@@ -197,3 +197,11 @@ def detail(client_data: typing.Union[typing.Dict[int, DataContainer], DataContai
             percentage = unique_count / len(data.y) * 100
             percentage = int(percentage)
             display(f"labels_{unique}= {percentage}% - {unique_count}")
+
+
+def compress(weights, output_dim, n_components):
+    weights = weights.flatten().reshape(output_dim, -1)
+    pca = decomposition.PCA(n_components=n_components)
+    pca.fit(weights)
+    weights = pca.transform(weights)
+    return weights.flatten()
