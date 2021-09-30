@@ -17,7 +17,7 @@ def sgd(lr):
     """
     # print("*** SGD Modified momentum=0.9, weight_decay=1e-5 ****")
     # return lambda model: torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=1e-5)
-    return lambda model: torch.optim.SGD(model.parameters(), lr=lr)
+    return lambda model: torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
 
 
 def adam(lr, wd, amsgrad=True):

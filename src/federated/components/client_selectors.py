@@ -17,4 +17,5 @@ class Random(ClientSelector):
         if self.num < 1:
             select_size = int(self.num * len(trainer_ids))
         selected_trainers = random.sample(trainer_ids, select_size)
+        print(f'Selected Client in Round {round_id}, are : {selected_trainers}')
         return selected_trainers
