@@ -2,6 +2,7 @@ import logging
 
 from torch import nn
 from apps.fed_ca.utilities.load_dataset import LoadData
+from libs.model.linear.lr import LogisticRegression
 from src import tools
 from src.federated import subscribers
 from src.federated.components.trainer_manager import SeqTrainerManager
@@ -15,7 +16,7 @@ from src.federated.protocols import TrainerParams
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-ld = LoadData(dataset_name='mnist', shards_nb=0, clients_nb=10, min_samples=600, max_samples=600)
+ld = LoadData(dataset_name='mnist', shards_nb=0, clients_nb=10, min_samples=2400, max_samples=3000)
 client_data = ld.pickle_distribute_continuous()
 
 # ld = LoadData(dataset_name='mnist', shards_nb=2, clients_nb=100, min_samples=300, max_samples=300)
@@ -30,7 +31,7 @@ tools.detail(client_data)
 # building Hyperparameters
 input_shape = 28 * 28
 labels_number = 10
-percentage_nb_client = 0.1
+percentage_nb_client = 0.2
 
 # number of models that we are using
 initial_models = {
@@ -42,7 +43,7 @@ initial_models = {
 for model_name, gen_model in initial_models.items():
 
     # hyper_params = {'batch_size': [10, 50, 1000], 'epochs': [1, 5, 20], 'num_rounds': [1200]}
-    hyper_params = {'batch_size': [10], 'epochs': [ 20], 'num_rounds': [1200]}
+    hyper_params = {'batch_size': [10], 'epochs': [1], 'num_rounds': [800]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 
@@ -73,7 +74,7 @@ for model_name, gen_model in initial_models.items():
             trainers_data_dict=client_data,
             initial_model=lambda: initial_model,
             num_rounds=num_rounds,
-            desired_accuracy=0.99
+            desired_accuracy=1
         )
 
         federated.add_subscriber(subscribers.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))

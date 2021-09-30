@@ -26,7 +26,7 @@ from src.federated.protocols import TrainerParams
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-ld = LoadData(dataset_name='cifar10', shards_nb=0, clients_nb=10, min_samples=3000, max_samples=3000)
+ld = LoadData(dataset_name='cifar10', shards_nb=0, clients_nb=10, min_samples=6000, max_samples=6000)
 dataset_used = ld.filename
 client_data = ld.pickle_distribute_continuous()
 # client_data = client_data.map(lambdas.reshape())
@@ -37,7 +37,7 @@ client_data = client_data.map(lambdas.reshape((-1, 32, 32, 3))).map(lambdas.tran
 # building Hyperparameters
 input_shape = 32 * 32
 labels_number = 10
-percentage_nb_client = 0.4
+percentage_nb_client = 10
 
 # number of models that we are using
 initial_models = {
@@ -46,15 +46,15 @@ initial_models = {
     # 'CNNCifar':CNNCifar(labels_number)
     #  'CNN': CNN_DropOut(False)
     # 'ResNet': resnet56(labels_number, 3, 32)
-    # 'Cifar10': Cifar10()
-    'Cifar10': CNN_batch_norm_cifar10()
+    'Cifar10': Cifar10()
+    # 'CNN_Normaliztion': CNN_batch_norm_cifar10()
 }
 
 # runs = {}
 
 for model_name, gen_model in initial_models.items():
 
-    hyper_params = {'batch_size': [128], 'epochs': [1], 'num_rounds': [10_000]}
+    hyper_params = {'batch_size': [100], 'epochs': [1], 'num_rounds': [800]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 
@@ -90,8 +90,8 @@ for model_name, gen_model in initial_models.items():
         )
 
         # use flush=True if you don't want to continue from the last round
-        federated.add_subscriber(
-            subscribers.Resumable('cifar10_batch_normalization_test_4c_1000.pkl', federated, flush=False))
+        # federated.add_subscriber(
+        #     subscribers.Resumable('cifar10_batch_normalization_test_4c_1000.pkl', federated, flush=True))
 
         # show weight divergence in each round
         # federated.add_subscriber(subscribers.ShowWeightDivergence(save_dir='./pics'))

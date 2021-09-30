@@ -3,6 +3,8 @@ import platform
 import sys
 from os.path import dirname
 from torch import nn
+from torchsummary import summary
+
 from apps.fed_ca.utilities.load_dataset import LoadData
 from libs.model.collection import MLP
 from libs.model.linear.lr import LogisticRegression
@@ -20,15 +22,15 @@ from src.federated.protocols import TrainerParams
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-ld = LoadData(dataset_name='femnist', shards_nb=62, clients_nb=62, min_samples=60_000, max_samples=60_000)
+ld = LoadData(dataset_name='femnist', shards_nb=0, clients_nb=62, min_samples=2500, max_samples=2500)
 dataset_used = ld.filename
-client_data = ld.pickle_distribute_shards()
+client_data = ld.pickle_distribute_continuous()
 tools.detail(client_data)
 
 # building Hyperparameters
 input_shape = 28 * 28
 labels_number = 62
-percentage_nb_client = 62
+percentage_nb_client = 0.4
 # number of models that we are using
 initial_models = {
     # 'CNN': CNN_DropOut(False)
@@ -73,6 +75,7 @@ for model_name, gen_model in initial_models.items():
         # use flush=True if you don't want to continue from the last round
         federated.add_subscriber(
             subscribers.Resumable('femnist_62shards_62c_60000mn_60000mx_lr100_000.pkl', federated, flush=True))
+
 
         federated.add_subscriber(subscribers.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
         federated.add_subscriber(
