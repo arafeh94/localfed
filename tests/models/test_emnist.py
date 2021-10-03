@@ -22,8 +22,8 @@ train, test = PickleDataProvider("../../datasets/pickles/femnist.pkl").collect()
 
 tools.detail(train)
 
-# model = CNN_OriginalFedAvg(False)
-model = resnet56(62, 1, 28)
+model = CNN_OriginalFedAvg(False)
+# model = resnet56(62, 1, 28)
 
 tools.train(model, train_data=train.batch(20), epochs=3)
 acc, loss = tools.infer(model, test.batch(20))
