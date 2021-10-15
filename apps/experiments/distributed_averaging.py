@@ -1,20 +1,18 @@
-# mpiexec -n 11 python distributed_averaging.py
+# mpiexec -n 2 python distributed_averaging.py
 import sys
 from os.path import dirname
 
-from src.data import data_loader
-from src.data.data_loader import preload
 
 sys.path.append(dirname(__file__) + '../../')
+
+from src.data import data_loader
 from src.federated.subscribers import Timer
 import logging
 from torch import nn
-import src
 from src.federated.protocols import TrainerParams
 from src.apis.mpi import Comm
 from src.federated.components import metrics, client_selectors, aggregators, trainers
 from libs.model.linear.lr import LogisticRegression
-from src.data.data_provider import PickleDataProvider
 from src.federated import subscribers
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning

@@ -1,43 +1,51 @@
+# py federated_with_args.py -e 25 -b 50 -r 100 -s 2 -d mnist -cr 0.1 -lr 0.1 -t mnist10 -mn 600 -mx 600 -cln 100
+
 import logging
 import sys
 
-from torch import nn
-
-from src.apis import files
-from src.data.data_loader import preload
-from src.data.data_provider import PickleDataProvider
-
 sys.path.append('../../')
+
+from torch import nn
+from libs.model.cv.cnn import Cifar10Model
+from src.apis import lambdas
+from src.apis.federated_args import FederatedArgs
+from src.data.data_distributor import LabelDistributor
+from src.data.data_loader import preload
 from libs.model.linear.lr import LogisticRegression
-from src import tools
-from src.data import data_loader
 from src.federated.components import metrics, client_selectors, aggregators, trainers
 from src.federated import subscribers
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
-from src.federated.components.trainer_manager import SeqTrainerManager, SharedTrainerProvider
+from src.federated.components.trainer_manager import SeqTrainerManager
 from src.federated.subscribers import Timer
 
+args = FederatedArgs()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
 logger.info('Generating Data --Started')
-client_data = data_loader.mnist_10shards_100c_400min_400max()
+client_data = preload(args.tag, args.dataset, LabelDistributor(args.clients, args.shard, args.min, args.max))
 logger.info('Generating Data --Ended')
 
-trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=50, epochs=1, optimizer='sgd',
-                               criterion='cel', lr=0.1)
+if args.dataset == 'cifar10':
+    client_data = client_data.map(lambdas.reshape((-1, 32, 32, 3))).map(lambdas.transpose((0, 3, 1, 2)))
+    initial_model = Cifar10Model()
+else:
+    initial_model = LogisticRegression(28 * 28, 10)
+
+trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=args.batch, epochs=args.epoch,
+                               optimizer='sgd', criterion='cel', lr=args.learn_rate)
 
 federated = FederatedLearning(
     trainer_manager=SeqTrainerManager(),
     trainer_config=trainer_params,
     aggregator=aggregators.AVGAggregator(),
-    metrics=metrics.AccLoss(batch_size=50, criterion=nn.CrossEntropyLoss()),
-    client_selector=client_selectors.Random(0.2),
+    metrics=metrics.AccLoss(batch_size=args.batch, criterion=nn.CrossEntropyLoss()),
+    client_selector=client_selectors.Random(args.clients_ratio),
     trainers_data_dict=client_data,
-    initial_model=lambda: LogisticRegression(28 * 28, 10),
-    num_rounds=50,
+    initial_model=lambda: initial_model,
+    num_rounds=args.round,
     desired_accuracy=0.99,
     accepted_accuracy_margin=0.01
 )
