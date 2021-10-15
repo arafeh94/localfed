@@ -15,7 +15,7 @@ from src.data.data_provider import PickleDataProvider
 logger = logging.getLogger('data_loader')
 
 
-def preload(tag, dataset, distributor: Distributor) -> typing.Union[Dict[int, DataContainer], DataContainer]:
+def preload(dataset, distributor: Distributor, tag=None) -> typing.Union[Dict[int, DataContainer], DataContainer]:
     """
     Args:
         tag: file name without postfix (file type, auto-filled with .pkl)
@@ -25,6 +25,7 @@ def preload(tag, dataset, distributor: Distributor) -> typing.Union[Dict[int, Da
     Returns: clients data of type typing.Dict[int, DataContainer]
 
     """
+    tag = tag or dataset + '_' + distributor.id() if distributor else ''
     file_path = manifest.DATA_PATH + tag + ".pkl"
     logger.info(f'searching for {file_path}...')
     if os.path.exists(file_path):
@@ -42,48 +43,48 @@ def preload(tag, dataset, distributor: Distributor) -> typing.Union[Dict[int, Da
 
 
 def mnist_10shards_100c_400min_400max() -> Dict[int, DataContainer]:
-    return preload('mnist_10shards_100c_400min_400max', 'mnist', LabelDistributor(100, 10, 400, 400))
+    return preload('mnist', LabelDistributor(100, 10, 400, 400))
 
 
 def cifar10_10shards_100c_400min_400max() -> Dict[int, DataContainer]:
-    return preload('cifar10_10shards_100c_400min_400max', 'cifar10', LabelDistributor(100, 10, 400, 400))
+    return preload('cifar10', LabelDistributor(100, 10, 400, 400))
 
 
 def mnist_2shards_100c_600min_600max() -> Dict[int, DataContainer]:
-    return preload('mnist_2shards_100c_600min_600max', 'mnist', LabelDistributor(100, 2, 600, 600))
+    return preload('mnist', LabelDistributor(100, 2, 600, 600))
 
 
 def cifar10_2shards_100c_600min_600max() -> Dict[int, DataContainer]:
-    return preload('cifar10_2shards_100c_600min_600max', 'cifar10', LabelDistributor(100, 2, 600, 600))
+    return preload('cifar10', LabelDistributor(100, 2, 600, 600))
 
 
 def cifar10_1shard_100c_600min_600max() -> Dict[int, DataContainer]:
-    return preload('cifar10_1shards_100c_600min_600max', 'cifar10', LabelDistributor(100, 1, 600, 600))
+    return preload('cifar10', LabelDistributor(100, 1, 600, 600))
 
 
 def mnist_1shards_100c_600min_600max() -> Dict[int, DataContainer]:
-    return preload('mnist_1shards_100c_600min_600max', 'mnist', LabelDistributor(100, 1, 600, 600))
+    return preload('mnist', LabelDistributor(100, 1, 600, 600))
 
 
 def femnist_2shards_100c_600min_600max() -> Dict[int, DataContainer]:
-    return preload('femnist_2shards_100c_600min_600max', 'femnist', LabelDistributor(100, 2, 600, 600))
+    return preload('femnist', LabelDistributor(100, 2, 600, 600))
 
 
 def femnist_100c_2000min_2000max() -> Dict[int, DataContainer]:
-    return preload('femnist_100c_2000min_2000max', 'femnist', SizeDistributor(100, 2000, 2000))
+    return preload('femnist', SizeDistributor(100, 2000, 2000))
 
 
 def femnist_2shards_100c_2000min_2000max() -> Dict[int, DataContainer]:
-    return preload('femnist_2shards_100c_2000min_2000max', 'femnist', LabelDistributor(100, 2, 2000, 2000))
+    return preload('femnist', LabelDistributor(100, 2, 2000, 2000))
 
 
 def kdd_100c_400min_400max() -> Dict[int, DataContainer]:
-    return preload('kdd_100c_400min_400max', 'kdd', SizeDistributor(100, 400, 400))
+    return preload('kdd', SizeDistributor(100, 400, 400))
 
 
 def femnist_1shard_62c_2000min_2000max() -> Dict[int, DataContainer]:
-    return preload('femnist_1shard_62c_2000min_2000max', 'femnist', UniqueDistributor(62, 2000, 2000))
+    return preload('femnist', UniqueDistributor(62, 2000, 2000))
 
 
 def femnist_1shard_62c_200min_2000max() -> Dict[int, DataContainer]:
-    return preload('femnist_1shard_62c_200min_2000max', 'femnist', UniqueDistributor(62, 200, 2000))
+    return preload('femnist', UniqueDistributor(62, 200, 2000))

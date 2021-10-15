@@ -25,7 +25,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
 logger.info('Generating Data --Started')
-client_data = preload(args.tag, args.dataset, LabelDistributor(args.clients, args.shard, args.min, args.max))
+client_data = preload(args.dataset, LabelDistributor(args.clients, args.shard, args.min, args.max))
 logger.info('Generating Data --Ended')
 
 if args.dataset == 'cifar10':
