@@ -1,7 +1,6 @@
 import logging
 import sys
 
-
 sys.path.append('../../')
 from libs.model.cv.cnn import CNN_OriginalFedAvg
 
@@ -26,7 +25,7 @@ if comm.pid() == 0:
     logger.info('Generating Data --Ended')
 
     trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=50, epochs=150, optimizer='sgd',
-                                   criterion='cel', lr=0.1)
+                                   criterion='cel', lr=0.001)
 
     federated = FederatedLearning(
         trainer_manager=MPITrainerManager(),
@@ -43,7 +42,7 @@ if comm.pid() == 0:
     federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
     federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND, Timer.TRAINER]))
     federated.add_subscriber(subscribers.FedPlot())
-    federated.add_subscriber(subscribers.FedSave())
+    federated.add_subscriber(subscribers.FedSave('femnist'))
 
     logger.info("----------------------")
     logger.info("start federated 1")

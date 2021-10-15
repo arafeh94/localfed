@@ -1,4 +1,7 @@
 import copy
+import logging
+import os
+import pickle
 import typing
 from abc import abstractmethod
 from collections import defaultdict
@@ -119,9 +122,36 @@ class Array(typing.List[V], Functional):
         return Array(self.copy().extend(other))
 
 
+class Serializable:
+    def __init__(self, file_path):
+        self.file_path = file_path
+
+    def save(self):
+        os.makedirs(os.path.dirname(self.file_path), exist_ok=True)
+        to_save = {}
+        for key, item in self.__dict__.items():
+            if not callable(item):
+                to_save[key] = item
+        pickle.dump(to_save, open(self.file_path, 'wb'))
+
+    def load(self):
+        if os.path.exists(self.file_path):
+            try:
+                for key, item in pickle.load(open(self.file_path, 'rb')).items():
+                    self.__dict__[key] = item
+            except Exception as e:
+                print(e)
+
+    def sync(self, func, *params):
+        self.load()
+        func(*params)
+        self.save()
+
+
 class TorchModel:
     def __init__(self, model):
         self.model = model
+        self.logger = logging.getLogger('TorchModel')
 
     def train(self, batched, **kwargs):
         r"""
@@ -133,6 +163,7 @@ class TorchModel:
                 momentum (float)
                 optimizer (Optimizer)
                 criterion (_WeightedLoss)
+                verbose (int)
         Returns:
 
         """
@@ -181,6 +212,9 @@ class TorchModel:
 
         return test_acc / test_total, test_loss / test_total
 
+    def log(self, msg, level=1):
+        self.logger.info(msg)
+
     def weights(self):
         return self.model.state_dict()
 
@@ -189,6 +223,18 @@ class TorchModel:
 
     def load(self, weights):
         self.model.load_state_dict(weights)
+
+    def save(self, file_path):
+        save_file = open(file_path, 'wb')
+        pickle.dump(self.model, save_file)
+
+    @staticmethod
+    def open(file_path):
+        if os.path.isfile(file_path):
+            model = pickle.load(open(file_path, 'rb'))
+            return TorchModel(model)
+        else:
+            return False
 
     def flatten(self):
         all_weights = []
@@ -203,4 +249,5 @@ class TorchModel:
         weights = pca.transform(weights)
         return weights.flatten()
 
-
+    def extract(self):
+        return self.model

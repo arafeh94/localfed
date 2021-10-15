@@ -1,19 +1,20 @@
 import atexit
 import logging
+import math
 import os
 import pickle
+import statistics
 import time
 import typing
 from collections import defaultdict
-from datetime import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
-import torch
-from typing.io import IO
+import scipy
+from scipy.stats import wasserstein_distance
 
 from src import tools, manifest
-from src.apis import plots
+from src.apis import plots, files
 from src.apis.extensions import Dict
 from src.apis.mpi import Comm
 from src.data.data_container import DataContainer
@@ -137,8 +138,12 @@ class FederatedLogger(FederatedEventPlug):
         params = tools.Dict.but(['context', 'trained_model'], params)
         self.logger.info(f"trainer ended {params}")
 
+    def on_model_status_eval(self, params):
+        params = tools.Dict.but(['context', 'trained_model'], params)
+        self.logger.info(f"model status: {params}")
+
     def force(self) -> []:
-        return [Events.ET_FED_START]
+        return [Events.ET_FED_START, Events.ET_MODEL_STATUS]
 
     def on_trainers_selected(self, params):
         params = tools.Dict.but(['context'], params)
@@ -267,7 +272,7 @@ class CustomModelTestPlug(FederatedEventPlug):
 
 
 class FedSave(FederatedEventPlug):
-    def __init__(self, tag, folder_name="./logs/"):
+    def __init__(self, tag, folder_name=manifest.COMPARE_PATH):
         super().__init__()
         self.folder_name = folder_name
         self.file_name = "fedruns.pkl"
@@ -280,9 +285,7 @@ class FedSave(FederatedEventPlug):
     def on_federated_ended(self, params):
         context = params['context']
         all_runs = self.old_runs()
-        if self.tag not in all_runs:
-            all_runs[self.tag] = []
-        all_runs[self.tag].append(context)
+        all_runs[self.tag] = context
         with open(self.path(), 'wb') as file:
             try:
                 pickle.dump(all_runs, file)
@@ -306,7 +309,9 @@ class FedSave(FederatedEventPlug):
         return self.folder_name + self.file_name
 
     @staticmethod
-    def unpack(file_path) -> typing.Dict[str, FederatedLearning.Context]:
+    def unpack(file_path=None) -> typing.Dict[str, FederatedLearning.Context]:
+        if file_path is None:
+            file_path = manifest.COMPARE_PATH + 'fedruns.pkl'
         return pickle.load(open(file_path, 'rb'))
 
 
@@ -404,7 +409,13 @@ class ShowDataDistribution(FederatedEventPlug):
 
 
 class ShowWeightDivergence(FederatedEventPlug):
-    def __init__(self, show_log=False, include_global_weights=False, save_dir=None):
+    def __init__(self, show_log=False, include_global_weights=False, save_dir=None, plot_type='matrix',
+                 divergence_tag=None):
+        """
+        plot_type = matrix | linear
+        Returns:
+            object: FederatedEventPlug
+        """
         super().__init__()
         self.logger = logging.getLogger('weights_divergence')
         self.show_log = show_log
@@ -413,6 +424,7 @@ class ShowWeightDivergence(FederatedEventPlug):
         self.global_weights = None
         self.save_dir = save_dir
         self.round_id = 0
+        self.plot_type = plot_type
         if self.save_dir is not None:
             os.makedirs(self.save_dir, exist_ok=True)
 
@@ -426,20 +438,80 @@ class ShowWeightDivergence(FederatedEventPlug):
         tick = time.time()
         self.logger.info('building weights divergence...')
         self.round_id = params['context'].round_id
+        save_dir = f"./{self.save_dir}/round_{self.round_id}_wd.png" if self.save_dir is not None else None
         acc = params['accuracy']
         trainers_weights = self.trainers_weights
         if self.include_global_weights:
             trainers_weights[len(trainers_weights)] = self.global_weights
         ids = list(trainers_weights.keys())
-        heatmap = np.zeros((len(trainers_weights), len(trainers_weights)))
-        id_mapper = lambda id: ids.index(id)
-        for trainer_id, weights in trainers_weights.items():
-            for trainer_id_1, weights_1 in trainers_weights.items():
-                w0 = tools.flatten_weights(weights)
-                w1 = tools.flatten_weights(weights_1)
-                heatmap[id_mapper(trainer_id)][id_mapper(trainer_id_1)] = np.var(np.subtract(w0, w1))
-        save_dir = f"./{self.save_dir}/round_{self.round_id}_wd.png" if self.save_dir is not None else None
-        plots.heatmap(heatmap, 'Weight Divergence', f'Acc {round(acc, 4)}', save_dir)
-        if self.show_log:
-            self.logger.info(heatmap)
         self.logger.info(f'building weights divergence finished {time.time() - tick}')
+        if self.plot_type == 'matrix':
+            id_mapper = lambda id: ids.index(id)
+            heatmap = np.zeros((len(trainers_weights), len(trainers_weights)))
+            for trainer_id, weights in trainers_weights.items():
+                for trainer_id_1, weights_1 in trainers_weights.items():
+                    w0 = tools.flatten_weights(weights)
+                    w1 = tools.flatten_weights(weights_1)
+                    heatmap[id_mapper(trainer_id)][id_mapper(trainer_id_1)] = np.var(np.subtract(w0, w1))
+            plots.heatmap(heatmap, 'Weight Divergence', f'Acc {round(acc, 4)}', save_dir)
+            if self.show_log:
+                self.logger.info(heatmap)
+        elif self.plot_type == 'linear':
+            weight_dict = defaultdict(lambda: [])
+            for trainer_id, weights in trainers_weights.items():
+                weights = tools.flatten_weights(weights)
+                weights = tools.compress(weights, 10, 1)
+                weight_dict[trainer_id] = weights
+            plots.linear(weight_dict, "Model's Weights", f'R: {self.round_id}', save_dir)
+        else:
+            raise Exception('plot type should be a string with a value either "linear" or "matrix"')
+
+
+class ShowAvgWeightDivergence(FederatedEventPlug):
+    def __init__(self, save_dir=None, divergence_tag=None, plot_each_round=False):
+        super().__init__()
+        self.logger = logging.getLogger('weights_divergence')
+        self.trainers_weights = None
+        self.global_weights = None
+        self.save_dir = save_dir
+        self.round_id = 0
+        self.all_wd = []
+        self.divergence_tag = divergence_tag
+        self.plot_each_round = plot_each_round
+        if self.save_dir is not None:
+            os.makedirs(self.save_dir, exist_ok=True)
+
+    def on_training_end(self, params):
+        self.trainers_weights = params['trainers_weights']
+
+    def on_aggregation_end(self, params):
+        self.global_weights = params['global_weights']
+
+    def on_round_end(self, params):
+        trainers_weights = self.trainers_weights
+        global_model_dict = params['context'].model.state_dict()
+        save_dir = f"./{self.save_dir}/round_{self.round_id}_wd.png" if self.save_dir is not None else None
+        avg_weight_divergence = self._get_average_weight_divergence(global_model_dict, trainers_weights)
+        self.all_wd.append(avg_weight_divergence)
+        if self.plot_each_round:
+            plt.plot(self.all_wd)
+            plt.show()
+
+    def on_federated_ended(self, params):
+        plt.plot(self.all_wd)
+        if self.divergence_tag is not None:
+            files.divergences.save_divergence(self.all_wd, self.divergence_tag)
+        if self.save_dir is not None:
+            save_dir = f"./{self.save_dir}/avg_wd.png" if self.save_dir is not None else None
+            plt.savefig(save_dir)
+        plt.show()
+
+    def _get_average_weight_divergence(self, global_model_dict, trainers_weights):
+        all_results = []
+        flattened_global_weights = tools.flatten_weights(global_model_dict)
+        for trained_id, trainers_weight in trainers_weights.items():
+            flattened_trainer_weights = tools.flatten_weights(trainers_weight)
+            result = wasserstein_distance(flattened_global_weights, flattened_trainer_weights)
+            all_results.append(result)
+        final_result = sum(all_results) / len(all_results)
+        return final_result

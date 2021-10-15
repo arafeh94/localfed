@@ -26,6 +26,9 @@ class DataContainer(Functional):
             batch_data.append((batched_x, batched_y))
         return batch_data
 
+    def labels(self):
+        return list(np.unique(self.y))
+
     def get(self):
         return self.x, self.y
 
@@ -71,9 +74,12 @@ class DataContainer(Functional):
         y_test = self.y[train_size:total_size]
         return DataContainer(x_train, y_train), DataContainer(x_test, y_test)
 
-    def shuffle(self):
+    def shuffle(self, seed=None):
         dc = copy.deepcopy(self) if self.is_numpy() else self.as_numpy()
-        p = np.random.permutation(len(dc.x))
+        permutation = np.random
+        if seed is not None and isinstance(seed, int):
+            permutation = permutation.RandomState(seed=seed)
+        p = permutation.permutation(len(dc.x))
         return DataContainer(dc.x[p], dc.y[p])
 
     def filter(self, predictor: typing.Callable[[typing.List, float], bool]) -> 'DataContainer':
@@ -134,9 +140,5 @@ class DataContainer(Functional):
         new_y = other.y if self.is_empty() else np.concatenate((self.y, other.y))
         return DataContainer(new_x, new_y)
 
-    def distributor(self, verbose=0):
-        from src.data.data_distributor import Distributor
-        return Distributor(self, verbose)
-
     def __repr__(self):
-        return f'Size:{len(self)}, Unique:{np.unique(self.y)}, Features:{None if self.is_empty() else len(self.x[0])}'
+        return f'Size:{len(self)}, Unique:{np.unique(self.y)}, Features:{None if self.is_empty() else np.shape(self.x[0])}'

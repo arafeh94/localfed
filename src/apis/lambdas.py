@@ -36,6 +36,9 @@ def as_numpy(_, val: DataContainer) -> np.array:
 
 
 def as_tensor(_, val: DataContainer) -> 'Tensor':
+    if not isinstance(val, DataContainer):
+        raise Exception(f'as tensor lambdas work only on dictionaries with DataContainer as value, '
+                        f'current value type is {type(val)}')
     return val.as_tensor()
 
 

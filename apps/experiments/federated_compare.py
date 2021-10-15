@@ -3,11 +3,11 @@ import logging
 from torch import nn
 
 import src
+from src.data import data_loader
 from src.federated.components import metrics, client_selectors, aggregators, trainers
 from libs.model.linear.lr import LogisticRegression
 from src.data.data_provider import PickleDataProvider
 from src.federated import subscribers
-from src.data.data_generator import DataGenerator
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.fedruns import FedRuns
@@ -21,9 +21,7 @@ data_file = '../datasets/pickles/mnist_2shards_70c_600mn_600mx.pkl'
 test_file = '../../datasets/pickles/test_data.pkl'
 
 logger.info('Generating Data --Started')
-dg = src.data.data_generator.load(data_file)
-client_data = dg.distributed
-dg.describe()
+client_data = data_loader.mnist_10shards_100c_400min_400max()
 logger.info('Generating Data --Ended')
 
 federated_configs = {
