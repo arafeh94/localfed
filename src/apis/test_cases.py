@@ -18,7 +18,7 @@ def random(**kwargs) -> Dict[str, List[int]]:
 
 def build(hyper_params: Dict[str, List[int]], num_runs=0):
     """
-    configs = generate_configs(build_grid(batch_size=(5, 50, 3), epochs=(5, 10, 3), num_rounds=(5, 120, 3)), 27)
+    example: build({'epoch': [1,25], 'batch': [999,50], 'round': [10,200]})
     """
     max_runs = calculate_max_rounds(hyper_params)
     if num_runs == 0:
@@ -39,13 +39,6 @@ def build(hyper_params: Dict[str, List[int]], num_runs=0):
         generated_params.append(params)
         runs += 1
     return generated_params
-
-
-def foreach(hyper_params: Dict[str, List[int]], func, num_runs=0):
-    test_cases = build(hyper_params)
-    for tc in test_cases:
-        func(tc)
-
 
 def calculate_max_rounds(hyper_params: Dict[str, List[int]]):
     max_rounds = 1

@@ -9,7 +9,7 @@ import numpy as np
 import torch
 import tqdm
 from sklearn import decomposition
-from torch import nn, device
+from torch import nn, device, Tensor
 import logging
 
 from src.data.data_container import DataContainer
@@ -50,7 +50,7 @@ def compress_weights(flattened_weights):
 def train(model, train_data, epochs=10, lr=0.1):
     torch.cuda.empty_cache()
     # change to train mode
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cpu')
     model.to(device)
     model.train()
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
@@ -145,9 +145,10 @@ def influence_cos2(aggregated, model):
     return cos(x1, x2).numpy().min()
 
 
-def normalize(arr):
-    total = math.fsum(arr)
-    return [i / total for i in arr]
+def normalize(arr, z1=False):
+    if z1:
+        return (arr - min(arr)) / (max(arr) - min(arr))
+    return np.array(arr) / math.fsum(arr)
 
 
 class Dict:

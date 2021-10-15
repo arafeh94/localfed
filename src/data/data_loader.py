@@ -1,5 +1,6 @@
 import json
 import os
+import pickle
 import typing
 
 import src
@@ -8,82 +9,81 @@ import logging
 
 from src.apis.extensions import Dict
 from src.data.data_container import DataContainer
-from src.data.data_generator import DataGenerator
+from src.data.data_distributor import Distributor, LabelDistributor, SizeDistributor, UniqueDistributor
 from src.data.data_provider import PickleDataProvider
-
-urls = json.load(open(manifest.DATA_PATH + "urls.json", 'r'))
 
 logger = logging.getLogger('data_loader')
 
 
-def preload(name, dataset, distributor: typing.Callable[[DataGenerator], Dict[int, DataContainer]]) \
-        -> Dict[int, DataContainer]:
+def preload(tag, dataset, distributor: Distributor) -> typing.Union[Dict[int, DataContainer], DataContainer]:
     """
     Args:
-        name: file name without postfix (file type, auto-filled with .pkl)
+        tag: file name without postfix (file type, auto-filled with .pkl)
         dataset: dataset used, should be exists inside urls
         distributor: distribution function, dg.distribute_shards or dg.distribute_size ...
 
     Returns: clients data of type typing.Dict[int, DataContainer]
 
     """
-    file_path = manifest.DATA_PATH + name + ".pkl"
+    file_path = manifest.DATA_PATH + tag + ".pkl"
+    logger.info(f'searching for {file_path}...')
     if os.path.exists(file_path):
         logger.info('distributed data file exists, loading...')
-        return src.data.data_generator.load(file_path).get_distributed_data()
+        data = pickle.load(open(file_path, 'rb'))
+        logger.info(data)
+        return data
     else:
         logger.info('distributed data file does not exists, distributing...')
-        data_provider = PickleDataProvider(urls[dataset])
-        data_generator = DataGenerator(data_provider)
-        client_data = distributor(data_generator)
-        data_generator.save(file_path)
-        return client_data
+        data = PickleDataProvider(manifest.dataset_urls(dataset)).collect()
+        if distributor:
+            data = distributor.distribute(data)
+        pickle.dump(data, open(file_path, 'wb'))
+        return data
 
 
 def mnist_10shards_100c_400min_400max() -> Dict[int, DataContainer]:
-    return preload('mnist_10shards_100c_400min_400max', 'mnist', lambda dg: dg.distribute_shards(100, 10, 400, 400))
+    return preload('mnist_10shards_100c_400min_400max', 'mnist', LabelDistributor(100, 10, 400, 400))
 
 
 def cifar10_10shards_100c_400min_400max() -> Dict[int, DataContainer]:
-    return preload('cifar10_10shards_100c_400min_400max', 'cifar10', lambda dg: dg.distribute_shards(100, 10, 400, 400))
+    return preload('cifar10_10shards_100c_400min_400max', 'cifar10', LabelDistributor(100, 10, 400, 400))
 
 
 def mnist_2shards_100c_600min_600max() -> Dict[int, DataContainer]:
-    return preload('mnist_2shards_100c_600min_600max', 'mnist', lambda dg: dg.distribute_shards(100, 2, 600, 600))
+    return preload('mnist_2shards_100c_600min_600max', 'mnist', LabelDistributor(100, 2, 600, 600))
 
 
 def cifar10_2shards_100c_600min_600max() -> Dict[int, DataContainer]:
-    return preload('cifar10_2shards_100c_600min_600max', 'cifar10', lambda dg: dg.distribute_shards(100, 2, 600, 600))
+    return preload('cifar10_2shards_100c_600min_600max', 'cifar10', LabelDistributor(100, 2, 600, 600))
 
 
 def cifar10_1shard_100c_600min_600max() -> Dict[int, DataContainer]:
-    return preload('cifar10_1shards_100c_600min_600max', 'cifar10', lambda dg: dg.distribute_shards(100, 1, 600, 600))
+    return preload('cifar10_1shards_100c_600min_600max', 'cifar10', LabelDistributor(100, 1, 600, 600))
 
 
 def mnist_1shards_100c_600min_600max() -> Dict[int, DataContainer]:
-    return preload('mnist_1shards_100c_600min_600max', 'mnist', lambda dg: dg.distribute_shards(100, 1, 600, 600))
+    return preload('mnist_1shards_100c_600min_600max', 'mnist', LabelDistributor(100, 1, 600, 600))
 
 
 def femnist_2shards_100c_600min_600max() -> Dict[int, DataContainer]:
-    return preload('femnist_2shards_100c_600min_600max', 'femnist', lambda dg: dg.distribute_shards(100, 2, 600, 600))
+    return preload('femnist_2shards_100c_600min_600max', 'femnist', LabelDistributor(100, 2, 600, 600))
 
 
 def femnist_100c_2000min_2000max() -> Dict[int, DataContainer]:
-    return preload('femnist_100c_2000min_2000max', 'femnist', lambda dg: dg.distribute_size(100, 2000, 2000))
+    return preload('femnist_100c_2000min_2000max', 'femnist', SizeDistributor(100, 2000, 2000))
 
 
 def femnist_2shards_100c_2000min_2000max() -> Dict[int, DataContainer]:
-    return preload('femnist_2shards_100c_2000min_2000max', 'femnist',
-                   lambda dg: dg.distribute_shards(100, 2, 2000, 2000))
+    return preload('femnist_2shards_100c_2000min_2000max', 'femnist', LabelDistributor(100, 2, 2000, 2000))
 
 
 def kdd_100c_400min_400max() -> Dict[int, DataContainer]:
-    return preload('kdd_100c_400min_400max', 'kdd', lambda dg: dg.distribute_size(100, 400, 400))
+    return preload('kdd_100c_400min_400max', 'kdd', SizeDistributor(100, 400, 400))
 
 
 def femnist_1shard_62c_2000min_2000max() -> Dict[int, DataContainer]:
-    return preload('femnist_1shard_62c_2000min_2000max', 'femnist', lambda dg: dg.distribute_continuous(62, 2000, 2000))
+    return preload('femnist_1shard_62c_2000min_2000max', 'femnist', UniqueDistributor(62, 2000, 2000))
 
 
 def femnist_1shard_62c_200min_2000max() -> Dict[int, DataContainer]:
-    return preload('femnist_1shard_62c_200min_2000max', 'femnist', lambda dg: dg.distribute_continuous(62, 200, 2000))
+    return preload('femnist_1shard_62c_200min_2000max', 'femnist', UniqueDistributor(62, 200, 2000))

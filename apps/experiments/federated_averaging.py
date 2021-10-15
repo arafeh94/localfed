@@ -3,6 +3,7 @@ import sys
 
 from torch import nn
 
+from src.data.data_loader import preload
 from src.data.data_provider import PickleDataProvider
 
 sys.path.append('../../')
@@ -37,6 +38,7 @@ federated = FederatedLearning(
     initial_model=lambda: LogisticRegression(28 * 28, 10),
     num_rounds=50,
     desired_accuracy=0.99,
+    accepted_accuracy_margin=0.01
 )
 
 # federated.add_subscriber(subscribers.ShowDataDistribution(10, per_round=True, save_dir='./pct'))

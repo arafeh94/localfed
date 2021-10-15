@@ -26,6 +26,9 @@ class DataContainer(Functional):
             batch_data.append((batched_x, batched_y))
         return batch_data
 
+    def labels(self):
+        return list(np.unique(self.y))
+
     def get(self):
         return self.x, self.y
 
@@ -137,9 +140,5 @@ class DataContainer(Functional):
         new_y = other.y if self.is_empty() else np.concatenate((self.y, other.y))
         return DataContainer(new_x, new_y)
 
-    def distributor(self, verbose=0):
-        from src.data.data_distributor import Distributor
-        return Distributor(self, verbose)
-
     def __repr__(self):
-        return f'Size:{len(self)}, Unique:{np.unique(self.y)}, Features:{None if self.is_empty() else len(self.x[0])}'
+        return f'Size:{len(self)}, Unique:{np.unique(self.y)}, Features:{None if self.is_empty() else np.shape(self.x[0])}'

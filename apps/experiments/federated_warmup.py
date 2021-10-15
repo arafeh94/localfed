@@ -1,19 +1,15 @@
 import logging
 import sys
 
-import matplotlib.pyplot as plt
-from torch import nn
-
-import libs.model.cv.cnn
+from src.data.data_loader import preload
 
 sys.path.append('../../')
 
-from libs.model.cv.cnn import CNN32
-from libs.model.cv.resnet import ResNet, resnet56
-from src.apis import lambdas
-from src.data.data_provider import PickleDataProvider
+from typing import Callable
+from torch import nn
+from src.apis import lambdas, files
+from src.apis.extensions import TorchModel
 from libs.model.linear.lr import LogisticRegression
-from src import tools
 from src.data import data_loader
 from src.federated.components import metrics, client_selectors, aggregators, trainers
 from src.federated import subscribers
@@ -21,27 +17,25 @@ from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
 from src.federated.components.trainer_manager import SeqTrainerManager, SharedTrainerProvider
-from src.federated.subscribers import Timer
+from src.federated.subscribers import Timer, ShowWeightDivergence
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
+tag = 'federated_test_basic_2'
+is_warmup = True
 
 logger.info('Generating Data --Started')
-client_data = data_loader.cifar10_10shards_100c_400min_400max()
+client_data = data_loader.mnist_2shards_100c_600min_600max()
 logger.info('Generating Data --Ended')
 
-
-def create_model(name):
-    if name == 'resnet':
-        return resnet56(10, 3, 32)
-    else:
-        global client_data
-        # cifar10 data reduced to 1 dimension from 32,32,3. cnn32 model requires the image shape to be 3,32,32
-        client_data = client_data.map(lambdas.reshape((-1, 32, 32, 3))).map(lambdas.transpose((0, 3, 1, 2)))
-        return libs.model.cv.cnn.Cifar10Model()
-
-
-initialize_model = create_model('cnn')
+if is_warmup:
+    warmup_data = client_data.map(lambda ci, dc: dc.shuffle(42).split(0.2)[0]).reduce(lambdas.dict2dc).as_tensor()
+    client_data = client_data.map(lambda ci, dc: dc.shuffle(42).split(0.2)[1]).map(lambdas.as_tensor)
+    initial_model = TorchModel(LogisticRegression(28 * 28, 10))
+    initial_model.train(warmup_data.batch(50), epochs=500)
+    initial_model = initial_model.extract()
+else:
+    initial_model = LogisticRegression(28 * 28, 10)
 
 trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=50, epochs=1, optimizer='sgd',
                                criterion='cel', lr=0.1)
@@ -51,18 +45,20 @@ federated = FederatedLearning(
     trainer_config=trainer_params,
     aggregator=aggregators.AVGAggregator(),
     metrics=metrics.AccLoss(batch_size=50, criterion=nn.CrossEntropyLoss()),
-    client_selector=client_selectors.Random(0.2),
+    client_selector=client_selectors.Random(0.1),
     trainers_data_dict=client_data,
-    initial_model=lambda: initialize_model,
+    initial_model=lambda: initial_model,
     num_rounds=50,
     desired_accuracy=0.99,
 )
-# federated.add_subscriber(subscribers.ShowDataDistribution(10, per_round=True, save_dir='./exp_pct2'))
+# federated.add_subscriber(subscribers.ShowDataDistribution(10, per_round=True, save_dir='./pct'))
 federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
-federated.add_subscriber(subscribers.FedPlot(plot_each_round=True, show_loss=False))
-# federated.add_subscriber(subscribers.ShowWeightDivergence(save_dir="./exp_pct2"))
+# federated.add_subscriber(subscribers.FedSave('basic'))
+federated.add_subscriber(ShowWeightDivergence(save_dir="./pct", plot_type='linear', divergence_tag=tag))
 logger.info("----------------------")
 logger.info("start federated 1")
 logger.info("----------------------")
 federated.start()
+
+files.accuracies.save_accuracy(federated, tag)

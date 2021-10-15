@@ -1,4 +1,5 @@
 import copy
+import logging
 import os
 import pickle
 import typing
@@ -150,6 +151,7 @@ class Serializable:
 class TorchModel:
     def __init__(self, model):
         self.model = model
+        self.logger = logging.getLogger('TorchModel')
 
     def train(self, batched, **kwargs):
         r"""
@@ -161,6 +163,7 @@ class TorchModel:
                 momentum (float)
                 optimizer (Optimizer)
                 criterion (_WeightedLoss)
+                verbose (int)
         Returns:
 
         """
@@ -209,6 +212,9 @@ class TorchModel:
 
         return test_acc / test_total, test_loss / test_total
 
+    def log(self, msg, level=1):
+        self.logger.info(msg)
+
     def weights(self):
         return self.model.state_dict()
 
@@ -217,6 +223,18 @@ class TorchModel:
 
     def load(self, weights):
         self.model.load_state_dict(weights)
+
+    def save(self, file_path):
+        save_file = open(file_path, 'wb')
+        pickle.dump(self.model, save_file)
+
+    @staticmethod
+    def open(file_path):
+        if os.path.isfile(file_path):
+            model = pickle.load(open(file_path, 'rb'))
+            return TorchModel(model)
+        else:
+            return False
 
     def flatten(self):
         all_weights = []

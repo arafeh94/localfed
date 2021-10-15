@@ -138,8 +138,12 @@ class FederatedLogger(FederatedEventPlug):
         params = tools.Dict.but(['context', 'trained_model'], params)
         self.logger.info(f"trainer ended {params}")
 
+    def on_model_status_eval(self, params):
+        params = tools.Dict.but(['context', 'trained_model'], params)
+        self.logger.info(f"model status: {params}")
+
     def force(self) -> []:
-        return [Events.ET_FED_START]
+        return [Events.ET_FED_START, Events.ET_MODEL_STATUS]
 
     def on_trainers_selected(self, params):
         params = tools.Dict.but(['context'], params)
@@ -421,8 +425,6 @@ class ShowWeightDivergence(FederatedEventPlug):
         self.save_dir = save_dir
         self.round_id = 0
         self.plot_type = plot_type
-        self.all_wd = []
-        self.divergence_tag = divergence_tag
         if self.save_dir is not None:
             os.makedirs(self.save_dir, exist_ok=True)
 
@@ -436,7 +438,6 @@ class ShowWeightDivergence(FederatedEventPlug):
         tick = time.time()
         self.logger.info('building weights divergence...')
         self.round_id = params['context'].round_id
-        global_model_dict = params['context'].model.state_dict()
         save_dir = f"./{self.save_dir}/round_{self.round_id}_wd.png" if self.save_dir is not None else None
         acc = params['accuracy']
         trainers_weights = self.trainers_weights
@@ -461,11 +462,40 @@ class ShowWeightDivergence(FederatedEventPlug):
                 weights = tools.flatten_weights(weights)
                 weights = tools.compress(weights, 10, 1)
                 weight_dict[trainer_id] = weights
-            avg_weight_divergence = self._get_average_weight_divergence(global_model_dict, trainers_weights)
-            self.all_wd.append(avg_weight_divergence)
             plots.linear(weight_dict, "Model's Weights", f'R: {self.round_id}', save_dir)
         else:
             raise Exception('plot type should be a string with a value either "linear" or "matrix"')
+
+
+class ShowAvgWeightDivergence(FederatedEventPlug):
+    def __init__(self, save_dir=None, divergence_tag=None, plot_each_round=False):
+        super().__init__()
+        self.logger = logging.getLogger('weights_divergence')
+        self.trainers_weights = None
+        self.global_weights = None
+        self.save_dir = save_dir
+        self.round_id = 0
+        self.all_wd = []
+        self.divergence_tag = divergence_tag
+        self.plot_each_round = plot_each_round
+        if self.save_dir is not None:
+            os.makedirs(self.save_dir, exist_ok=True)
+
+    def on_training_end(self, params):
+        self.trainers_weights = params['trainers_weights']
+
+    def on_aggregation_end(self, params):
+        self.global_weights = params['global_weights']
+
+    def on_round_end(self, params):
+        trainers_weights = self.trainers_weights
+        global_model_dict = params['context'].model.state_dict()
+        save_dir = f"./{self.save_dir}/round_{self.round_id}_wd.png" if self.save_dir is not None else None
+        avg_weight_divergence = self._get_average_weight_divergence(global_model_dict, trainers_weights)
+        self.all_wd.append(avg_weight_divergence)
+        if self.plot_each_round:
+            plt.plot(self.all_wd)
+            plt.show()
 
     def on_federated_ended(self, params):
         plt.plot(self.all_wd)

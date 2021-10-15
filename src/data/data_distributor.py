@@ -1,5 +1,6 @@
 import logging
 import random
+from abc import abstractmethod
 from collections import defaultdict
 
 import numpy
@@ -12,41 +13,60 @@ from src.data.data_container import DataContainer
 from src import tools
 
 
-# noinspection PyTypeChecker
 class Distributor:
-    def __init__(self, data_container: DataContainer, verbose=0):
-        self.data = data_container
-        self.verbose = verbose
+    def __init__(self):
+        self.logger = logging.getLogger('datasets')
 
-    def log(self, msg, level=1):
-        if self.verbose >= level:
-            logging.getLogger('distributor').info(msg)
+    def log(self, msg, level=logging.INFO):
+        self.logger.log(level, msg)
 
-    def distribute_dirichlet(self, num_clients, num_labels, skewness=0.5) -> Dict[int, DataContainer]:
-        self.data = self.data.as_list()
-        client_rows = non_iid_partition_with_dirichlet_distribution(self.data.y, num_clients, num_labels, skewness)
+    @abstractmethod
+    def distribute(self, data: DataContainer) -> Dict[int, DataContainer]:
+        pass
+
+
+class DirichletDistributor(Distributor):
+    def __init__(self, num_clients, num_labels, skewness=0.5):
+        super().__init__()
+        self.num_clients = num_clients
+        self.num_labels = num_labels
+        self.skewness = skewness
+
+    def distribute(self, data: DataContainer) -> Dict[int, DataContainer]:
+        data = data.as_list()
+        client_rows = non_iid_partition_with_dirichlet_distribution(
+            data.y, self.num_clients, self.num_labels, self.skewness)
         clients_data = {}
         for client in client_rows:
             client_x = []
             client_y = []
             for pos in client_rows[client]:
-                client_x.append(self.data.x[pos])
-                client_y.append(self.data.y[pos])
+                client_x.append(data.x[pos])
+                client_y.append(data.y[pos])
             clients_data[client] = DataContainer(client_x, client_y).as_tensor()
         return Dict(clients_data)
 
-    def distribute_percentage(self, num_clients, percentage=0.8, min_size=10, max_size=100) -> Dict[int, DataContainer]:
-        self.data = self.data.as_list()
+
+class PercentageDistributor(Distributor):
+    def __init__(self, num_clients, min_size, max_size, percentage):
+        super().__init__()
+        self.num_clients = num_clients
+        self.min_size = min_size
+        self.max_size = max_size
+        self.percentage = percentage
+
+    def distribute(self, data: DataContainer) -> Dict[int, DataContainer]:
+        data = data.as_list()
         clients_data = {}
-        xs = self.data.x
-        ys = self.data.y
+        xs = data.x
+        ys = data.y
         unique_labels = np.unique(ys)
-        for i in range(num_clients):
-            client_data_size = random.randint(min_size, max_size)
+        for i in range(self.num_clients):
+            client_data_size = random.randint(self.min_size, self.max_size)
             selected_label = unique_labels[random.randint(0, len(unique_labels) - 1)]
             client_x = []
             client_y = []
-            while len(client_y) / client_data_size < percentage:
+            while len(client_y) / client_data_size < self.percentage:
                 for index, item in enumerate(ys):
                     if item == selected_label:
                         client_x.append(xs.pop(index))
@@ -61,22 +81,36 @@ class Distributor:
             clients_data[i] = DataContainer(client_x, client_y).as_tensor()
         return Dict(clients_data)
 
-    def distribute_shards(self, num_clients, shards_per_client, min_size, max_size, is_random=False) -> Dict[
-        int, DataContainer]:
-        self.data = self.data.as_numpy()
+
+class LabelDistributor(Distributor):
+
+    def __init__(self, num_clients, label_per_client, min_size, max_size,
+                 is_random_label_size=False):
+        super().__init__()
+        self.num_clients = num_clients
+        self.label_per_client = label_per_client
+        self.min_size = min_size
+        self.max_size = max_size
+        self.is_random_label_size = is_random_label_size
+
+    def distribute(self, data: DataContainer) -> Dict[int, DataContainer]:
+        data = data.as_numpy()
+        self.log(f'distributing {data}', level=0)
         clients_data = defaultdict(list)
-        grouper = self.Grouper(self.data.x, self.data.y)
-        for client_id in range(num_clients):
-            client_data_size = random.randint(min_size, max_size)
-            shards_per_client = random.randint(1, shards_per_client) if is_random else shards_per_client
-            selected_shards = grouper.groups(shards_per_client)
-            self.log(f'generating data for {client_id}-{selected_shards}')
+        grouper = self.Grouper(data.x, data.y)
+        for client_id in range(self.num_clients):
+            client_data_size = random.randint(self.min_size, self.max_size)
+            label_per_client = random.randint(1, self.label_per_client) if self.is_random_label_size \
+                else self.label_per_client
+            selected_labels = grouper.groups(label_per_client)
+            self.log(f'generating data for {client_id}-{selected_labels}')
             client_x = []
             client_y = []
-            for shard in selected_shards:
-                rx, ry = grouper.get(shard, int(client_data_size / len(selected_shards)))
+            for shard in selected_labels:
+                selected_data_size = int(client_data_size / len(selected_labels)) or 1
+                rx, ry = grouper.get(shard, selected_data_size)
                 if len(rx) == 0:
-                    self.log(f'shard {round(shard)} have no more available data to distribute, skipping...')
+                    self.log(f'shard {round(shard)} have no more available data to distribute, skipping...', level=0)
                 else:
                     client_x = rx if len(client_x) == 0 else np.concatenate((client_x, rx))
                     client_y = ry if len(client_y) == 0 else np.concatenate((client_y, ry))
@@ -101,6 +135,9 @@ class Distributor:
             return selected_labels
 
         def next(self):
+            if len(self.all_labels) == 0:
+                raise Exception('no more data available to distribute')
+
             temp = 0 if self.label_cursor >= len(self.all_labels) else self.label_cursor
             self.label_cursor = (self.label_cursor + 1) % len(self.all_labels)
             return self.all_labels[temp]
@@ -115,41 +152,104 @@ class Distributor:
                 del self.all_labels[self.all_labels.index(label)]
             return x, y
 
-    def distribute_labels(self):
-        group = self.Grouper(self.data.x, self.data.y)
-        clients_data = Dict()
-        for index, label in enumerate(group.groups()):
-            x, y = group.get(label)
-            clients_data[index] = DataContainer(x, y).as_tensor()
-        return clients_data
 
-    def distribute_continuous(self, num_clients, min_size, max_size) -> Dict:
-        self.data = self.data.as_list()
-        clients_data = Dict()
-        xs = self.data.x
-        ys = self.data.y
-        group = {}
-        for index in range(len(xs)):
-            if ys[index] not in group:
-                group[ys[index]] = []
-            group[ys[index]].append(xs[index])
-        for i in range(num_clients):
-            client_data_size = random.randint(min_size, max_size)
-            client_x = group[i][0:client_data_size]
-            client_y = [i for _ in range(len(client_x))]
-            clients_data[i] = DataContainer(client_x, client_y).as_tensor()
-        return clients_data
+class SizeDistributor(Distributor):
+    def __init__(self, num_clients, min_size, max_size):
+        super().__init__()
+        self.num_clients = num_clients
+        self.min_size = min_size
+        self.max_size = max_size
 
-    def distribute_size(self, num_clients, min_size, max_size) -> Dict[int, DataContainer]:
-        self.data = self.data.as_list()
+    def distribute(self, data: DataContainer) -> Dict[int, DataContainer]:
+        data = data.as_list()
         clients_data = Dict()
-        xs = self.data.x
-        ys = self.data.y
+        xs = data.x
+        ys = data.y
         data_pos = 0
-        for i in range(num_clients):
-            client_data_size = random.randint(min_size, max_size)
+        for i in range(self.num_clients):
+            client_data_size = random.randint(self.min_size, self.max_size)
             client_x = xs[data_pos:data_pos + client_data_size]
             client_y = ys[data_pos:data_pos + client_data_size]
             data_pos += len(client_x)
             clients_data[i] = DataContainer(client_x, client_y).as_tensor()
         return Dict(clients_data)
+
+
+class UniqueDistributor(Distributor):
+    def __init__(self, num_clients, min_size, max_size):
+        super().__init__()
+        self.num_clients = num_clients
+        self.min_size = min_size
+        self.max_size = max_size
+
+    def distribute(self, data: DataContainer) -> Dict[int, DataContainer]:
+        data = data.as_list()
+        clients_data = Dict()
+        xs = data.x
+        ys = data.y
+        group = {}
+        for index in range(len(xs)):
+            if ys[index] not in group:
+                group[ys[index]] = []
+            group[ys[index]].append(xs[index])
+        for i in range(self.num_clients):
+            client_data_size = random.randint(self.min_size, self.max_size)
+            client_x = group[i][0:client_data_size]
+            client_y = [i for _ in range(len(client_x))]
+            clients_data[i] = DataContainer(client_x, client_y).as_tensor()
+        return clients_data
+
+
+class ShardDistributor(Distributor):
+    def __init__(self, shard_size, shards_per_client):
+        super().__init__()
+        self.shard_size = shard_size
+        self.shards_per_client = shards_per_client
+
+    def distribute(self, data: DataContainer) -> Dict[int, DataContainer]:
+        data = data.as_list()
+        data = self.as_shards(data)
+        clients_data = {}
+        index = 0
+        while len(data) > 0:
+            labels = data.keys()
+            if len(labels) < self.shards_per_client:
+                break
+            selected_labels = random.sample(labels, self.shards_per_client)
+            client_x = []
+            client_y = []
+            for label in selected_labels:
+                x = self._pop(label, data).data
+                y = [label] * len(x)
+                client_x.extend(x)
+                client_y.extend(y)
+            clients_data[index] = DataContainer(client_x, client_y)
+            index += 1
+        return Dict(clients_data)
+
+    def as_shards(self, data: DataContainer) -> typing.Dict[int, typing.List['ShardDistributor.Shard']]:
+        shards = defaultdict(lambda: [self.Shard(y, shard_size)])
+        shard_size = self.shard_size
+        for x, y in zip(data.x, data.y):
+            if shards[y][-1].is_full():
+                shards[y].append(self.Shard(y, shard_size))
+            shards[y][-1].append(x)
+        return shards
+
+    def _pop(self, label, shards: typing.Dict[int, typing.List['ShardDistributor.Shard']]):
+        shard = shards[label].pop(0)
+        if len(shards[label]) == 0:
+            del shards[label]
+        return shard
+
+    class Shard:
+        def __init__(self, label, max_size):
+            self.label = label
+            self.data = []
+            self.max_size = max_size
+
+        def is_full(self) -> bool:
+            return len(self.data) >= self.max_size
+
+        def append(self, x):
+            self.data.append(x)

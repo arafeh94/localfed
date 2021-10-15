@@ -42,7 +42,7 @@ class AccuracyCompare(Serializable):
 
     def show_saved_accuracy_plot(self, filter: typing.Callable[[str], bool] = None, title=None):
         colors = {'cluster': '#AA4499', 'basic': '#DDCC77', 'genetic': 'blue', 'warmup': '#117733'}
-        line = {'cluster': '--', 'basic': '+', 'genetic': '-', 'warmup': '*'}
+        line = {'cluster': '--', 'basic': '-o', 'genetic': '-+', 'warmup': '-*'}
         accs = self.get_saved_accuracy(filter)
         if len(accs) < 1:
             return
@@ -62,7 +62,8 @@ class AccuracyCompare(Serializable):
         title = last_tag if title is None else title
         plt.ylim()
         plt.title(title)
-        plt.savefig('./pics/' + title.replace(':', '').replace('-', '').replace(' ', '') + '.png', bbox_inches='tight')
+        plt.savefig('./pics/' + title.replace(':', '').replace('-', '').replace(' ', '').replace('.', '') + '.png',
+                    bbox_inches='tight')
         plt.show()
 
 
