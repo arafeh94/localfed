@@ -3,6 +3,7 @@ import json
 import logging
 
 from libs.model.collection import CNNCifar
+from libs.model.cv.resnet import Cifar10, CNN_Cifar10
 from src import tools, manifest
 from src.apis import lambdas
 from src.data.data_provider import PickleDataProvider
@@ -30,15 +31,16 @@ test = data[1]
 # number of models that we are using
 initial_models = {
     # 'CNN_OriginalFedAvg': CNN_OriginalFedAvg(False),
-    'CNNCifar(10)': CNNCifar(10)
+    # 'CNNCifar(10)': CNNCifar(10)
     # model = Net()
     # model = CNN_DropOut()
     # model = CNN_OriginalFedAvg()
     # model = LogisticRegression(28*28, 10)
     # model = CNN_OriginalFedAvg(False)
     # model = resnet56(62, 1, 28)
-    # model = CNNCifar(10)
-    # model = Cifar10()
+    # 'Cifar10(10)': Cifar10()
+    'CNN_Cifar10()': CNN_Cifar10()
+
 }
 
 # building Hyperparameters
@@ -48,7 +50,7 @@ percentage_nb_client = 10
 
 for model_name, gen_model in initial_models.items():
 
-    hyper_params = {'batch_size': [100], 'epochs': [1, 20], 'num_rounds': [800], 'learn_rate': [0.01]}
+    hyper_params = {'batch_size': [100], 'epochs': [1], 'num_rounds': [800], 'learn_rate': [0.001]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 

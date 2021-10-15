@@ -14,7 +14,7 @@ logger = logging.getLogger('main')
 wandb_project = 'localfed_ca01'
 dataset_used = 'femnist'
 train, test = PickleDataProvider(
-    "../../../datasets/pickles/" + dataset_used + ".pkl").collect().shuffle(47).as_tensor().split(0.8)
+    "../../../datasets/pickles/" + dataset_used + ".pkl").collect().shuffle().as_tensor().split(0.8)
 # tools.detail(train)
 # tools.detail(test)
 
@@ -30,7 +30,7 @@ percentage_nb_client = 62
 
 for model_name, gen_model in initial_models.items():
 
-    hyper_params = {'batch_size': [10], 'epochs': [1, 5], 'num_rounds': [800], 'learn_rate': [0.001]}
+    hyper_params = {'batch_size': [10], 'epochs': [1, 5], 'num_rounds': [800], 'learn_rate': [0.01]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 
@@ -55,7 +55,6 @@ for model_name, gen_model in initial_models.items():
             'selected_clients': percentage_nb_client
         })
 
-        wandb = wandb
 
         for i in range(num_rounds):
             tools.train(gen_model, train_data=train.batch(batch_size), epochs=epochs, lr=learn_rate)
