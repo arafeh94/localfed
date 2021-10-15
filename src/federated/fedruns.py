@@ -32,24 +32,8 @@ class FedRuns:
                     self.logger.info(
                         f'comparing {first} to {second}: {self.compare(self.runs[first], self.runs[second])}')
 
-    def compare(self, first, second, verbose=1):
-        local_history = first.history
-        other_history = second.history
-        performance_history = defaultdict(lambda: [])
-        diff = {}
-        for round_id, first_data in local_history.items():
-            if round_id not in other_history:
-                continue
-            second_data = other_history[round_id]
-            for item in first_data:
-                if type(first_data[item]) in [int, float, str]:
-                    performance_history[item].append(first_data[item] - second_data[item])
-        for item, val in performance_history.items():
-            diff[item] = math.fsum(val) / len(val)
-        if verbose == 1:
-            return diff
-        else:
-            return diff, performance_history
+    def compare(self, first: FederatedLearning, second: FederatedLearning, verbose=1):
+        return first.compare(second)
 
     def plot(self):
         acc_plot = {}

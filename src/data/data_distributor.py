@@ -21,11 +21,16 @@ class Distributor:
         self.logger.log(level, msg)
 
     @abstractmethod
+    def id(self):
+        pass
+
+    @abstractmethod
     def distribute(self, data: DataContainer) -> Dict[int, DataContainer]:
         pass
 
 
 class DirichletDistributor(Distributor):
+
     def __init__(self, num_clients, num_labels, skewness=0.5):
         super().__init__()
         self.num_clients = num_clients
@@ -45,6 +50,9 @@ class DirichletDistributor(Distributor):
                 client_y.append(data.y[pos])
             clients_data[client] = DataContainer(client_x, client_y).as_tensor()
         return Dict(clients_data)
+
+    def id(self):
+        return f'dirichlet_{self.num_clients}c_{self.num_labels}l_{self.skewness}s'
 
 
 class PercentageDistributor(Distributor):
@@ -80,6 +88,9 @@ class PercentageDistributor(Distributor):
                         break
             clients_data[i] = DataContainer(client_x, client_y).as_tensor()
         return Dict(clients_data)
+
+    def id(self):
+        return f'percentage_{self.num_clients}c_{self.percentage}p_{self.min_size}mn_{self.max_size}mx'
 
 
 class LabelDistributor(Distributor):
@@ -152,6 +163,10 @@ class LabelDistributor(Distributor):
                 del self.all_labels[self.all_labels.index(label)]
             return x, y
 
+    def id(self):
+        r = '_r' if self.is_random_label_size else ''
+        return f'label_{self.num_clients}c_{self.label_per_client}l_{self.min_size}mn_{self.max_size}mx' + r
+
 
 class SizeDistributor(Distributor):
     def __init__(self, num_clients, min_size, max_size):
@@ -173,6 +188,9 @@ class SizeDistributor(Distributor):
             data_pos += len(client_x)
             clients_data[i] = DataContainer(client_x, client_y).as_tensor()
         return Dict(clients_data)
+
+    def id(self):
+        return f'size_{self.num_clients}c_{self.min_size}mn_{self.max_size}mx'
 
 
 class UniqueDistributor(Distributor):
@@ -198,6 +216,9 @@ class UniqueDistributor(Distributor):
             client_y = [i for _ in range(len(client_x))]
             clients_data[i] = DataContainer(client_x, client_y).as_tensor()
         return clients_data
+
+    def id(self):
+        return f'unique_{self.num_clients}c_{self.min_size}mn_{self.max_size}mx'
 
 
 class ShardDistributor(Distributor):
@@ -253,3 +274,6 @@ class ShardDistributor(Distributor):
 
         def append(self, x):
             self.data.append(x)
+
+    def id(self):
+        return f'shard_{self.shards_per_client}spp_{self.shard_size}ss'

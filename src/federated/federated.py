@@ -10,14 +10,14 @@ import src
 from src import tools
 from src.apis.broadcaster import Broadcaster
 from src.data.data_container import DataContainer
-from src.federated.events import Events, FederatedEventPlug
-from src.federated.protocols import Aggregator, ClientSelector, ModelInfer
+from src.federated.events import Events
+from src.federated.protocols import Aggregator, ClientSelector, ModelInfer, TrainerParams
 from src.federated.components.trainer_manager import TrainerManager
 
 
 class FederatedLearning(Broadcaster):
 
-    def __init__(self, trainer_manager: TrainerManager, trainer_config, aggregator: Aggregator,
+    def __init__(self, trainer_manager: TrainerManager, trainer_config: TrainerParams, aggregator: Aggregator,
                  client_selector: ClientSelector, metrics: ModelInfer, trainers_data_dict: Dict[int, DataContainer],
                  initial_model: callable, num_rounds=10, desired_accuracy=0.9, train_ratio=0.8,
                  accepted_accuracy_margin=False, test_data: DataContainer = None, **kwargs):
@@ -168,6 +168,15 @@ class FederatedLearning(Broadcaster):
         }
         return reduce(lambda x, y: dict(x, **y), (named, self.args))
 
+    def build_id(self):
+        model_type = type(self.context.model).__name__ if self.context.model else 'none'
+        fed_id = type(self.trainer_manager).__name__ + '_' + type(self.aggregator).__name__ + '_' + \
+                 type(self.client_selector).__name__ + '_' + type(self.metrics).__name__ + '_' + \
+                 model_type + '_' + f'{self.num_rounds}r' + '_' + \
+                 f'{self.trainer_config.epochs}e' + '_' + f'{self.trainer_config.batch_size}b' + '_' + \
+                 self.trainer_config.optimizer + '_' + self.trainer_config.criterion
+        return fed_id.lower()
+
     def broadcast(self, event_name: str, **kwargs):
         args = reduce(lambda x, y: dict(x, **y), ({'context': self.context}, kwargs))
         super(FederatedLearning, self).broadcast(event_name, **args)
@@ -181,6 +190,7 @@ class FederatedLearning(Broadcaster):
             self.history = src.apis.extensions.Dict()
             self.timestamp = time.time()
             self.logger = None
+            self.id = None
 
         def load_weights(self, weights):
             self.model.load_state_dict(weights)
@@ -213,6 +223,7 @@ class FederatedLearning(Broadcaster):
             self.num_rounds = federated.num_rounds
             self.desired_accuracy = federated.desired_accuracy
             self.logger = federated.logger
+            self.id = federated.build_id()
 
         def reset(self):
             self.round_id = 0

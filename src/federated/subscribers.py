@@ -209,23 +209,6 @@ class FedPlot(FederatedEventPlug):
             loss_y = [trainer_losses for trainer_id, trainer_losses in self.local_losses.items()]
             self.show_acc_loss(acc_y, 'Local Accuracy', loss_y, 'Local Loss', 'Local AccLoss')
 
-    def show_acc_loss(self, acc_y, acc_title, loss_y, loss_title, big_title):
-        config = []
-        if self.show_acc:
-            config.append(self.PlotParams(acc_y, acc_title))
-        if self.show_loss:
-            config.append(self.PlotParams(loss_y, loss_title))
-        self.show(config, big_title)
-
-    def on_federated_ended(self, params):
-        if self.show_global:
-            self.show_acc_loss(self.rounds_accuracy, 'Accuracy', self.rounds_loss, 'Loss', 'Federated Results')
-
-        if self.show_local:
-            acc_y = [trainer_accuracies for trainer_id, trainer_accuracies in self.local_accuracies.items()]
-            loss_y = [trainer_losses for trainer_id, trainer_losses in self.local_losses.items()]
-            self.show_acc_loss(acc_y, 'Local Accuracy', loss_y, 'Local Loss', 'Local AccLoss')
-
     def on_round_end(self, params):
         self.rounds_accuracy.append(params['accuracy'])
         self.rounds_loss.append(params['loss'])
@@ -239,51 +222,23 @@ class FedPlot(FederatedEventPlug):
             self.show_acc_loss(self.rounds_accuracy, f'Round Acc', self.rounds_loss, f'Round Loss', 'Per Round')
 
 
-class CustomModelTestPlug(FederatedEventPlug):
-    def __init__(self, test_data: DataContainer, batch_size, show_plot=True):
-        super().__init__()
-        self.test_data = test_data
-        self.batch_size = 10
-        self.history_acc = []
-        self.history_loss = []
-        self.show_plot = show_plot
-
-    def on_aggregation_end(self, params):
-        model = params['global_model']
-        acc, loss = tools.infer(model, test_data=self.test_data.batch(self.batch_size))
-        self.history_acc.append(acc)
-        self.history_loss.append(loss)
-        if 'context' in params:
-            context: FederatedLearning.Context = params['context']
-            context.store(custom_accuracy=acc, custom_loss=loss)
-        logging.getLogger('custom_test').info(f'accuracy: {acc}, loss: {loss}')
-
-    def on_federated_ended(self, params):
-        fig, axs = plt.subplots(2)
-        axs[0].plot(self.history_acc)
-        axs[0].set_title('Total Accuracy')
-        axs[0].set_xticks(range(len(self.history_acc)))
-        axs[1].plot(self.history_loss)
-        axs[1].set_title('Total Loss')
-        axs[1].set_xticks(range(len(self.history_loss)))
-        fig.suptitle('Custom Set Accuracy & Loss')
-        fig.tight_layout()
-        plt.show()
-
-
 class FedSave(FederatedEventPlug):
-    def __init__(self, tag, folder_name=manifest.COMPARE_PATH):
+    def __init__(self, tag=None, folder_name=manifest.COMPARE_PATH):
         super().__init__()
         self.folder_name = folder_name
         self.file_name = "fedruns.pkl"
         self.tag = tag
         os.makedirs(folder_name, exist_ok=True)
 
+    def on_init(self, params):
+        context: FederatedLearning.Context = params['context']
+        self.tag = self.tag or 'sv_' + context.id
+
     def force(self) -> []:
         return [Events.ET_FED_END]
 
     def on_federated_ended(self, params):
-        context = params['context']
+        context: FederatedLearning.Context = params['context']
         all_runs = self.old_runs()
         all_runs[self.tag] = context
         with open(self.path(), 'wb') as file:
@@ -338,16 +293,18 @@ class MPIStopPlug(FederatedEventPlug):
 
 
 class Resumable(FederatedEventPlug):
-    def __init__(self, tag, federated: FederatedLearning, verbose=1, flush=False):
+    def __init__(self, federated: FederatedLearning, verbose=logging.INFO):
         super().__init__()
         os.makedirs(manifest.ROOT_PATH + "/checkpoints", exist_ok=True)
         self.federated = federated
-        self.file_name = manifest.ROOT_PATH + "/checkpoints" + "/run_" + tag + ".fed"
+        self.file_name = None
         self.verbose = verbose
-        self.flush = flush
+        self.logger = logging.getLogger('resumable')
 
     def on_init(self, params):
-        if os.path.exists(self.file_name) and not self.flush:
+        context: FederatedLearning.Context = params['context']
+        self.file_name = manifest.ROOT_PATH + "/checkpoints" + "/run_" + context.id + ".fed"
+        if os.path.exists(self.file_name):
             self.log('found a checkpoint, loading...')
             file = open(self.file_name, 'rb')
             loaded = pickle.load(file)
@@ -368,8 +325,7 @@ class Resumable(FederatedEventPlug):
         file.close()
 
     def log(self, msg):
-        if self.verbose == 1:
-            logging.getLogger('resumable').info(msg)
+        self.logger.log(self.verbose, msg)
 
 
 class ShowDataDistribution(FederatedEventPlug):
@@ -409,8 +365,7 @@ class ShowDataDistribution(FederatedEventPlug):
 
 
 class ShowWeightDivergence(FederatedEventPlug):
-    def __init__(self, show_log=False, include_global_weights=False, save_dir=None, plot_type='matrix',
-                 divergence_tag=None):
+    def __init__(self, show_log=False, include_global_weights=False, save_dir=None, plot_type='matrix'):
         """
         plot_type = matrix | linear
         Returns:
@@ -480,6 +435,10 @@ class ShowAvgWeightDivergence(FederatedEventPlug):
         self.plot_each_round = plot_each_round
         if self.save_dir is not None:
             os.makedirs(self.save_dir, exist_ok=True)
+
+    def on_init(self, params):
+        context: FederatedLearning.Context = params['context']
+        self.divergence_tag = self.divergence_tag or 'div_' + context.id
 
     def on_training_end(self, params):
         self.trainers_weights = params['trainers_weights']
