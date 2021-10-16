@@ -272,13 +272,26 @@ class FedSave(FederatedEventPlug):
 
 
 class WandbLogger(FederatedEventPlug):
-    def __init__(self, config=None):
+    def __init__(self, config=None, resume=False, prefix: str = None):
         super().__init__()
         import wandb
         wandb.login(key=WandbAuth.key)
-        wandb.init(project=WandbAuth.project, entity=WandbAuth.entity, config=config)
         self.wandb = wandb
+        self.config = config
+        self.prefix = prefix
+        self.resume = resume
         atexit.register(lambda: self.wandb.finish())
+
+    def on_init(self, params):
+        if self.resume:
+            context: FederatedLearning.Context = params['context']
+            fed_id = context.id
+            if self.prefix:
+                fed_id = self.prefix + '_' + fed_id
+            self.wandb.init(project=WandbAuth.project, entity=WandbAuth.entity, config=self.config, id=fed_id,
+                            resume="allow")
+        else:
+            self.wandb.init(project=WandbAuth.project, entity=WandbAuth.entity, config=self.config)
 
     def on_round_end(self, params):
         self.wandb.log({'acc': params['accuracy'], 'loss': params['loss']})
@@ -293,36 +306,53 @@ class MPIStopPlug(FederatedEventPlug):
         Comm().stop()
 
 
+# noinspection PyUnresolvedReferences
 class Resumable(FederatedEventPlug):
-    def __init__(self, federated: FederatedLearning, ignore_rounds=True, save_each=50, verbose=logging.INFO):
+    def __init__(self, federated: FederatedLearning, distributor: 'Distributor' = None, tag='',
+                 save_path=manifest.ROOT_PATH, ignore_rounds=True, save_each=50, verbose=logging.INFO):
         super().__init__()
         os.makedirs(manifest.ROOT_PATH + "/checkpoints", exist_ok=True)
         self.federated = federated
-        self.file_name = None
         self.verbose = verbose
         self.logger = logging.getLogger('resumable')
         self.save_each = save_each
+        self.file_path = f"{save_path}/checkpoints.fed"
         self.ignore_rounds = ignore_rounds
+        self.tag = f'{tag}_' if len(tag) > 0 else ''
+        if distributor:
+            self.tag = self.tag + distributor.id() + '_'
 
     def on_init(self, params):
         context: FederatedLearning.Context = params['context']
-        file_title: str = context.id
+        run_title: str = context.id
         if self.ignore_rounds:
-            file_title = re.sub('_(.[0-9]?r)_', '_', file_title)
-        self.file_name = f"{manifest.ROOT_PATH}/checkpoints/{file_title}.fed"
-        if os.path.exists(self.file_name):
-            self.log('found a checkpoint, loading...')
-            file = open(self.file_name, 'rb')
-            loaded_context: FederatedLearning.Context = pickle.load(file)
-            loaded_context.num_rounds = context.num_rounds
-            self.federated.context = loaded_context
+            run_title = re.sub('_([0-9]*?r)_', '_', run_title)
+        self.tag = f'{self.tag}{run_title}'
+        if os.path.exists(self.file_path):
+            file = open(self.file_path, 'rb')
+            checkpoints = pickle.load(file)
+            if self.tag in checkpoints:
+                self.log(f'found a checkpoint [{self.tag}], loading...')
+                loaded_context: FederatedLearning.Context = checkpoints[self.tag]
+                loaded_context.num_rounds = context.num_rounds
+                self.federated.context = loaded_context
             file.close()
+            del checkpoints
+        else:
+            writer = open(self.file_path, 'wb')
+            pickle.dump({}, writer)
+            writer.close()
 
     def _save(self, context):
         self.log('saving checkpoint...')
-        file = open(self.file_name, 'wb')
-        pickle.dump(context, file)
-        file.close()
+        reader = open(self.file_path, 'rb')
+        checkpoints = pickle.load(reader)
+        checkpoints[self.tag] = context
+        reader.close()
+        writer = open(self.file_path, 'wb')
+        pickle.dump(checkpoints, writer)
+        writer.close()
+        del checkpoints
 
     def on_round_end(self, params):
         context: FederatedLearning.Context = params['context']
