@@ -3,6 +3,7 @@ import logging
 import math
 import os
 import pickle
+import re
 import statistics
 import time
 import typing
@@ -293,36 +294,45 @@ class MPIStopPlug(FederatedEventPlug):
 
 
 class Resumable(FederatedEventPlug):
-    def __init__(self, federated: FederatedLearning, verbose=logging.INFO):
+    def __init__(self, federated: FederatedLearning, ignore_rounds=True, save_each=50, verbose=logging.INFO):
         super().__init__()
         os.makedirs(manifest.ROOT_PATH + "/checkpoints", exist_ok=True)
         self.federated = federated
         self.file_name = None
         self.verbose = verbose
         self.logger = logging.getLogger('resumable')
+        self.save_each = save_each
+        self.ignore_rounds = ignore_rounds
 
     def on_init(self, params):
         context: FederatedLearning.Context = params['context']
-        self.file_name = manifest.ROOT_PATH + "/checkpoints" + "/run_" + context.id + ".fed"
+        file_title: str = context.id
+        if self.ignore_rounds:
+            file_title = re.sub('_(.[0-9]?r)_', '_', file_title)
+        self.file_name = f"{manifest.ROOT_PATH}/checkpoints/{file_title}.fed"
         if os.path.exists(self.file_name):
             self.log('found a checkpoint, loading...')
             file = open(self.file_name, 'rb')
-            loaded = pickle.load(file)
-            context = loaded['context']
-            is_finished = loaded['is_finished']
-            self.federated.context = context
-            self.federated.is_finished = is_finished
+            loaded_context: FederatedLearning.Context = pickle.load(file)
+            loaded_context.num_rounds = context.num_rounds
+            self.federated.context = loaded_context
             file.close()
 
-    def on_round_end(self, params):
-        file = open(self.file_name, 'wb')
-        to_save = {
-            'context': self.federated.context,
-            'is_finished': self.federated.is_finished,
-        }
+    def _save(self, context):
         self.log('saving checkpoint...')
-        pickle.dump(to_save, file)
+        file = open(self.file_name, 'wb')
+        pickle.dump(context, file)
         file.close()
+
+    def on_round_end(self, params):
+        context: FederatedLearning.Context = params['context']
+        round_id = context.round_id
+        if round_id % self.save_each == 0:
+            self._save(context)
+
+    def on_federated_ended(self, params):
+        context: FederatedLearning.Context = params['context']
+        self._save(context)
 
     def log(self, msg):
         self.logger.log(self.verbose, msg)

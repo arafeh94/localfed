@@ -37,7 +37,7 @@ federated = FederatedLearning(
     client_selector=client_selectors.Random(0.2),
     trainers_data_dict=client_data,
     initial_model=lambda: LogisticRegression(28 * 28, 10),
-    num_rounds=50,
+    num_rounds=30,
     desired_accuracy=0.99,
     accepted_accuracy_margin=0.01
 )
@@ -47,7 +47,7 @@ federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
 federated.add_subscriber(subscribers.Resumable(federated))
 # federated.add_subscriber(subscribers.FedPlot(plot_each_round=True))
-federated.add_subscriber(subscribers.ShowAvgWeightDivergence('./'))
+# federated.add_subscriber(subscribers.ShowAvgWeightDivergence('./'))
 logger.info("----------------------")
 logger.info("start federated 1")
 logger.info("----------------------")
