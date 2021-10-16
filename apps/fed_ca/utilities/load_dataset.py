@@ -1,11 +1,11 @@
 import json
 import os
+import pickle
 
 import src
 from src import manifest
 import logging
 
-from src.data.data_generator import DataGenerator
 from src.data.data_provider import PickleDataProvider
 
 urls = json.load(open(manifest.DATA_PATH + "urls.json", 'r'))
@@ -47,11 +47,9 @@ class LoadData:
             logger.info(f'distributed data file does not exists, distributing into {self.file_path}...')
 
     def distribute_data(self):
-        return src.data.data_generator.load(self.file_path).get_distributed_data()
+        return pickle.load(self.file_path)
 
-    def get_data_generator(self):
-        data_provider = PickleDataProvider(urls[self.dataset_name])
-        return DataGenerator(data_provider)
+
 
     def pickle_distribute_continuous(self):
         is_path_exists = self.is_path_exists()

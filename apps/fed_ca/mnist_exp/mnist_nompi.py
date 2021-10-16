@@ -1,9 +1,9 @@
 import logging
 
 from torch import nn
-from apps.fed_ca.utilities.load_dataset import LoadData
-from libs.model.linear.lr import LogisticRegression
 from src import tools
+from src.data.data_distributor import UniqueDistributor
+from src.data.data_loader import preload
 from src.federated import subscribers
 from src.federated.components.trainer_manager import SeqTrainerManager
 from apps.fed_ca.utilities.hp_generator import generate_configs, build_random, calculate_max_rounds
@@ -15,9 +15,9 @@ from src.federated.protocols import TrainerParams
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
+dataset_used = 'mnist'
 
-ld = LoadData(dataset_name='mnist', shards_nb=0, clients_nb=10, min_samples=100, max_samples=100)
-client_data = ld.pickle_distribute_continuous()
+client_data = preload(dataset_used, UniqueDistributor(10, 600, 600))
 
 # ld = LoadData(dataset_name='mnist', shards_nb=2, clients_nb=100, min_samples=300, max_samples=300)
 # client_data = ld.pickle_distribute_shards()
@@ -25,7 +25,6 @@ client_data = ld.pickle_distribute_continuous()
 # ld = LoadData(dataset_name='mnist', shards_nb=10, clients_nb=100, min_samples=600, max_samples=600)
 # client_data = ld.pickle_distribute_shards()
 
-dataset_used = ld.filename
 tools.detail(client_data)
 
 # building Hyperparameters
@@ -74,7 +73,8 @@ for model_name, gen_model in initial_models.items():
             trainers_data_dict=client_data,
             initial_model=lambda: initial_model,
             num_rounds=num_rounds,
-            desired_accuracy=1
+            desired_accuracy=1,
+            accepted_accuracy_margin=0.05
         )
 
         federated.add_subscriber(subscribers.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))

@@ -6,8 +6,8 @@ import sys
 sys.path.append('../../')
 
 from torch import nn
-from libs.model.cv.cnn import Cifar10Model
-from src.apis import lambdas
+from libs.model.cv.cnn import SimpleCNN
+from src.apis import lambdas, files
 from src.apis.federated_args import FederatedArgs
 from src.data.data_distributor import LabelDistributor
 from src.data.data_loader import preload
@@ -30,7 +30,7 @@ logger.info('Generating Data --Ended')
 
 if args.dataset == 'cifar10':
     client_data = client_data.map(lambdas.reshape((-1, 32, 32, 3))).map(lambdas.transpose((0, 3, 1, 2)))
-    initial_model = Cifar10Model()
+    initial_model = SimpleCNN()
 else:
     initial_model = LogisticRegression(28 * 28, 10)
 
@@ -59,3 +59,5 @@ logger.info("----------------------")
 logger.info("start federated 1")
 logger.info("----------------------")
 federated.start()
+
+files.accuracies.save_accuracy(federated,'shu_maken')
