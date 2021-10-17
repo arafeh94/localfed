@@ -308,48 +308,50 @@ class MPIStopPlug(FederatedEventPlug):
 
 # noinspection PyUnresolvedReferences
 class Resumable(FederatedEventPlug):
-    def __init__(self, federated: FederatedLearning, distributor: 'Distributor' = None, tag='',
-                 save_path=manifest.ROOT_PATH, ignore_rounds=True, save_each=50, verbose=logging.INFO):
+    def __init__(self, federated: FederatedLearning, distributor: 'Distributor' = None, prefix='',
+                 cp_file_path=manifest.CHECKPOINTS_PATH, ignore_rounds=True, save_each=50, verbose=logging.INFO,
+                 id=None):
         super().__init__()
-        os.makedirs(manifest.ROOT_PATH + "/checkpoints", exist_ok=True)
         self.federated = federated
         self.verbose = verbose
         self.logger = logging.getLogger('resumable')
         self.save_each = save_each
-        self.file_path = f"{save_path}/checkpoints.fed"
+        self.cp_file_path = cp_file_path
         self.ignore_rounds = ignore_rounds
-        self.tag = f'{tag}_' if len(tag) > 0 else ''
+        self.id = id
+        self.prefix = f'{prefix}_' if len(prefix) > 0 else ''
         if distributor:
-            self.tag = self.tag + distributor.id() + '_'
+            self.prefix = self.prefix + distributor.id() + '_'
 
     def on_init(self, params):
         context: FederatedLearning.Context = params['context']
-        run_title: str = context.id
-        if self.ignore_rounds:
-            run_title = re.sub('_([0-9]*?r)_', '_', run_title)
-        self.tag = f'{self.tag}{run_title}'
-        if os.path.exists(self.file_path):
-            file = open(self.file_path, 'rb')
+        if not self.id:
+            run_title: str = context.id
+            if self.ignore_rounds:
+                run_title = re.sub('_([0-9]*?r)_', '_', run_title)
+            self.id = f'{self.prefix}{run_title}'
+        if os.path.exists(self.cp_file_path):
+            file = open(self.cp_file_path, 'rb')
             checkpoints = pickle.load(file)
-            if self.tag in checkpoints:
-                self.log(f'found a checkpoint [{self.tag}], loading...')
-                loaded_context: FederatedLearning.Context = checkpoints[self.tag]
+            if self.id in checkpoints:
+                self.log(f'found a checkpoint [{self.id}], loading...')
+                loaded_context: FederatedLearning.Context = checkpoints[self.id]
                 loaded_context.num_rounds = context.num_rounds
                 self.federated.context = loaded_context
             file.close()
             del checkpoints
         else:
-            writer = open(self.file_path, 'wb')
+            writer = open(self.cp_file_path, 'wb')
             pickle.dump({}, writer)
             writer.close()
 
     def _save(self, context):
         self.log('saving checkpoint...')
-        reader = open(self.file_path, 'rb')
+        reader = open(self.cp_file_path, 'rb')
         checkpoints = pickle.load(reader)
-        checkpoints[self.tag] = context
+        checkpoints[self.id] = context
         reader.close()
-        writer = open(self.file_path, 'wb')
+        writer = open(self.cp_file_path, 'wb')
         pickle.dump(checkpoints, writer)
         writer.close()
         del checkpoints

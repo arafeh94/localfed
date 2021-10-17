@@ -4,6 +4,7 @@ import typing
 
 import numpy as np
 from matplotlib import pyplot as plt
+from scipy.ndimage import gaussian_filter1d
 
 from src import manifest
 from src.apis.extensions import Serializable
@@ -40,9 +41,9 @@ class AccuracyCompare(Serializable):
                     accs[tag] = vals
             return accs
 
-    def show_saved_accuracy_plot(self, filter: typing.Callable[[str], bool] = None, title=None):
+    def show_saved_accuracy_plot(self, filter: typing.Callable[[str], bool] = None, title=None, smooth=True):
         colors = {'cluster': '#AA4499', 'basic': '#DDCC77', 'genetic': 'blue', 'warmup': '#117733'}
-        line = {'cluster': '--', 'basic': '-o', 'genetic': '-+', 'warmup': '-*'}
+        line = {'cluster': ':', 'basic': '--', 'genetic': '', 'warmup': '-,'}
         accs = self.get_saved_accuracy(filter)
         if len(accs) < 1:
             return
@@ -50,6 +51,7 @@ class AccuracyCompare(Serializable):
         for tag, vals in accs.items():
             tag: str
             label = tag.split('_')[0].capitalize()
+            vals = gaussian_filter1d(vals, sigma=2) if smooth else vals
             plt.plot(vals, line[label.lower()], label=label, color=colors[label.lower()])
             plt.xlabel("Round")
             plt.ylabel("Accuracy")

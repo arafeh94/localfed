@@ -29,3 +29,6 @@ class AccLoss(ModelInfer):
                 test_total += target.size(0)
 
         return test_acc / test_total, test_loss / test_total
+
+    def id(self):
+        return 'accloss'

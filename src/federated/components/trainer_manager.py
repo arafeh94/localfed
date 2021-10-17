@@ -7,10 +7,10 @@ from torch import nn
 
 from src.apis.mpi import Comm
 from src.data.data_container import DataContainer
-from src.federated.protocols import Trainer, TrainerParams
+from src.federated.protocols import Trainer, TrainerParams, Identifiable
 
 
-class TrainerManager:
+class TrainerManager(Identifiable):
     def __init__(self):
         self.trainer_started = None
         self.trainer_finished = None
@@ -62,6 +62,9 @@ class SeqTrainerManager(TrainerManager):
             trainers_sample_size[trainer_id] = sample_size
         self.train_requests = {}
         return trainers_trained_weights, trainers_sample_size
+
+    def id(self):
+        return 'seqmgr'
 
 
 class SharedTrainerProvider(SeqTrainerManager.TrainerProvider):
@@ -129,3 +132,6 @@ class MPITrainerManager(TrainerManager):
                 trainer = config.trainer_class()
             trained_weights, sample_size = trainer.train(model, train_data, context, config)
             comm.send(0, (trained_weights, sample_size), 2)
+
+    def id(self):
+        return 'mpi'

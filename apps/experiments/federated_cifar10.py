@@ -1,12 +1,12 @@
 import logging
 import sys
 
+sys.path.append('../../')
 import matplotlib.pyplot as plt
 from torch import nn
 
 import libs.model.cv.cnn
 
-sys.path.append('../../')
 
 from libs.model.cv.cnn import CNN32
 from libs.model.cv.resnet import ResNet, resnet56

@@ -2,17 +2,23 @@ import logging
 import sys
 
 from torch import nn
-sys.path.append('../../')
 
+from src.apis import files
 from src.data.data_distributor import LabelDistributor
 from src.data.data_loader import preload
+from src.data.data_provider import PickleDataProvider
+from src.federated.events import FederatedEventPlug
+
+sys.path.append('../../')
 from libs.model.linear.lr import LogisticRegression
+from src import tools
+from src.data import data_loader
 from src.federated.components import metrics, client_selectors, aggregators, trainers
 from src.federated import subscribers
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
-from src.federated.components.trainer_manager import SeqTrainerManager
+from src.federated.components.trainer_manager import SeqTrainerManager, SharedTrainerProvider
 from src.federated.subscribers import Timer
 
 logging.basicConfig(level=logging.INFO)
@@ -34,14 +40,18 @@ federated = FederatedLearning(
     client_selector=client_selectors.Random(0.2),
     trainers_data_dict=client_data,
     initial_model=lambda: LogisticRegression(28 * 28, 10),
-    num_rounds=30,
+    num_rounds=5,
     desired_accuracy=0.99,
     accepted_accuracy_margin=0.01
 )
 
+# federated.add_subscriber(subscribers.ShowDataDistribution(10, per_round=True, save_dir='./pct'))
 federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
-federated.add_subscriber(subscribers.Resumable(federated, dist, 'exp'))
+# federated.add_subscriber(subscribers.Resumable(federated, dist, 'exp'))
+federated.add_subscriber(subscribers.WandbLogger(config={'samira': '2'}, resume=True))
+# federated.add_subscriber(subscribers.FedPlot(plot_each_round=True))
+# federated.add_subscriber(subscribers.ShowAvgWeightDivergence('./'))
 logger.info("----------------------")
 logger.info("start federated 1")
 logger.info("----------------------")

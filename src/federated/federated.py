@@ -169,12 +169,9 @@ class FederatedLearning(Broadcaster):
         return reduce(lambda x, y: dict(x, **y), (named, self.args))
 
     def build_id(self):
-        model_type = type(self.context.model).__name__ if self.context.model else 'none'
-        fed_id = type(self.trainer_manager).__name__ + '_' + type(self.aggregator).__name__ + '_' + \
-                 type(self.client_selector).__name__ + '_' + type(self.metrics).__name__ + '_' + \
-                 model_type + '_' + f'{self.num_rounds}r' + '_' + \
-                 f'{self.trainer_config.epochs}e' + '_' + f'{self.trainer_config.batch_size}b' + '_' + \
-                 self.trainer_config.optimizer + '_' + self.trainer_config.criterion
+        model_type = type(self.context.model).__name__ if self.context.model else 'idle'
+        fed_id = self.trainer_manager.id() + '_' + self.aggregator.id() + '_' + self.client_selector.id() + '_' + \
+                 self.metrics.id() + '_' + f'{self.num_rounds}r' + '_' + self.trainer_config.id() + '_' + model_type
         return fed_id.lower()
 
     def broadcast(self, event_name: str, **kwargs):

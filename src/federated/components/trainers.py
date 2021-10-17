@@ -42,6 +42,9 @@ class TorchTrainer(Trainer):
         weights = model.cpu().state_dict()
         return weights, len(train_data)
 
+    def id(self):
+        return 'torch'
+
 
 class TorchChunkTrainer(TorchTrainer):
     def train(self, model: nn.Module, train_data: DataContainer, context: FederatedLearning.Context,
@@ -49,8 +52,14 @@ class TorchChunkTrainer(TorchTrainer):
         round_id = context.round_id
         num_rounds = context.num_rounds
         total_size = len(train_data)
+        if total_size <= num_rounds:
+            raise Exception(
+                f'not enough data to run a chunk trainer, data size: {total_size} - num_rounds: {num_rounds}')
         round_data_size = total_size / num_rounds
         x = train_data.x[int(round_id * round_data_size):int((round_id * round_data_size) + round_data_size)]
         y = train_data.y[int(round_id * round_data_size):int((round_id * round_data_size) + round_data_size)]
         chunk = DataContainer(x, y)
         return super(TorchChunkTrainer, self).train(model, chunk, round_id, config)
+
+    def id(self):
+        return 'torch:chunk'
