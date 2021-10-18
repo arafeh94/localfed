@@ -1,7 +1,8 @@
 import atexit
 import logging
 
-from src import tools
+from libs.model.linear.lr import LogisticRegression
+from src import tools, manifest
 from src.data.data_provider import PickleDataProvider
 from apps.fed_ca.utilities.hp_generator import generate_configs, build_random, calculate_max_rounds
 from libs.model.cv.cnn import CNN_OriginalFedAvg
@@ -12,14 +13,14 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
 dataset_used = 'mnist'
-train, test = PickleDataProvider(
-    "../../../datasets/pickles/" + dataset_used + ".pkl").collect().shuffle(47).as_tensor().split(0.8)
+train, test = PickleDataProvider(manifest.datasets_urls[dataset_used]).collect().shuffle(47).as_tensor().split(0.8)
 # tools.detail(train)
 # tools.detail(test)
 
 # number of models that we are using
 initial_models = {
-    'CNN_OriginalFedAvg': CNN_OriginalFedAvg()
+    # 'CNN_OriginalFedAvg': CNN_OriginalFedAvg(),
+    'LogisticsRegression': LogisticRegression(28 * 28, 10)
 }
 
 # building Hyperparameters
@@ -29,8 +30,8 @@ percentage_nb_client = 10
 
 for model_name, gen_model in initial_models.items():
 
-    hyper_params = {'batch_size': [10, 50], 'epochs': [1, 5, 20], 'num_rounds': [800], 'learn_rate': [0.01, 0.001]}
-
+    # hyper_params = {'batch_size': [10, 50], 'epochs': [1, 5, 20], 'num_rounds': [800], 'learn_rate': [0.01, 0.001]}
+    hyper_params = {'batch_size': [10], 'epochs': [1], 'num_rounds': [800], 'learn_rate': [0.001]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 

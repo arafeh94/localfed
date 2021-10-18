@@ -162,6 +162,7 @@ class CNN_DropOut(torch.nn.Module):
         x = self.softmax(self.linear_2(x))
         return x
 
+
 class SimpleCNN(nn.Module):
     def __init__(self, input_dim, hidden_dims, output_dim=10):
         super(SimpleCNN, self).__init__()
@@ -184,6 +185,7 @@ class SimpleCNN(nn.Module):
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
         return x
+
 
 class Net(nn.Module):
     def __init__(self):
@@ -209,3 +211,46 @@ class Net(nn.Module):
         x = self.fc2(x)
         output = F.log_softmax(x, dim=1)
         return output
+
+
+class Cifar10Model(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv1 = nn.Conv2d(3, 6, 5)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.conv2 = nn.Conv2d(6, 16, 5)
+        self.fc1 = nn.Linear(16 * 5 * 5, 120)
+        self.fc2 = nn.Linear(120, 84)
+        self.fc3 = nn.Linear(84, 10)
+
+    def forward(self, x):
+        x = self.pool(torch.relu(self.conv1(x)))
+        x = self.pool(torch.relu(self.conv2(x)))
+        x = torch.flatten(x, 1)  # flatten all dimensions except batch
+        x = torch.relu(self.fc1(x))
+        x = torch.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
+
+
+class CNN32(torch.nn.Module):
+    def __init__(self, channels, output_dim):
+        super(CNN32, self).__init__()
+        self.conv2d_1 = torch.nn.Conv2d(channels, 32, kernel_size=5, padding=2)
+        self.max_pooling = nn.MaxPool2d(2, stride=2)
+        self.conv2d_2 = torch.nn.Conv2d(32, 64, kernel_size=5, padding=2)
+        self.flatten = nn.Flatten()
+        self.linear_1 = nn.Linear(3136, 512)
+        self.linear_2 = nn.Linear(512, output_dim)
+        self.relu = nn.ReLU()
+        self.softmax = nn.Softmax(dim=1)
+
+    def forward(self, x):
+        x = self.conv2d_1(x)
+        x = self.max_pooling(x)
+        x = self.conv2d_2(x)
+        x = self.max_pooling(x)
+        x = self.flatten(x)
+        x = self.relu(self.linear_1(x))
+        x = self.softmax(self.linear_2(x))
+        return x

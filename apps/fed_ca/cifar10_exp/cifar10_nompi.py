@@ -8,12 +8,14 @@ from os.path import dirname
 from torch import nn
 
 from apps.fed_ca.cifar10_exp.cifar10_models import CNN_85
-from apps.fed_ca.utilities.load_dataset import LoadData
 from libs.model.collection import CNNCifar
-from libs.model.cv.cnn import CNN_DropOut, SimpleCNN
-from libs.model.cv.resnet import resnet56, CNN_batch_norm_cifar10
+from libs.model.cv.cnn import CNN_DropOut, SimpleCNN, Cifar10Model, CNN32
+from libs.model.cv.resnet import resnet56, CNN_batch_norm_cifar10, CNN_Cifar10
+from libs.model.linear.lr import LogisticRegression
 from src import tools
 from src.apis import lambdas
+from src.data.data_distributor import UniqueDistributor
+from src.data.data_loader import preload
 from src.federated import subscribers
 from src.federated.components.trainer_manager import SeqTrainerManager
 
@@ -27,11 +29,13 @@ from src.federated.protocols import TrainerParams
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-ld = LoadData(dataset_name='cifar10', shards_nb=0, clients_nb=10, min_samples=6000, max_samples=6000)
-dataset_used = ld.filename
-client_data = ld.pickle_distribute_continuous()
+dataset_used = 'cifar10'
+client_data = preload(dataset_used, UniqueDistributor(10, 6000, 6000))
+
 tools.detail(client_data)
 client_data = client_data.map(lambdas.reshape((-1, 32, 32, 3))).map(lambdas.transpose((0, 3, 1, 2)))
+
+# client_data = client_data.map(lambdas.reshape((32, 32, 3))).map(lambdas.transpose((2, 0, 1)))
 
 # building Hyperparameters
 input_shape = 32 * 32
@@ -42,20 +46,23 @@ percentage_nb_client = 10
 initial_models = {
     # 'LR': LogisticRegression(input_shape, labels_number),
     # 'MLP': MLP(input_shape, labels_number)
-    # 'CNNCifar':CNNCifar(labels_number)
+    'CNNCifar': CNNCifar(labels_number)
     #  'CNN': CNN_DropOut(False)
     # 'ResNet': resnet56(labels_number, 3, 32)
     # 'SimpleCNN': SimpleCNN(input_dim=(16 * 5 * 5), hidden_dims=[120, 84], output_dim=10)
     # 'Cifar10': CNN_batch_norm_cifar10()
-    'CNN_85': CNN_85()
-}
+    # 'CNN_85': CNN_85()
+    # 'Cifar10Model': Cifar10Model()  #ok
+    # 'CNN_Cifar10()': CNN_Cifar10() #ok
+    # 'CNN32': CNN32(3, 10)
 
+}
 
 # runs = {}
 
 for model_name, gen_model in initial_models.items():
 
-    hyper_params = {'batch_size': [64], 'epochs': [10], 'num_rounds': [10000]}
+    hyper_params = {'batch_size': [100], 'epochs': [1], 'num_rounds': [800], 'learn_rate': [0.01]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 
@@ -65,7 +72,7 @@ for model_name, gen_model in initial_models.items():
         epochs = config['epochs']
         num_rounds = config['num_rounds']
         initial_model = config['initial_model']
-        learn_rate = 0.01
+        learn_rate = config['learn_rate']
 
         print("------------------------------------------------------------------------------------------------")
         print(
@@ -88,6 +95,7 @@ for model_name, gen_model in initial_models.items():
             initial_model=lambda: initial_model,
             num_rounds=num_rounds,
             desired_accuracy=0.99
+            # accepted_accuracy_margin=0.05
         )
 
         # use flush=True if you don't want to continue from the last round

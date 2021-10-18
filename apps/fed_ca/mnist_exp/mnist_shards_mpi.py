@@ -7,6 +7,9 @@ from os.path import dirname
 from torch import nn
 
 # windows
+from src.data.data_distributor import UniqueDistributor, ShardDistributor
+from src.data.data_loader import preload
+
 sys.path.append(dirname(__file__) + '../../../')
 from src.apis.mpi import Comm
 
@@ -27,10 +30,10 @@ logger = logging.getLogger('main')
 
 comm = Comm()
 if comm.pid() == 0:
+    dataset_used = 'mnist'
 
-    ld = LoadData(dataset_name='mnist', shards_nb=2, clients_nb=10, min_samples=1000, max_samples=1000)
-    dataset_used = ld.filename
-    client_data = ld.pickle_distribute_shards()
+    # ld = LoadData(dataset_name='mnist', shards_nb=2, clients_nb=10, min_samples=1000, max_samples=1000)
+    client_data = preload(dataset_used, ShardDistributor(100, 2))
     tools.detail(client_data)
 
     # building Hyperparameters

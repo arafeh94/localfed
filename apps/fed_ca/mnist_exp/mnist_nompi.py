@@ -16,7 +16,6 @@ from src.federated.protocols import TrainerParams
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 dataset_used = 'mnist'
-
 client_data = preload(dataset_used, UniqueDistributor(10, 600, 600))
 
 # ld = LoadData(dataset_name='mnist', shards_nb=2, clients_nb=100, min_samples=300, max_samples=300)
@@ -52,7 +51,7 @@ for model_name, gen_model in initial_models.items():
         epochs = config['epochs']
         num_rounds = config['num_rounds']
         initial_model = config['initial_model']
-        learn_rate = 0.1
+        learn_rate = 0.159
 
         print(
             f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds}, '
@@ -73,8 +72,8 @@ for model_name, gen_model in initial_models.items():
             trainers_data_dict=client_data,
             initial_model=lambda: initial_model,
             num_rounds=num_rounds,
-            desired_accuracy=1,
-            accepted_accuracy_margin=0.05
+            desired_accuracy=1
+            # accepted_accuracy_margin=0.05
         )
 
         federated.add_subscriber(subscribers.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))

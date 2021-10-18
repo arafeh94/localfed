@@ -18,9 +18,9 @@ logger = logging.getLogger('main')
 wandb_project = 'localfed_ca01'
 dataset_used = 'cifar10'
 
-urls = json.load(open(manifest.DATA_PATH + "urls.json", 'r'))
+# urls = json.load(open(manifest.DATA_PATH + "urls.json", 'r'))
 
-data = PickleDataProvider(urls[dataset_used]).collect().map(lambdas.reshape((32, 32, 3))).map(
+data = PickleDataProvider(manifest.datasets_urls[dataset_used]).collect().map(lambdas.reshape((32, 32, 3))).map(
     lambdas.transpose((2, 0, 1))).shuffle().as_tensor().split(0.8)
 train = data[0]
 test = data[1]
@@ -73,7 +73,7 @@ for model_name, gen_model in initial_models.items():
             'num_rounds': num_rounds, 'data_file': dataset_used,
             'model': model_name,
             'selected_clients': percentage_nb_client
-        })
+        }, id=str('test00001'))
 
         wandb = wandb
 
