@@ -7,6 +7,7 @@ from os.path import dirname
 
 from torch import nn
 
+from apps.extends.extends import MyUniqueDistributor
 from apps.fed_ca.cifar10_exp.cifar10_models import CNN_85
 from libs.model.collection import CNNCifar
 from libs.model.cv.cnn import CNN_DropOut, SimpleCNN, Cifar10Model, CNN32
@@ -29,8 +30,11 @@ from src.federated.protocols import TrainerParams
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-dataset_used = 'cifar10'
-client_data = preload(dataset_used, UniqueDistributor(10, 6000, 6000))
+dist = UniqueDistributor(10, 6000, 6000)
+dataset_name = 'cifar10'
+
+client_data = preload(dataset_name, dist)
+dataset_used_wd = 'cifar10_' + dist.id()
 
 tools.detail(client_data)
 client_data = client_data.map(lambdas.reshape((-1, 32, 32, 3))).map(lambdas.transpose((0, 3, 1, 2)))
@@ -46,14 +50,14 @@ percentage_nb_client = 10
 initial_models = {
     # 'LR': LogisticRegression(input_shape, labels_number),
     # 'MLP': MLP(input_shape, labels_number)
-    'CNNCifar': CNNCifar(labels_number)
+    # 'CNNCifar': CNNCifar(labels_number)
     #  'CNN': CNN_DropOut(False)
     # 'ResNet': resnet56(labels_number, 3, 32)
     # 'SimpleCNN': SimpleCNN(input_dim=(16 * 5 * 5), hidden_dims=[120, 84], output_dim=10)
     # 'Cifar10': CNN_batch_norm_cifar10()
     # 'CNN_85': CNN_85()
     # 'Cifar10Model': Cifar10Model()  #ok
-    # 'CNN_Cifar10()': CNN_Cifar10() #ok
+    'CNN_Cifar10()': CNN_Cifar10() #ok
     # 'CNN32': CNN32(3, 10)
 
 }
@@ -62,7 +66,7 @@ initial_models = {
 
 for model_name, gen_model in initial_models.items():
 
-    hyper_params = {'batch_size': [100], 'epochs': [1], 'num_rounds': [800], 'learn_rate': [0.01]}
+    hyper_params = {'batch_size': [100], 'epochs': [20], 'num_rounds': [800], 'learn_rate': [0.01]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 
@@ -110,7 +114,7 @@ for model_name, gen_model in initial_models.items():
         federated.add_subscriber(subscribers.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
         federated.add_subscriber(
             subscribers.WandbLogger(config={'lr': learn_rate, 'batch_size': batch_size, 'epochs': epochs,
-                                            'num_rounds': num_rounds, 'data_file': dataset_used,
+                                            'num_rounds': num_rounds, 'data_file': dataset_used_wd,
                                             'model': model_name, 'os': platform.system() + '',
                                             'selected_clients': percentage_nb_client}))
 
