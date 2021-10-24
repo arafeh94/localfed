@@ -6,9 +6,9 @@ from src.federated.protocols import Trainer, ModelInfer
 
 
 class AccLoss(ModelInfer):
-    def __init__(self, batch_size: int, criterion):
+    def __init__(self, batch_size: int, criterion, device=None):
         super().__init__(batch_size, criterion)
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = device or torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     def infer(self, model: nn.Module, test_data: DataContainer):
         model.to(self.device)
@@ -29,6 +29,3 @@ class AccLoss(ModelInfer):
                 test_total += target.size(0)
 
         return test_acc / test_total, test_loss / test_total
-
-    def id(self):
-        return 'accloss'

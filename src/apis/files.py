@@ -9,10 +9,13 @@ from scipy.ndimage import gaussian_filter1d
 from src import manifest
 from src.apis.extensions import Serializable
 
+ACCURACY_PATH = manifest.DEFAULT_ACC_PATH
+DIVERGENCE_PATH = manifest.DEFAULT_DIV_PATH
+
 
 class AccuracyCompare(Serializable):
     def __init__(self):
-        super().__init__(manifest.DEFAULT_ACC_PATH)
+        super().__init__(ACCURACY_PATH)
         self.accuracies = {}
         self.load()
 
@@ -71,7 +74,7 @@ class AccuracyCompare(Serializable):
 
 class DivergenceCompare(Serializable):
     def __init__(self):
-        super().__init__(manifest.DEFAULT_DIV_PATH)
+        super().__init__(DIVERGENCE_PATH)
         self.divergences = {}
         self.load()
 

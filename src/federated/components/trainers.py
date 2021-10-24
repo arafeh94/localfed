@@ -42,15 +42,18 @@ class TorchTrainer(Trainer):
         weights = model.cpu().state_dict()
         return weights, len(train_data)
 
-    def id(self):
-        return 'torch'
+
+class CPUTrainer(TorchTrainer):
+    def __init__(self):
+        super().__init__()
+        self.device = 'cpu'
 
 
 class TorchChunkTrainer(TorchTrainer):
     def train(self, model: nn.Module, train_data: DataContainer, context: FederatedLearning.Context,
               config: TrainerParams) -> Tuple[any, int]:
         round_id = context.round_id
-        num_rounds = context.num_rounds
+        num_rounds = context.federated.num_rounds
         total_size = len(train_data)
         if total_size <= num_rounds:
             raise Exception(
@@ -60,6 +63,3 @@ class TorchChunkTrainer(TorchTrainer):
         y = train_data.y[int(round_id * round_data_size):int((round_id * round_data_size) + round_data_size)]
         chunk = DataContainer(x, y)
         return super(TorchChunkTrainer, self).train(model, chunk, round_id, config)
-
-    def id(self):
-        return 'torch:chunk'

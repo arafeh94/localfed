@@ -2,6 +2,9 @@ import logging
 import sys
 
 from src.data.data_loader import preload
+from src.federated.subscribers.analysis import ShowWeightDivergence
+from src.federated.subscribers.logger import FederatedLogger
+from src.federated.subscribers.timer import Timer
 
 sys.path.append('../../')
 
@@ -16,8 +19,7 @@ from src.federated import subscribers
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
-from src.federated.components.trainer_manager import SeqTrainerManager, SharedTrainerProvider
-from src.federated.subscribers import Timer, ShowWeightDivergence
+from src.federated.components.trainer_manager import SeqTrainerManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
@@ -51,11 +53,9 @@ federated = FederatedLearning(
     num_rounds=50,
     desired_accuracy=0.99,
 )
-# federated.add_subscriber(subscribers.ShowDataDistribution(10, per_round=True, save_dir='./pct'))
-federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
+federated.add_subscriber(FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
-# federated.add_subscriber(subscribers.FedSave('basic'))
-federated.add_subscriber(ShowWeightDivergence(save_dir="./pct", plot_type='linear', divergence_tag=tag))
+federated.add_subscriber(ShowWeightDivergence(save_dir="./pct", plot_type='linear'))
 logger.info("----------------------")
 logger.info("start federated 1")
 logger.info("----------------------")

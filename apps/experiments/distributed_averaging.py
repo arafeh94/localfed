@@ -2,11 +2,12 @@
 import sys
 from os.path import dirname
 
+from src.federated.subscribers.logger import FederatedLogger
+from src.federated.subscribers.timer import Timer
 
 sys.path.append(dirname(__file__) + '../../')
 
 from src.data import data_loader
-from src.federated.subscribers import Timer
 import logging
 from torch import nn
 from src.federated.protocols import TrainerParams
@@ -24,9 +25,6 @@ logger = logging.getLogger('main')
 comm = Comm()
 
 if comm.pid() == 0:
-    data_file = '../datasets/pickles/mnist_10shards_100c_400mn_400mx.pkl'
-    test_file = '../../datasets/pickles/test_data.pkl'
-
     logger.info('Generating Data --Started')
     client_data = data_loader.mnist_10shards_100c_400min_400max()
     logger.info('Generating Data --Ended')
@@ -42,19 +40,12 @@ if comm.pid() == 0:
         client_selector=client_selectors.Random(5),
         trainers_data_dict=client_data,
         initial_model=lambda: LogisticRegression(28 * 28, 10),
-        # initial_model=lambda: CNN_OriginalFedAvg(),
         num_rounds=0,
         desired_accuracy=0.99
     )
 
-    federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
+    federated.add_subscriber(FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
     federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
-    federated.add_subscriber(subscribers.FedPlot())
-    # federated.plug(plugins.CustomModelTestPlug(PickleDataProvider(test_file).collect().as_tensor(), 8))
-    # federated.plug(plugins.FedSave())
-    # federated.plug(plugins.WandbLogger(config={'num_rounds': 10}))
-    # federated.plug(plugins.MPIStopPlug())
-
     logger.info("----------------------")
     logger.info("start federated 1")
     logger.info("----------------------")

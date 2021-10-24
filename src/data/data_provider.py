@@ -19,7 +19,7 @@ logger = logging.getLogger('data_provider')
 
 class DataProvider:
     @abstractmethod
-    def collect(self) -> DataContainer:
+    def collect(self, args) -> DataContainer:
         pass
 
 
@@ -27,7 +27,7 @@ class PickleDataProvider(DataProvider):
     def __init__(self, file_path):
         self.uri = file_path
 
-    def collect(self) -> DataContainer:
+    def collect(self, args=None) -> DataContainer:
         self._handle_url()
         file = open(self.uri, 'rb')
         return pickle.load(file)

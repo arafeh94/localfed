@@ -28,5 +28,3 @@ class AVGAggregator(Aggregator):
 
         return averaged_params
 
-    def id(self):
-        return 'avg'

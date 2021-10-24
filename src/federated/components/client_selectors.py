@@ -7,8 +7,6 @@ class All(ClientSelector):
     def select(self, trainer_ids: List[int], round_id: int) -> List[int]:
         return trainer_ids
 
-    def id(self):
-        return f'all'
 
 
 class Random(ClientSelector):
@@ -23,5 +21,3 @@ class Random(ClientSelector):
         selected_trainers = random.sample(trainer_ids, select_size)
         return selected_trainers
 
-    def id(self):
-        return f'rand({self.num})'

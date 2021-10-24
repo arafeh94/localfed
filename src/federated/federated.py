@@ -36,7 +36,7 @@ class FederatedLearning(Broadcaster):
         self.args = kwargs
         self.events = {}
         self._check_params()
-        self.context = FederatedLearning.Context()
+        self.context = FederatedLearning.Context(self)
         self.test_data = test_data
         self.trainers_train = self.trainers_data_dict
         self.is_finished = False
@@ -168,26 +168,17 @@ class FederatedLearning(Broadcaster):
         }
         return reduce(lambda x, y: dict(x, **y), (named, self.args))
 
-    def build_id(self):
-        model_type = type(self.context.model).__name__ if self.context.model else 'idle'
-        fed_id = self.trainer_manager.id() + '_' + self.aggregator.id() + '_' + self.client_selector.id() + '_' + \
-                 self.metrics.id() + '_' + f'{self.num_rounds}r' + '_' + self.trainer_config.id() + '_' + model_type
-        return fed_id.lower()
-
     def broadcast(self, event_name: str, **kwargs):
         args = reduce(lambda x, y: dict(x, **y), ({'context': self.context}, kwargs))
         super(FederatedLearning, self).broadcast(event_name, **args)
 
     class Context:
-        def __init__(self):
+        def __init__(self, federated):
+            self.federated = federated
             self.round_id = 0
             self.model = None
-            self.num_rounds = None
-            self.desired_accuracy = None
             self.history = src.apis.extensions.Dict()
             self.timestamp = time.time()
-            self.logger = None
-            self.id = None
 
         def load_weights(self, weights):
             self.model.load_state_dict(weights)
@@ -212,15 +203,11 @@ class FederatedLearning(Broadcaster):
             return self.history[list(self.history)[-1]]['acc']
 
         def stop(self, acc: float):
-            return (0 < self.num_rounds <= self.round_id) or acc >= self.desired_accuracy
+            return (0 < self.federated.num_rounds <= self.round_id) or acc >= self.federated.desired_accuracy
 
         def build(self, federated):
             self.reset()
             self.model = federated.initial_model() if callable(federated.initial_model) else federated.initial_model
-            self.num_rounds = federated.num_rounds
-            self.desired_accuracy = federated.desired_accuracy
-            self.logger = federated.logger
-            self.id = federated.build_id()
 
         def reset(self):
             self.round_id = 0

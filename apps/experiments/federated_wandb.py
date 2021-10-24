@@ -1,25 +1,21 @@
 import logging
 import sys
 
-from torch import nn
-
-from src.apis import files
-from src.data.data_distributor import LabelDistributor
-from src.data.data_loader import preload
-from src.data.data_provider import PickleDataProvider
-from src.federated.events import FederatedEventPlug
+from src.federated.subscribers.logger import FederatedLogger
+from src.federated.subscribers.timer import Timer
+from src.federated.subscribers.wandb_logger import WandbLogger
 
 sys.path.append('../../')
+from torch import nn
+from src.data.data_distributor import LabelDistributor
+from src.data.data_loader import preload
 from libs.model.linear.lr import LogisticRegression
-from src import tools
-from src.data import data_loader
 from src.federated.components import metrics, client_selectors, aggregators, trainers
 from src.federated import subscribers
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
-from src.federated.components.trainer_manager import SeqTrainerManager, SharedTrainerProvider
-from src.federated.subscribers import Timer
+from src.federated.components.trainer_manager import SeqTrainerManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
@@ -45,13 +41,9 @@ federated = FederatedLearning(
     accepted_accuracy_margin=0.01
 )
 
-# federated.add_subscriber(subscribers.ShowDataDistribution(10, per_round=True, save_dir='./pct'))
-federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
+federated.add_subscriber(FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
-# federated.add_subscriber(subscribers.Resumable(federated, dist, 'exp'))
-federated.add_subscriber(subscribers.WandbLogger(config={'samira': '2'}, resume=True))
-# federated.add_subscriber(subscribers.FedPlot(plot_each_round=True))
-# federated.add_subscriber(subscribers.ShowAvgWeightDivergence('./'))
+federated.add_subscriber(WandbLogger(config={'samira': '2'}))
 logger.info("----------------------")
 logger.info("start federated 1")
 logger.info("----------------------")
