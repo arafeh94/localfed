@@ -1,6 +1,8 @@
 import logging
 
 from torch import nn
+
+from libs.model.linear.lr import LogisticRegression
 from src import tools
 from src.data.data_distributor import UniqueDistributor
 from src.data.data_loader import preload
@@ -15,9 +17,10 @@ from src.federated.protocols import TrainerParams
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
-dataset_used = 'mnist'
-client_data = preload(dataset_used, UniqueDistributor(10, 600, 600))
-
+dataset = 'mnist'
+ud = UniqueDistributor(10, 600, 600)
+client_data = preload(dataset, ud)
+dataset_used = dataset + '_' + ud.id()
 # ld = LoadData(dataset_name='mnist', shards_nb=2, clients_nb=100, min_samples=300, max_samples=300)
 # client_data = ld.pickle_distribute_shards()
 
@@ -33,9 +36,9 @@ percentage_nb_client = 0.2
 
 # number of models that we are using
 initial_models = {
-    # 'LR': LogisticRegression(input_shape, labels_number),
+    'LR': LogisticRegression(input_shape, labels_number),
     # 'MLP': MLP(input_shape, labels_number)
-    'CNN_OriginalFedAvg': CNN_OriginalFedAvg()
+    # 'CNN_OriginalFedAvg': CNN_OriginalFedAvg()
     # 'CNN': CNN_DropOut(False)
 }
 for model_name, gen_model in initial_models.items():
@@ -51,7 +54,7 @@ for model_name, gen_model in initial_models.items():
         epochs = config['epochs']
         num_rounds = config['num_rounds']
         initial_model = config['initial_model']
-        learn_rate = 0.159
+        learn_rate = 0.1
 
         print(
             f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds}, '
@@ -67,7 +70,6 @@ for model_name, gen_model in initial_models.items():
             trainer_config=trainer_params,
             aggregator=aggregators.AVGAggregator(),
             metrics=metrics.AccLoss(batch_size=batch_size, criterion=nn.CrossEntropyLoss()),
-            # client_selector=client_selectors.All(),
             client_selector=client_selectors.Random(percentage_nb_client),
             trainers_data_dict=client_data,
             initial_model=lambda: initial_model,
@@ -75,6 +77,10 @@ for model_name, gen_model in initial_models.items():
             desired_accuracy=1
             # accepted_accuracy_margin=0.05
         )
+        # filename is used for both the wandb id and for model resume at checkpoint
+        filename_id = f'lr={learn_rate}_batch_size={batch_size}_epochs={epochs}_num_rounds={num_rounds}_data_file={dataset_used}_model_name={model_name}'
+        # use flush=True if you don't want to continue from the last round
+        federated.add_subscriber(subscribers.Resumable(federated, tag='002', save_each=5))
 
         federated.add_subscriber(subscribers.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
 
@@ -84,7 +90,7 @@ for model_name, gen_model in initial_models.items():
             'num_rounds': num_rounds, 'data_file': dataset_used,
             'model': model_name,
             'selected_clients': percentage_nb_client
-        }))
+        }, resume=True, id=filename_id))
 
         logger.info("----------------------")
         logger.info("start federated")

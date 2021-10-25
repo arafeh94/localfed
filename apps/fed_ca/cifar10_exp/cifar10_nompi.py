@@ -66,7 +66,7 @@ initial_models = {
 
 for model_name, gen_model in initial_models.items():
 
-    hyper_params = {'batch_size': [100], 'epochs': [20], 'num_rounds': [800], 'learn_rate': [0.01]}
+    hyper_params = {'batch_size': [100], 'epochs': [1], 'num_rounds': [800], 'learn_rate': [0.01]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 

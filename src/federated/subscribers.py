@@ -272,29 +272,27 @@ class FedSave(FederatedEventPlug):
 
 
 class WandbLogger(FederatedEventPlug):
-    def __init__(self, config=None, resume=False, prefix: str = None):
+    def __init__(self, config=None, resume=False, id: str = None):
         super().__init__()
         import wandb
         wandb.login(key=WandbAuth.key)
         self.wandb = wandb
         self.config = config
-        self.prefix = prefix
+        self.id = id
         self.resume = resume
         atexit.register(lambda: self.wandb.finish())
 
     def on_init(self, params):
         if self.resume:
-            context: FederatedLearning.Context = params['context']
-            fed_id = context.id
-            if self.prefix:
-                fed_id = self.prefix + '_' + fed_id
-            self.wandb.init(project=WandbAuth.project, entity=WandbAuth.entity, config=self.config, id=fed_id,
+            self.wandb.init(project=WandbAuth.project, entity=WandbAuth.entity, config=self.config, id=self.id,
                             resume="allow")
         else:
             self.wandb.init(project=WandbAuth.project, entity=WandbAuth.entity, config=self.config)
 
     def on_round_end(self, params):
-        self.wandb.log({'acc': params['accuracy'], 'loss': params['loss'], 'last_round':params['round']+1})
+        context: FederatedLearning.Context = params['context']
+        self.wandb.log({'acc': params['accuracy'], 'loss': params['loss'], 'last_round': params['round'] + 1},
+                       step=context.round_id)
 
     def on_federated_ended(self, params):
         self.wandb.finish()
