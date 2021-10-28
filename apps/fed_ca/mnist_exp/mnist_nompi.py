@@ -79,8 +79,9 @@ for model_name, gen_model in initial_models.items():
         )
         # filename is used for both the wandb id and for model resume at checkpoint
         filename_id = f'lr={learn_rate}_batch_size={batch_size}_epochs={epochs}_num_rounds={num_rounds}_data_file={dataset_used}_model_name={model_name}'
+
         # use flush=True if you don't want to continue from the last round
-        federated.add_subscriber(subscribers.Resumable(federated, tag='002', save_each=5))
+        # federated.add_subscriber(subscribers.Resumable(federated, tag='002', save_each=5))
 
         federated.add_subscriber(subscribers.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
 
@@ -90,7 +91,7 @@ for model_name, gen_model in initial_models.items():
             'num_rounds': num_rounds, 'data_file': dataset_used,
             'model': model_name,
             'selected_clients': percentage_nb_client
-        }, resume=True, id=filename_id))
+        }, resume=False, id=filename_id))
 
         logger.info("----------------------")
         logger.info("start federated")

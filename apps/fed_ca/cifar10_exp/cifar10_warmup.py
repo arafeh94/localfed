@@ -1,18 +1,12 @@
 # mpiexec -n 11 python cifar10_nompi.py
 
 import logging
+import pickle
 import platform
 import sys
 from os.path import dirname
-
 from torch import nn
-
-from apps.extends.extends import MyUniqueDistributor
-from apps.fed_ca.cifar10_exp.cifar10_models import CNN_85
-from libs.model.collection import CNNCifar
-from libs.model.cv.cnn import CNN_DropOut, SimpleCNN, Cifar10Model, CNN32
-from libs.model.cv.resnet import resnet56, CNN_batch_norm_cifar10, CNN_Cifar10
-from libs.model.linear.lr import LogisticRegression
+from libs.model.cv.resnet import CNN_Cifar10
 from src import tools
 from src.apis import lambdas
 from src.data.data_distributor import UniqueDistributor
@@ -22,19 +16,23 @@ from src.federated.components.trainer_manager import SeqTrainerManager
 
 sys.path.append(dirname(__file__) + '../')
 
-from apps.fed_ca.utilities.hp_generator import generate_configs, build_random, calculate_max_rounds
+from apps.fed_ca.utilities.hp_generator import generate_configs, calculate_max_rounds
 from src.federated.components import metrics, client_selectors, aggregators, trainers
 from src.federated.federated import Events, FederatedLearning
 from src.federated.protocols import TrainerParams
 
+def load_warmup():
+    model = pickle.load(open("../utilities/warmup_model_cifar10_240.pkl", 'rb'))
+    return model
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-dist = UniqueDistributor(10, 300, 300)
+dist = UniqueDistributor(10, 6000, 6000)
 dataset_name = 'cifar10'
 
 client_data = preload(dataset_name, dist)
-dataset_used_wd = 'cifar10_' + dist.id()
+dataset_used_wd = 'cifar10_' + dist.id() + '_warmup_240'
 
 tools.detail(client_data)
 client_data = client_data.map(lambdas.reshape((-1, 32, 32, 3))).map(lambdas.transpose((0, 3, 1, 2)))
@@ -96,7 +94,7 @@ for model_name, gen_model in initial_models.items():
             # client_selector=client_selectors.All(),
             client_selector=client_selectors.Random(percentage_nb_client),
             trainers_data_dict=client_data,
-            initial_model=lambda: initial_model,
+            initial_model=lambda: load_warmup(),
             num_rounds=num_rounds,
             desired_accuracy=0.99
             # accepted_accuracy_margin=0.05
