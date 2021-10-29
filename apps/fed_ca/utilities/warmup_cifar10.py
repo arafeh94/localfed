@@ -31,21 +31,21 @@ train, test = client_data.reduce(lambdas.dict2dc).shuffle().as_tensor().split(0.
 tools.detail(train)
 tools.detail(test)
 
-model = CNN_Cifar10()
-model_name = 'CNN_Cifar10()'
-
-trainer = TorchModel(model)
-# gave 0.57 acc with 600 epochs 0.01 lr
-# gave 0.57 acc with 1000 epochs 0.01 lr
-# gave 0.6 acc with 600 epochs 0.1 lr
-
-learn_rate = 0.001
+learn_rates = [0.1, 0.001, 0.0001]
 epochs = 1
 batch_size = 100
-trainer.train(train.batch(batch_size), lr=learn_rate, epochs=epochs)
-acc, loss = trainer.infer(test.batch(batch_size))
-print(acc, loss)
-acc = round(acc, 4)
-file_name = 'warmup_' + dist.id() + '_' + model_name + '_lr_' + str(learn_rate) + '_e_' + str(epochs) + '_b_' + str(
-    batch_size) + '_acc_' + str(acc) + '.pkl'
-pickle.dump(model, open(file_name, 'wb'))
+for learn_rate in learn_rates:
+    model = CNN_Cifar10()
+    model_name = 'CNN_Cifar10()'
+
+    trainer = TorchModel(model)
+    # gave 0.57 acc with 600 epochs 0.01 lr
+    # gave 0.57 acc with 1000 epochs 0.01 lr
+    # gave 0.6 acc with 600 epochs 0.1 lr
+    trainer.train(train.batch(batch_size), lr=learn_rate, epochs=epochs)
+    acc, loss = trainer.infer(test.batch(batch_size))
+    acc = round(acc, 4)
+    file_name = 'warmup_' + dist.id() + '_' + model_name + '_lr_' + str(learn_rate) + '_e_' + str(epochs) + '_b_' + str(
+        batch_size) + '_acc_' + str(acc) + '.pkl'
+    print(file_name, '\n', 'acc = ', acc, ' loss = ', loss)
+    pickle.dump(model, open('cifar10_pretrained_models\\' + file_name, 'wb'))
