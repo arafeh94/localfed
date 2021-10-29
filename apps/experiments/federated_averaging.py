@@ -1,18 +1,14 @@
 import logging
 import sys
 
-from torch import nn
-
-from src.apis.rw import IODict
-from src.federated.subscribers import fed_plots
-from src.federated.subscribers.fed_plots import EMDWeightDivergence
-from src.federated.subscribers.logger import FederatedLogger
-from src.federated.subscribers.resumable import Resumable
-from src.federated.subscribers.sqlite_logger import SQLiteLogger
-from src.federated.subscribers.timer import Timer
-
 sys.path.append('../../')
 
+
+from torch import nn
+from src.federated.subscribers.fed_plots import EMDWeightDivergence
+from src.federated.subscribers.logger import FederatedLogger
+from src.federated.subscribers.sqlite_logger import SQLiteLogger
+from src.federated.subscribers.timer import Timer
 from src.data.data_distributor import LabelDistributor
 from src.data.data_loader import preload
 from libs.model.linear.lr import LogisticRegression

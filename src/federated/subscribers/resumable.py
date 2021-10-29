@@ -1,10 +1,5 @@
 import copy
 import logging
-import os
-import pickle
-
-from src import manifest
-from src.apis import checkpoints_utils
 from src.apis.rw import IODict
 from src.federated.events import FederatedEventPlug
 from src.federated.federated import FederatedLearning

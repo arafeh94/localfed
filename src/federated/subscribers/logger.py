@@ -1,5 +1,4 @@
 import logging
-
 from src import tools
 from src.federated.events import Events, FederatedEventPlug
 from src.federated.federated import FederatedLearning

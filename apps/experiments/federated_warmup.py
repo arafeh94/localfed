@@ -1,21 +1,18 @@
 import logging
 import sys
 
-from src.data.data_loader import preload
-from src.federated.subscribers.analysis import ShowWeightDivergence
-from src.federated.subscribers.logger import FederatedLogger
-from src.federated.subscribers.timer import Timer
 
 sys.path.append('../../')
 
-from typing import Callable
+from src.federated.subscribers.analysis import ShowWeightDivergence
+from src.federated.subscribers.logger import FederatedLogger
+from src.federated.subscribers.timer import Timer
 from torch import nn
 from src.apis import lambdas, files
 from src.apis.extensions import TorchModel
 from libs.model.linear.lr import LogisticRegression
 from src.data import data_loader
 from src.federated.components import metrics, client_selectors, aggregators, trainers
-from src.federated import subscribers
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams

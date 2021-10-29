@@ -11,12 +11,11 @@ DEFAULT_DIV_PATH = COMPARE_PATH + "div.pkl"
 DB_PATH = COMPARE_PATH + "history.db"
 __urls_datasets_links_ = None
 
-
-class WandbAuth:
-    key = '3c35c1f04ebc7ffc1825f3056a6aabe714a1ccdc'
-    project = 'geneticfed'
-    entity = 'arafeh'
-
+wandb_config = {
+    'key': '3c35c1f04ebc7ffc1825f3056a6aabe714a1ccdc',
+    'project': 'geneticfed',
+    'entity': 'arafeh',
+}
 
 datasets_urls = {
     "mnist10k": "https://www.dropbox.com/s/5zhudqpupg061of/mnist10k.zip?dl=1",
@@ -30,7 +29,3 @@ datasets_urls = {
     "signs": "https://www.dropbox.com/s/ni85ukowhs9ghkb/signs.zip?dl=1",
     "cifar10": "https://www.dropbox.com/s/2x8176jyrs6ydqi/cifar10.zip?dl=1"
 }
-
-
-def dataset_urls(dataset: str):
-    return datasets_urls[dataset]

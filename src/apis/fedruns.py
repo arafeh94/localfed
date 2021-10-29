@@ -1,8 +1,6 @@
 import logging
-import math
 from collections import defaultdict
 from typing import List, Dict
-
 import numpy as np
 from matplotlib import pyplot as plt
 

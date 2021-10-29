@@ -1,5 +1,4 @@
 from abc import abstractmethod, ABC
-from functools import reduce
 from typing import Dict, Tuple, List
 
 from torch import nn, Tensor

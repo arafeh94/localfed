@@ -1,5 +1,4 @@
 import typing
-from abc import ABC
 
 from src.apis.broadcaster import Subscriber
 

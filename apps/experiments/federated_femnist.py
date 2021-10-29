@@ -1,17 +1,15 @@
 import logging
 import sys
 
-from src.federated.subscribers.logger import FederatedLogger
-from src.federated.subscribers.timer import Timer
 
 sys.path.append('../../')
 from libs.model.cv.cnn import CNN_OriginalFedAvg
-
+from src.federated.subscribers.logger import FederatedLogger
+from src.federated.subscribers.timer import Timer
 from torch import nn
 from src.apis.mpi import Comm
 from src.data import data_loader
 from src.federated.components import metrics, client_selectors, aggregators, trainers
-from src.federated import subscribers
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams

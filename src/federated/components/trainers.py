@@ -1,13 +1,7 @@
-import logging
-import time
-from abc import ABC
 from typing import Tuple, Dict
 
 import torch
-from torch import nn, Tensor
-from torch.types import Device
-
-from src.apis.mpi import Comm
+from torch import nn
 from src.data.data_container import DataContainer
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import Trainer, TrainerParams

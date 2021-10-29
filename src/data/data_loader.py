@@ -1,12 +1,8 @@
-import json
 import os
 import pickle
 import typing
-
-import src
 from src import manifest
 import logging
-
 from src.apis.extensions import Dict
 from src.data.data_container import DataContainer
 from src.data.data_distributor import Distributor, LabelDistributor, SizeDistributor, UniqueDistributor
@@ -35,7 +31,7 @@ def preload(dataset, distributor: Distributor, tag=None) -> typing.Union[Dict[in
         return data
     else:
         logger.info('distributed data file does not exists, distributing...')
-        data = PickleDataProvider(manifest.dataset_urls(dataset)).collect()
+        data = PickleDataProvider(manifest.datasets_urls[dataset]).collect()
         if distributor:
             data = distributor.distribute(data)
         pickle.dump(data, open(file_path, 'wb'))

@@ -4,7 +4,6 @@ import os
 import pickle
 import typing
 from abc import abstractmethod
-from collections import defaultdict
 
 import numpy as np
 import torch

@@ -1,12 +1,11 @@
 # mpiexec -n 2 python distributed_averaging.py
 import sys
 from os.path import dirname
+sys.path.append(dirname(__file__) + '../../')
+
 
 from src.federated.subscribers.logger import FederatedLogger
 from src.federated.subscribers.timer import Timer
-
-sys.path.append(dirname(__file__) + '../../')
-
 from src.data import data_loader
 import logging
 from torch import nn
@@ -14,7 +13,6 @@ from src.federated.protocols import TrainerParams
 from src.apis.mpi import Comm
 from src.federated.components import metrics, client_selectors, aggregators, trainers
 from libs.model.linear.lr import LogisticRegression
-from src.federated import subscribers
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.components.trainer_manager import MPITrainerManager

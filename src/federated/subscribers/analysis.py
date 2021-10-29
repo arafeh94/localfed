@@ -3,13 +3,9 @@ import os
 import time
 from collections import defaultdict
 from typing import Dict
-
 import numpy as np
-from matplotlib import pyplot as plt
-from scipy.stats import wasserstein_distance
-
 from src import tools
-from src.apis import plots, files
+from src.apis import plots
 from src.data.data_container import DataContainer
 from src.federated.events import FederatedEventPlug
 

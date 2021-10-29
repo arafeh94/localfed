@@ -1,12 +1,8 @@
 import os
 import sys
-import typing
-from abc import ABC, abstractmethod
-from collections import defaultdict
-
+from abc import abstractmethod
 from matplotlib import pyplot as plt
 from scipy.stats import wasserstein_distance
-
 from src import tools
 from src.federated.events import FederatedEventPlug
 from src.federated.federated import FederatedLearning

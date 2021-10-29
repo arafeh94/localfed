@@ -1,11 +1,11 @@
 import logging
 import sys
 
+
+sys.path.append('../../')
 from src.federated.subscribers.logger import FederatedLogger
 from src.federated.subscribers.timer import Timer
 from src.federated.subscribers.wandb_logger import WandbLogger
-
-sys.path.append('../../')
 from torch import nn
 from src.data.data_distributor import LabelDistributor
 from src.data.data_loader import preload

@@ -1,7 +1,5 @@
 import copy
 import hashlib
-import inspect
-import os.path
 import random
 from datetime import date
 

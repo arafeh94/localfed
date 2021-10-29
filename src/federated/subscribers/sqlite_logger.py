@@ -1,14 +1,9 @@
-import atexit
 import logging
 import sqlite3
 
 from src import manifest
-from src.app import session
-from src.app.federated_app import FederatedApp
-from src.app.session import Session
 from src.federated.events import FederatedEventPlug
 from src.federated.federated import FederatedLearning
-from src.manifest import WandbAuth
 
 
 # noinspection SqlNoDataSourceInspection
