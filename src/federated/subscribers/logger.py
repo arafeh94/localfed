@@ -39,7 +39,8 @@ class FederatedLogger(FederatedEventPlug):
         self.logger.info(f"aggregation ended {params}")
 
     def on_round_end(self, params):
-        self.logger.info(f"round ended {params['context'].history}")
+        params = tools.Dict.but(['context'], params)
+        self.logger.info(f'federated learning ended {params}')
         self.logger.info("----------------------------------------")
 
     def on_round_start(self, params):
