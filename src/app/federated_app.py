@@ -13,6 +13,7 @@ from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
 from src.federated.subscribers.logger import FederatedLogger
 from src.federated.subscribers.resumable import Resumable
+from src.federated.subscribers.sqlite_logger import SQLiteLogger
 from src.federated.subscribers.timer import Timer
 
 logging.basicConfig(level=logging.INFO)
@@ -100,4 +101,5 @@ class FederatedApp:
             FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]),
             Timer([Timer.FEDERATED, Timer.ROUND]),
             Resumable(io=session.cache),
+            SQLiteLogger(session.session_id(), './log.db')
         ]

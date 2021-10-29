@@ -7,6 +7,8 @@ import tqdm
 from sklearn import decomposition
 from torch import nn
 import logging
+from src.data.data_container import DataContainer
+
 logger = logging.getLogger('tools')
 
 
