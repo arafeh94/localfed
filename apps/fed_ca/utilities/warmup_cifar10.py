@@ -18,7 +18,7 @@ from src.manifest import dataset_urls
 # client_data = data_loader.cifar10_10shards_100c_400min_400max()
 
 # total images per class is 6000. 5% is 300. 80% for training is 240, that's 4% of the data.
-dist = UniqueDistributor(10, 300, 300)
+dist = UniqueDistributor(10, 380, 380)
 dataset_name = 'cifar10'
 
 client_data = preload(dataset_name, dist)
@@ -32,10 +32,18 @@ tools.detail(train)
 tools.detail(test)
 
 model = CNN_Cifar10()
+model_name = 'CNN_Cifar10()'
 
 trainer = TorchModel(model)
 # gave 0.57 acc with 600 epochs
-trainer.train(train.batch(100), lr=0.01, epochs=600)
-acc, loss = trainer.infer(test.batch(100))
+# gave 0.57 acc with 1000 epochs
+# gave 0.6 acc with 600 epochs 0.1 lr
+
+learn_rate = 0.001
+epochs = 1
+batch_size = 100
+trainer.train(train.batch(batch_size), lr=learn_rate, epochs=epochs)
+acc, loss = trainer.infer(test.batch(batch_size))
 print(acc, loss)
-pickle.dump(model, open("warmup_model_cifar10_240.pkl", 'wb'))
+file_name = 'warmup_' + dist.id() + '_' + model_name + '_lr_' + str(learn_rate) + '_e_' + str(epochs) + '_b_' + str(batch_size) + '.pkl'
+pickle.dump(model, open(file_name, 'wb'))
