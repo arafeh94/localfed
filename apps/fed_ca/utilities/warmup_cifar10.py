@@ -35,8 +35,8 @@ model = CNN_Cifar10()
 model_name = 'CNN_Cifar10()'
 
 trainer = TorchModel(model)
-# gave 0.57 acc with 600 epochs
-# gave 0.57 acc with 1000 epochs
+# gave 0.57 acc with 600 epochs 0.01 lr
+# gave 0.57 acc with 1000 epochs 0.01 lr
 # gave 0.6 acc with 600 epochs 0.1 lr
 
 learn_rate = 0.001
@@ -45,5 +45,7 @@ batch_size = 100
 trainer.train(train.batch(batch_size), lr=learn_rate, epochs=epochs)
 acc, loss = trainer.infer(test.batch(batch_size))
 print(acc, loss)
-file_name = 'warmup_' + dist.id() + '_' + model_name + '_lr_' + str(learn_rate) + '_e_' + str(epochs) + '_b_' + str(batch_size) + '.pkl'
+acc = round(acc, 4)
+file_name = 'warmup_' + dist.id() + '_' + model_name + '_lr_' + str(learn_rate) + '_e_' + str(epochs) + '_b_' + str(
+    batch_size) + '_acc_' + str(acc) + '.pkl'
 pickle.dump(model, open(file_name, 'wb'))
