@@ -135,12 +135,15 @@ class Serializable:
         pickle.dump(to_save, open(self.file_path, 'wb'))
 
     def load(self):
-        if os.path.exists(self.file_path):
+        if self.exists():
             try:
                 for key, item in pickle.load(open(self.file_path, 'rb')).items():
                     self.__dict__[key] = item
             except Exception as e:
                 print(e)
+
+    def exists(self):
+        return os.path.exists(self.file_path)
 
     def sync(self, func, *params):
         self.load()

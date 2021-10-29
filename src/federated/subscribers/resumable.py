@@ -5,45 +5,29 @@ import pickle
 
 from src import manifest
 from src.apis import checkpoints_utils
+from src.apis.rw import IODict
 from src.federated.events import FederatedEventPlug
 from src.federated.federated import FederatedLearning
 
 
 class Resumable(FederatedEventPlug):
-    def __init__(self, id: str, cp_file_path=manifest.CHECKPOINTS_PATH, save_ratio=50,
-                 verbose=logging.INFO):
+    def __init__(self, io: IODict, save_ratio=5, verbose=logging.INFO):
         super().__init__()
         self.verbose = verbose
         self.logger = logging.getLogger('resumable')
         self.save_ratio = save_ratio
-        self.cp_file_path = cp_file_path
-        self.id = id
+        self.io = io
 
     def on_init(self, params):
-        if os.path.exists(self.cp_file_path):
-            checkpoints = checkpoints_utils.read(self.cp_file_path)
-            if self.id in checkpoints:
-                self.log(f'found a checkpoint [{self.id}], loading...')
-                loaded_context: FederatedLearning.Context = checkpoints[self.id]
-                context: FederatedLearning.Context = params['context']
-                federated = context.federated
-                context.__dict__ = loaded_context.__dict__
-                context.federated = federated
-            del checkpoints
-        else:
-            self.init_file(self.cp_file_path)
-
-    def init_file(self, cp_file_path):
-        writer = open(self.cp_file_path, 'wb')
-        pickle.dump({}, writer)
-        writer.close()
+        loaded_context: FederatedLearning.Context = self.io.read('context', absent_ok=True)
+        if loaded_context:
+            context: FederatedLearning.Context = params['context']
+            context.__dict__.update(loaded_context.__dict__)
 
     def _save(self, context):
         self.log('saving checkpoint...')
-        cps = checkpoints_utils.read(self.cp_file_path)
         context_copy = self.context_copy(context)
-        cps[self.id] = context_copy
-        checkpoints_utils.write(cps)
+        self.io.write('context', context_copy)
 
     def on_round_end(self, params):
         context: FederatedLearning.Context = params['context']

@@ -86,9 +86,9 @@ class FederatedLearning(Broadcaster):
         model_status = self.context.update_model(temporary_model, accuracy, self.accepted_accuracy_margin)
         self.broadcast(Events.ET_MODEL_STATUS, model_status=model_status, accuracy=accuracy)
         accuracy = accuracy if model_status else self.context.highest_accuracy()
+        self.context.store(acc=accuracy, loss=loss, local_acc=local_acc, local_loss=local_loss, status=model_status)
         self.broadcast(Events.ET_ROUND_FINISHED, round=self.context.round_id, accuracy=accuracy, loss=loss,
                        local_acc=local_acc, local_loss=local_loss)
-        self.context.store(acc=accuracy, loss=loss, local_acc=local_acc, local_loss=local_loss, status=model_status)
         self.context.new_round()
         is_done = self.context.stop(accuracy)
         if is_done:

@@ -14,8 +14,8 @@ DIVERGENCE_PATH = manifest.DEFAULT_DIV_PATH
 
 
 class AccuracyCompare(Serializable):
-    def __init__(self):
-        super().__init__(ACCURACY_PATH)
+    def __init__(self, path=ACCURACY_PATH):
+        super().__init__(path)
         self.accuracies = {}
         self.load()
 
@@ -41,17 +41,23 @@ class AccuracyCompare(Serializable):
             for tag, vals in self.accuracies.items():
                 is_not_filtered = False if filter is None else filter(tag)
                 if vals is not None and is_not_filtered:
+                    if len(vals) > 500:
+                        vals = vals[0:500]
                     accs[tag] = vals
             return accs
 
     def show_saved_accuracy_plot(self, filter: typing.Callable[[str], bool] = None, title=None, smooth=True):
+        self.show_saved_accuracy_plot_acc(self.get_saved_accuracy(filter))
+
+    def show_saved_accuracy_plot_acc(self, accs, title=None, smooth=True):
         colors = {'cluster': '#AA4499', 'basic': '#DDCC77', 'genetic': 'blue', 'warmup': '#117733'}
         line = {'cluster': ':', 'basic': '--', 'genetic': '', 'warmup': '-,'}
-        accs = self.get_saved_accuracy(filter)
         if len(accs) < 1:
             return
         last_tag: str = None
         for tag, vals in accs.items():
+            if 'cluster' in tag:
+                continue
             tag: str
             label = tag.split('_')[0].capitalize()
             vals = gaussian_filter1d(vals, sigma=2) if smooth else vals
@@ -63,7 +69,9 @@ class AccuracyCompare(Serializable):
         last_tag = " - ".join(map(lambda s: s.upper(), last_tag.split('_')[1:]))
         last_tag = last_tag.replace("- LR01", "").replace("E", "E: ").replace("B", "B: ") \
             .replace('- R', '- R: ').replace('- S', "- Ψ: ").replace('CR', 'CR: ') \
-            .replace('01', '0.1').replace('05', '0.5').replace('02', '0.2').replace('CR: 10', 'CR: 1')
+            .replace('01', '0.1').replace('05', '0.5').replace('02', '0.2').replace('CR: 10', 'CR: 1') \
+            .replace('1000', '500').replace('9999', '∞').replace('999', '∞').replace('0.2', '0.1').replace('0.00.1',
+                                                                                                           '0.001')
         title = last_tag if title is None else title
         plt.ylim()
         plt.title(title)
@@ -73,8 +81,8 @@ class AccuracyCompare(Serializable):
 
 
 class DivergenceCompare(Serializable):
-    def __init__(self):
-        super().__init__(DIVERGENCE_PATH)
+    def __init__(self, path=DIVERGENCE_PATH):
+        super().__init__(path)
         self.divergences = {}
         self.load()
 
@@ -84,8 +92,12 @@ class DivergenceCompare(Serializable):
     def append(self, tag, val):
         self.sync(self._append, tag, val)
 
-    def save_divergence(self, div_evolution_list, tag):
-        self.append(tag, div_evolution_list)
+    def save_divergence(self, federated_learning, tag):
+        def reducer(first, key, val):
+            return [val['wd']] if first is None else np.append(first, val['wd'])
+
+        all_div = federated_learning.context.history.reduce(reducer)
+        self.append(tag, all_div)
 
     def get_saved_divergences(self, filter: typing.Callable[[str], bool] = None):
         self.load()

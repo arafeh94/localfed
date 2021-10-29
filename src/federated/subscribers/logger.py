@@ -2,6 +2,7 @@ import logging
 
 from src import tools
 from src.federated.events import Events, FederatedEventPlug
+from src.federated.federated import FederatedLearning
 
 
 class FederatedLogger(FederatedEventPlug):
@@ -18,8 +19,9 @@ class FederatedLogger(FederatedEventPlug):
         self.logger.info('federated learning started')
 
     def on_federated_ended(self, params):
-        params = tools.Dict.but(['context'], params)
-        self.logger.info(f'federated learning ended {params}')
+        context: FederatedLearning.Context = params['context']
+        self.logger.info(f'federated learning ended')
+        self.logger.info(f'"""final accuracy {context.latest_accuracy()}"""')
 
     def on_init(self, params):
         params = tools.Dict.but(['context'], params)
@@ -38,8 +40,7 @@ class FederatedLogger(FederatedEventPlug):
         self.logger.info(f"aggregation ended {params}")
 
     def on_round_end(self, params):
-        params = tools.Dict.but(['context'], params)
-        self.logger.info(f"round ended {params}")
+        self.logger.info(f"round ended {params['context'].history}")
         self.logger.info("----------------------------------------")
 
     def on_round_start(self, params):
@@ -59,7 +60,7 @@ class FederatedLogger(FederatedEventPlug):
         self.logger.info(f"model status: {params}")
 
     def force(self) -> []:
-        return [Events.ET_FED_START, Events.ET_MODEL_STATUS]
+        return [Events.ET_FED_START, Events.ET_MODEL_STATUS, Events.ET_FED_END]
 
     def on_trainers_selected(self, params):
         params = tools.Dict.but(['context'], params)

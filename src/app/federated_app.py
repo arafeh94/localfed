@@ -21,69 +21,83 @@ logging.basicConfig(level=logging.INFO)
 class FederatedApp:
     def __init__(self, settings: Settings):
         self.settings = settings
-        self.session = Session(settings)
-        self.distributor = settings.get('distributor', absent_ok=False)
-        self.dataset_name = settings.get('dataset', absent_ok=False)
-        self.model = settings.get('model', absent_ok=False)
-        self.trainer_params = TrainerParams(
-            trainer_class=settings.get('trainer_class') or trainers.TorchTrainer,
-            batch_size=settings.get('batch_size', absent_ok=False),
-            epochs=settings.get('epochs', absent_ok=False),
-            optimizer=settings.get('optimizer') or 'sgd',
-            criterion=settings.get('criterion') or 'cel',
-            lr=settings.get('lr', absent_ok=False)
-        )
-        self.aggregator = aggregators.AVGAggregator()
-        self.metric = metrics.AccLoss(batch_size=self.settings.get('batch_size', absent_ok=False),
-                                      criterion=nn.CrossEntropyLoss(), device=self.settings.get('device') or None)
-        self.selector = client_selectors.Random(self.settings.get('client_ratio', absent_ok=False))
         self.logger = logging.getLogger('main')
-        self.subscribers: list = self.settings.get('subscribers', absent_ok=True)
-        self._check_subscribers()
+        self.log_level = settings.get('log_level', absent_ok=True) or logging.INFO
 
-    def _attach_subscribers(self, federated: FederatedLearning):
-        self.logger.info('attaching subscribers...')
-        for subs in self.subscribers:
-            self.logger.info(f'attaching: {type(subs)}')
-            federated.add_subscriber(subs)
-
-    def default_subscribers(self):
-        return [
-            FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]),
-            Timer([Timer.FEDERATED, Timer.ROUND]),
-            Resumable(id=self.session.session_id(), save_ratio=5),
-        ]
-
-    def start_with_subscribers(self, subscribers=None):
-        distributed_data = preload(self.dataset_name, self.distributor)
+    def init_federated(self, session):
+        distributor = self.settings.get('distributor', absent_ok=False)
+        dataset_name = self.settings.get('dataset', absent_ok=False)
+        model = self.settings.get('model', absent_ok=False)
+        trainer_params = TrainerParams(
+            trainer_class=self.settings.get('trainer_class') or trainers.TorchTrainer,
+            batch_size=self.settings.get('batch_size', absent_ok=False),
+            epochs=self.settings.get('epochs', absent_ok=False),
+            optimizer=self.settings.get('optimizer') or 'sgd',
+            criterion=self.settings.get('criterion') or 'cel',
+            lr=self.settings.get('lr', absent_ok=False)
+        )
+        aggregator = self.settings.get('aggregator') or aggregators.AVGAggregator()
+        metric = metrics.AccLoss(batch_size=self.settings.get('batch_size', absent_ok=False),
+                                 criterion=nn.CrossEntropyLoss(), device=self.settings.get('device') or None)
+        selector = client_selectors.Random(self.settings.get('client_ratio', absent_ok=False))
+        distributed_data = preload(dataset_name, distributor)
         federated = FederatedLearning(
             trainer_manager=SeqTrainerManager(),
-            trainer_config=self.trainer_params,
-            aggregator=self.aggregator,
-            metrics=self.metric,
-            client_selector=self.selector,
+            trainer_config=trainer_params,
+            aggregator=aggregator,
+            metrics=metric,
+            client_selector=selector,
             trainers_data_dict=distributed_data,
-            initial_model=lambda: self.model,
+            initial_model=lambda: model,
             num_rounds=self.settings.get('rounds'),
             desired_accuracy=0.99,
             accepted_accuracy_margin=self.settings.get('accepted_accuracy_margin') or -1,
         )
-        if subscribers is not None:
-            self.subscribers.extend(subscribers)
-        self._attach_subscribers(federated)
+        return federated
+
+    def start_with_subscribers(self, subscribers=None):
+        if subscribers and not isinstance(subscribers, list):
+            subscribers = [subscribers]
+
+        session = Session(self.settings)
+        federated = self.init_federated(session)
+        configs_subscribers: list = session.settings.get('subscribers', absent_ok=True)
+        subscribers = configs_subscribers + subscribers if subscribers else configs_subscribers
+        self._attach_subscribers(federated, subscribers, session)
+
         federated.start()
 
     def start(self):
         self.start_with_subscribers(None)
 
-    def _check_subscribers(self):
-        if self.subscribers is None:
-            self.subscribers = self.default_subscribers()
-        if len(self.subscribers) == 0:
+    def start_all(self, subscribers=None):
+        for index, st in enumerate(self.settings):
+            self.logger.info(f'starting config {index}: {str(st.get_config())}')
+            self.start_with_subscribers(subscribers)
+
+    def _attach_subscribers(self, federated: FederatedLearning, subscribers, session):
+        self.logger.info('attaching subscribers...')
+        subscribers = self._check_subscribers(subscribers, session)
+        for subs in subscribers:
+            self.logger.info(f'attaching: {type(subs)}')
+            federated.add_subscriber(subs)
+
+    def _check_subscribers(self, subscribers, session):
+        if subscribers is None:
+            subscribers = self._default_subscribers(session)
+        if len(subscribers) == 0:
             return
-        if self.subscribers[0] == '..':
-            self.subscribers.pop(0)
-            self.subscribers = self.default_subscribers() + self.subscribers
-        for subscriber in self.subscribers:
+        if subscribers[0] == '..':
+            subscribers.pop(0)
+            subscribers = self._default_subscribers(session) + subscribers
+        for subscriber in subscribers:
             if not isinstance(subscriber, Subscriber):
                 raise Exception(f'unsupported subscriber of type {type(subscriber)}')
+        return subscribers
+
+    def _default_subscribers(self, session):
+        return [
+            FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]),
+            Timer([Timer.FEDERATED, Timer.ROUND]),
+            Resumable(io=session.cache),
+        ]

@@ -8,6 +8,7 @@ COMPARE_PATH = ROOT_PATH + "/compares/"
 CHECKPOINTS_PATH = f'{ROOT_PATH}/checkpoints.fed'
 DEFAULT_ACC_PATH = COMPARE_PATH + "acc.pkl"
 DEFAULT_DIV_PATH = COMPARE_PATH + "div.pkl"
+DB_PATH = COMPARE_PATH + "history.db"
 __urls_datasets_links_ = None
 
 
