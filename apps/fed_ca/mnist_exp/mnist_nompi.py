@@ -38,7 +38,7 @@ percentage_nb_client = 0.2
 initial_models = {
     'LR': LogisticRegression(input_shape, labels_number),
     # 'MLP': MLP(input_shape, labels_number)
-    # 'CNN_OriginalFedAvg': CNN_OriginalFedAvg()
+    'CNN_OriginalFedAvg': CNN_OriginalFedAvg()
     # 'CNN': CNN_DropOut(False)
 }
 for model_name, gen_model in initial_models.items():
