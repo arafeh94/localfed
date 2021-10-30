@@ -1,9 +1,15 @@
+import hashlib
 import typing
 
 
 def smooth(vals, sigma=2):
     from scipy.ndimage import gaussian_filter1d
     return list(gaussian_filter1d(vals, sigma=sigma))
+
+
+def hash_string(string: str):
+    full_hash = str.encode(str)
+    hashed = hashlib.md5(full_hash).hexdigest()
 
 
 # noinspection PyUnresolvedReferences

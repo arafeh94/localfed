@@ -3,6 +3,7 @@ import hashlib
 import random
 from datetime import date
 
+from src.apis import utils
 from src.app.cache import Cache
 from src.app.settings import Settings
 
@@ -23,8 +24,7 @@ class Session:
         config_copy = copy.deepcopy(self.settings.get_config())
         if 'rounds' in config_copy:
             del config_copy['rounds']
-        full_hash = str.encode(str(config_copy))
-        hashed = hashlib.md5(full_hash).hexdigest()
+        hashed = utils.hash_string(str(config_copy))
         return hashed
 
     def _generate_id(self):
