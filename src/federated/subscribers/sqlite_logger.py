@@ -1,6 +1,7 @@
 import logging
 import re
 import sqlite3
+from sqlite3 import OperationalError
 
 from src import manifest
 from src.federated.events import FederatedEventPlug
@@ -14,24 +15,29 @@ class SQLiteLogger(FederatedEventPlug):
         self.id = id
         self.con = sqlite3.connect(db_path)
         self.check_table_creation = True
-        self.logger = logging.getLogger('sqlite')
+        self._logger = logging.getLogger('sqlite')
         self.tag = str(tag)
+        self._check_table_name()
 
     def on_federated_started(self, params):
+        self.init()
+
+    def init(self):
         query = 'create table if not exists session (session_id text primary key, config text)'
         self._execute(query)
         query = f"insert or ignore into session values (?,?)"
         self._execute(query, [self.id, self.tag])
 
-    def _create_table(self, params):
+    def _create_table(self, **kwargs):
         if self.check_table_creation:
             self.check_table_creation = False
+            params = self._extract_params(**kwargs)
             sub_query = ''
             for param in params:
                 sub_query += f'{param[0]} {param[1]},'
             sub_query = sub_query.rstrip(',')
             query = f'''
-            create table if not exists {self.id}(
+            create table if not exists {self.id} (
                 {sub_query}
             )
             '''
@@ -45,14 +51,14 @@ class SQLiteLogger(FederatedEventPlug):
 
     def _execute(self, query, params=None):
         cursor = self.con.cursor()
-        self.logger.debug(f'executing {query}')
+        self._logger.debug(f'executing {query}')
         if params:
             cursor.execute(query, params)
         else:
             cursor.execute(query)
         self.con.commit()
 
-    def _extract_params(self, history):
+    def _extract_params(self, **kwargs):
         def param_map(val):
             if isinstance(val, int):
                 return 'INTEGER'
@@ -64,14 +70,22 @@ class SQLiteLogger(FederatedEventPlug):
                 return 'text'
 
         params = [('round_id', 'INTEGER PRIMARY KEY')]
-        for key, val in history[list(history.keys())[0]].items():
+        for key, val in kwargs.items():
             params.append((key, param_map(val)))
         return params
 
+    def log(self, round_id, **kwargs):
+        self._create_table(**kwargs)
+        record = {'round_id': round_id, **kwargs}
+        self._insert(record)
+
     def on_round_end(self, params):
         context: FederatedLearning.Context = params['context']
-        history: dict = context.history
-        history_columns = self._extract_params(history)
-        self._create_table(history_columns)
-        last_inserted = {'round_id': context.round_id, **history[list(history.keys())[-1]]}
-        self._insert(last_inserted)
+        last_record: dict = context.history[list(context.history.keys())[-1]]
+        self.log(context.round_id, **last_record)
+
+    def _check_table_name(self):
+        if self.id is None:
+            self.id = 'None'
+        if self.id[0].isdigit():
+            self.id = f't{self.id}'

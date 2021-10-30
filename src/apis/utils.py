@@ -8,8 +8,8 @@ def smooth(vals, sigma=2):
 
 
 def hash_string(string: str):
-    full_hash = str.encode(str)
-    hashed = hashlib.md5(full_hash).hexdigest()
+    full_hash = str.encode(string)
+    return hashlib.md5(full_hash).hexdigest()
 
 
 # noinspection PyUnresolvedReferences
