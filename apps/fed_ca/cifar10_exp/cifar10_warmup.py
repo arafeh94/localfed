@@ -22,7 +22,7 @@ from src.federated.federated import Events, FederatedLearning
 from src.federated.protocols import TrainerParams
 
 def load_warmup():
-    model = pickle.load(open("../utilities/warmup_model_cifar10_240.pkl", 'rb'))
+    model = pickle.load(open("../utilities/cifar10_pretrained_models/warmup_unique_10c_380mn_380mx_CNN_Cifar10()_lr_0.1_e_600_b_100_acc_0.6513.pkl", 'rb'))
     return model
 
 logging.basicConfig(level=logging.INFO)
@@ -32,7 +32,7 @@ dist = UniqueDistributor(10, 6000, 6000)
 dataset_name = 'cifar10'
 
 client_data = preload(dataset_name, dist)
-dataset_used_wd = 'cifar10_' + dist.id() + '_warmup_240'
+dataset_used_wd = 'cifar10_' + dist.id() + '_warmup_300'
 
 tools.detail(client_data)
 client_data = client_data.map(lambdas.reshape((-1, 32, 32, 3))).map(lambdas.transpose((0, 3, 1, 2)))
@@ -64,7 +64,7 @@ initial_models = {
 
 for model_name, gen_model in initial_models.items():
 
-    hyper_params = {'batch_size': [100], 'epochs': [1], 'num_rounds': [800], 'learn_rate': [0.01]}
+    hyper_params = {'batch_size': [100], 'epochs': [1], 'num_rounds': [800], 'learn_rate': [0.1]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 
@@ -96,8 +96,8 @@ for model_name, gen_model in initial_models.items():
             trainers_data_dict=client_data,
             initial_model=lambda: load_warmup(),
             num_rounds=num_rounds,
-            desired_accuracy=0.99
-            # accepted_accuracy_margin=0.05
+            desired_accuracy=0.99,
+            accepted_accuracy_margin=0.15
         )
 
         # use flush=True if you don't want to continue from the last round
