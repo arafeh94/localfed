@@ -1,17 +1,11 @@
-import copy
+import logging
 import logging
 import pickle
-import sys
 
 from libs.model.cv.cnn import CNN_OriginalFedAvg
-from libs.model.linear.lr import LogisticRegression
 from src.apis import lambdas
 from src.apis.extensions import TorchModel
-from src.data import data_loader, data_generator
-from src.data.data_generator import DataGenerator
-from src.data.data_provider import PickleDataProvider
-from src.federated.components.trainers import TorchTrainer
-from src.manifest import dataset_urls
+from src.data import data_generator
 
 logging.basicConfig(level=logging.INFO)
 clients_data = data_generator.load("../../../datasets/pickles/femnist_62c_200mn_200mx.pkl").distributed

@@ -32,13 +32,13 @@ client_data = client_data.reduce(lambdas.dict2dc).shuffle().as_tensor()
 validate, client_data = client_data.split(0.2)
 train, test = client_data.split(0.8)
 
-tools.detail(train)
-tools.detail(test)
+# tools.detail(train)
+# tools.detail(test)
 
 models = {}
 
 learn_rates = [0.1, 0.01, 0.001, 0.0001]
-epochs = 600
+epochs = 1
 batch_size = 100
 for learn_rate in learn_rates:
     model = CNN_Cifar10()
@@ -47,13 +47,15 @@ for learn_rate in learn_rates:
     trainer = TorchModel(model)
     trainer.train(train.batch(batch_size), lr=learn_rate, epochs=epochs)
     acc, loss = trainer.infer(test.batch(batch_size))
+    acc_val, loss_eval = tools.infer(model, validate.batch(batch_size))
     acc = round(acc, 4)
     loss = round(loss, 4)
+    acc_val = round(acc_val, 4)
     file_name = 'warmup_' + dist.id() + '_' + model_name + '_lr_' + str(learn_rate) + '_e_' + str(epochs) + '_b_' + str(
-        batch_size) + '_acc_' + str(acc) + '.pkl'
-    print(file_name, '\n', 'acc = ', acc, ' loss = ', loss)
-    print('Validating results = ', tools.infer(model, validate.batch(batch_size)))
-    # pickle.dump(model, open('cifar10_pretrained_models\\' + file_name, 'wb'))
+        batch_size) + '_acc_' + str(acc) +  '_val_' + str(acc_val) + '.pkl'
+
+    print(file_name, '\n', 'acc = ', acc, 'acc_val = ', str(acc_val), ' loss = ', loss)
+    pickle.dump(model, open('cifar10_pretrained_models\\' + file_name, 'wb'))
     # models[str(learn_rate)] = model
 
 

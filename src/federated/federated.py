@@ -72,8 +72,8 @@ class FederatedLearning(Broadcaster):
             return self.is_finished
         self.broadcast(Events.ET_ROUND_START, round=self.context.round_id)
         trainers_ids = self.client_selector.select(list(self.trainers_data_dict.keys()), self.context)
-        if len(trainers_ids) == 0:
-            Exception('no client selected for the current rounds')
+        if len(trainers_ids) > 0:
+            raise Exception('no client selected for the current rounds')
         self.broadcast(Events.ET_TRAINER_SELECTED, trainers_ids=trainers_ids)
         trainers_train_data = tools.dict_select(trainers_ids, self.trainers_train)
         self.broadcast(Events.ET_TRAIN_START, trainers_data=trainers_train_data)
