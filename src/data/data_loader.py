@@ -11,7 +11,8 @@ from src.data.data_provider import PickleDataProvider
 logger = logging.getLogger('data_loader')
 
 
-def preload(dataset, distributor: Distributor, tag=None) -> typing.Union[Dict[int, DataContainer], DataContainer]:
+def preload(dataset, distributor: Distributor = None, tag=None) -> typing.Union[
+    Dict[int, DataContainer], DataContainer]:
     """
     Args:
         tag: file name without postfix (file type, auto-filled with .pkl)
