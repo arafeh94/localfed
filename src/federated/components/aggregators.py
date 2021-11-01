@@ -27,4 +27,3 @@ class AVGAggregator(Aggregator):
                     averaged_params[k] += local_model_params[k] * w
 
         return averaged_params
-

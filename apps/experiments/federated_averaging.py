@@ -46,7 +46,7 @@ federated = FederatedLearning(
 federated.add_subscriber(FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
 federated.add_subscriber(EMDWeightDivergence(show_plot=False))
-federated.add_subscriber(SQLiteLogger('avg_2'))
+# federated.add_subscriber(SQLiteLogger('avg_2'))
 # federated.add_subscriber(Resumable(IODict('./saved_models/test_avg'), save_ratio=1))
 # federated.add_subscriber(fed_plots.RoundAccuracy(plot_ratio=0))
 logger.info("----------------------")

@@ -20,14 +20,14 @@ class FederatedLearning(Broadcaster):
     def __init__(self, trainer_manager: TrainerManager, trainer_config: TrainerParams, aggregator: Aggregator,
                  client_selector: ClientSelector, metrics: ModelInfer, trainers_data_dict: Dict[int, DataContainer],
                  initial_model: callable, num_rounds=10, desired_accuracy=0.9, train_ratio=0.8,
-                 accepted_accuracy_margin=False, test_data: DataContainer = None, **kwargs):
+                 accepted_accuracy_margin=False, test_data: DataContainer = None, zero_client_exception=True, **kwargs):
         super().__init__()
         self.trainer_config = trainer_config
         self.trainer_manager = trainer_manager
         self.aggregator = aggregator
         self.client_selector = client_selector
         self.metrics = metrics
-        self.accepted_accuracy_margin = accepted_accuracy_margin
+        self.aam = accepted_accuracy_margin
         self.trainers_data_dict = trainers_data_dict
         self.desired_accuracy = desired_accuracy
         self.initial_model = initial_model
@@ -40,6 +40,7 @@ class FederatedLearning(Broadcaster):
         self.test_data = test_data
         self.trainers_train = self.trainers_data_dict
         self.is_finished = False
+        self.zero_client_exception = zero_client_exception
         self.logger = logging.getLogger('FederatedLearning')
         if self.test_data is None:
             self.test_data = {}
@@ -72,23 +73,32 @@ class FederatedLearning(Broadcaster):
             return self.is_finished
         self.broadcast(Events.ET_ROUND_START, round=self.context.round_id)
         trainers_ids = self.client_selector.select(list(self.trainers_data_dict.keys()), self.context)
-        if len(trainers_ids) == 0:
-            Exception('no client selected for the current rounds')
-        self.broadcast(Events.ET_TRAINER_SELECTED, trainers_ids=trainers_ids)
-        trainers_train_data = tools.dict_select(trainers_ids, self.trainers_train)
-        self.broadcast(Events.ET_TRAIN_START, trainers_data=trainers_train_data)
-        trainers_weights, sample_size_dict = self.train(trainers_train_data)
-        self.broadcast(Events.ET_TRAIN_END, trainers_weights=trainers_weights, sample_size=sample_size_dict)
-        global_weights = self.aggregator.aggregate(trainers_weights, sample_size_dict, self.context.round_id)
-        temporary_model = self.context.model_copy(global_weights)
-        self.broadcast(Events.ET_AGGREGATION_END, global_weights=global_weights, global_model=self.context.model)
-        accuracy, loss, local_acc, local_loss = self.infer(temporary_model, self.test_data)
-        model_status = self.context.update_model(temporary_model, accuracy, self.accepted_accuracy_margin)
-        self.broadcast(Events.ET_MODEL_STATUS, model_status=model_status, accuracy=accuracy)
-        accuracy = accuracy if model_status else self.context.highest_accuracy()
-        self.context.store(acc=accuracy, loss=loss, local_acc=local_acc, local_loss=local_loss, status=model_status)
-        self.broadcast(Events.ET_ROUND_FINISHED, round=self.context.round_id, accuracy=accuracy, loss=loss,
-                       local_acc=local_acc, local_loss=local_loss)
+        if len(trainers_ids) > 0:
+            self.broadcast(Events.ET_TRAINER_SELECTED, trainers_ids=trainers_ids)
+            trainers_train_data = tools.dict_select(trainers_ids, self.trainers_train)
+            self.broadcast(Events.ET_TRAIN_START, trainers_data=trainers_train_data)
+            trainers_weights, sample_size_dict = self.train(trainers_train_data)
+            self.broadcast(Events.ET_TRAIN_END, trainers_weights=trainers_weights, sample_size=sample_size_dict)
+            global_weights = self.aggregator.aggregate(trainers_weights, sample_size_dict, self.context.round_id)
+            temporary_model = self.context.model_copy(global_weights)
+            self.broadcast(Events.ET_AGGREGATION_END, global_weights=global_weights, global_model=self.context.model)
+            accuracy, loss, local_acc, local_loss = self.infer(temporary_model, self.test_data)
+            model_status = self.context.update_model(temporary_model, accuracy, self.aam)
+            self.broadcast(Events.ET_MODEL_STATUS, model_status=model_status, accuracy=accuracy)
+            accuracy = accuracy if model_status else self.context.highest_accuracy()
+            self.context.store(acc=accuracy, loss=loss, local_acc=local_acc, local_loss=local_loss, status=model_status)
+            self.broadcast(Events.ET_ROUND_FINISHED, round=self.context.round_id, accuracy=accuracy, loss=loss,
+                           local_acc=local_acc, local_loss=local_loss)
+        else:
+            if self.zero_client_exception:
+                raise Exception('no client selected for the current rounds')
+            self.broadcast(Events.ET_MODEL_STATUS, model_status=False, accuracy=0)
+            accuracy = self.context.latest_accuracy()
+            loss = self.context.latest_loss()
+            self.context.store(acc=accuracy, loss=loss, local_acc={}, local_loss={}, status=False)
+            self.broadcast(Events.ET_ROUND_FINISHED, round=self.context.round_id, accuracy=accuracy, loss=loss,
+                           local_acc={}, local_loss={})
+
         self.context.new_round()
         is_done = self.context.stop(accuracy)
         if is_done:
@@ -155,7 +165,7 @@ class FederatedLearning(Broadcaster):
             'aggregator': self.aggregator,
             'client_selector': self.client_selector,
             'metrics': self.metrics,
-            'accepted_accuracy_margin': self.accepted_accuracy_margin,
+            'accepted_accuracy_margin': self.aam,
             'trainers_data_dict': self.trainers_data_dict,
             'desired_accuracy': self.desired_accuracy,
             'initial_model': self.initial_model,
@@ -201,6 +211,11 @@ class FederatedLearning(Broadcaster):
             if len(self.history) == 0:
                 return 0
             return self.history[list(self.history)[-1]]['acc']
+
+        def latest_loss(self):
+            if len(self.history) == 0:
+                return 0
+            return self.history[list(self.history)[-1]]['loss']
 
         def stop(self, acc: float):
             return (0 < self.federated.num_rounds <= self.round_id) or acc >= self.federated.desired_accuracy

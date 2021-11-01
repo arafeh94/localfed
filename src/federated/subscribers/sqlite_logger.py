@@ -25,7 +25,7 @@ class SQLiteLogger(FederatedEventPlug):
     def init(self):
         query = 'create table if not exists session (session_id text primary key, config text)'
         self._execute(query)
-        query = f"insert or ignore into session values (?,?)"
+        query = f"insert or replace into session values (?,?)"
         self._execute(query, [self.id, self.tag])
 
     def _create_table(self, **kwargs):
@@ -45,7 +45,7 @@ class SQLiteLogger(FederatedEventPlug):
 
     def _insert(self, params):
         sub_query = ' '.join(['?,' for _ in range(len(params))]).rstrip(',')
-        query = f'insert OR IGNORE into {self.id} values ({sub_query})'
+        query = f'insert OR replace into {self.id} values ({sub_query})'
         values = list(map(lambda v: str(v) if isinstance(v, (list, dict)) else v, params.values()))
         self._execute(query, values)
 

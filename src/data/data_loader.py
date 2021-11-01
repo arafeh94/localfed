@@ -47,6 +47,10 @@ def cifar10_10shards_100c_400min_400max() -> Dict[int, DataContainer]:
     return preload('cifar10', LabelDistributor(100, 10, 400, 400))
 
 
+def cifar10_10shards_100c_600min_600max() -> Dict[int, DataContainer]:
+    return preload('cifar10', LabelDistributor(100, 10, 600, 600))
+
+
 def mnist_2shards_100c_600min_600max() -> Dict[int, DataContainer]:
     return preload('mnist', LabelDistributor(100, 2, 600, 600))
 

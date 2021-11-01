@@ -56,6 +56,7 @@ class LocalAccuracy(BasePlotter):
 
     def round_plot(self, params) -> plt:
         plt.bar(params['local_acc'].keys(), params['local_acc'].values())
+        plt.title('Local Accuracy')
         return plt
 
     def save_file_name(self, context: FederatedLearning.Context):
@@ -69,6 +70,7 @@ class RoundAccuracy(BasePlotter):
         for round_id, item in history.items():
             acc.append(item['acc'])
         plt.plot(acc)
+        plt.title('Round Accuracy')
         return plt
 
     def final_plot(self, params):
@@ -81,6 +83,7 @@ class RoundAccuracy(BasePlotter):
 class LocalLoss(BasePlotter):
     def round_plot(self, params) -> plt:
         plt.bar(params['local_loss'].keys(), params['local_loss'].values())
+        plt.title('Local Loss')
         return plt
 
     def save_file_name(self, context: FederatedLearning.Context):
@@ -96,6 +99,7 @@ class RoundLoss(BasePlotter):
         history = params['context'].history
         for round_id, item in history.items():
             acc.append(item['loss'])
+        plt.title('Round Loss')
         plt.plot(acc)
         return plt
 
@@ -130,6 +134,7 @@ class EMDWeightDivergence(BasePlotter):
         for round_id, item in history.items():
             wd.append(item['wd'])
         plt.plot(wd)
+        plt.title('EMD Weight Divergence')
         return plt
 
     def final_plot(self, params):
