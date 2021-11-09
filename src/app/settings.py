@@ -91,19 +91,43 @@ class Settings:
         return immutable_multi_configs
 
     def get(self, key, absent_ok=True) -> typing.Any:
-        if key not in self.configs[self.cursor]:
+        try:
+            val = self._extract(key)
+            return self._create(val)
+        except Exception as e:
             if absent_ok:
                 return None
-            raise Exception(f'key {key} does not exists')
-        return self._create(self.configs[self.cursor][key])
+            else:
+                raise e
+
+    def _extract(self, key: str, absent_ok=False):
+        if '.' in key:
+            paths = key.split('.')
+            level = self.get_config()
+            for path in paths:
+                if path in level:
+                    level = level[path]
+                else:
+                    raise KeyError(paths)
+            return level
+        if key not in self.get_config():
+            raise KeyError(key)
+        return self.get_config()[key]
+
+    def _has_children(self, level):
+        if isinstance(level, dict):
+            if ('class' in level) or ('refer' in level):
+                return False
+            return True
+        return False
 
     def __len__(self):
         return len(self.configs)
 
     def _create(self, obj) -> typing.Any:
         if isinstance(obj, dict):
-            if 'class_ref' in obj:
-                class_ref = obj.get('class_ref')
+            if 'refer' in obj:
+                class_ref = obj.get('refer')
                 return Clazz(class_ref).refer()
             if 'class' in obj:
                 class_name = obj.get('class')

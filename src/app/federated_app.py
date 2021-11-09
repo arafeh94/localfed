@@ -26,9 +26,11 @@ class FederatedApp:
         self.log_level = settings.get('log_level', absent_ok=True) or logging.INFO
 
     def init_federated(self, session):
-        distributor = self.settings.get('distributor', absent_ok=False)
-        dataset_name = self.settings.get('dataset', absent_ok=False)
+        distributor = self.settings.get('data.distributor', absent_ok=False)
+        dataset_name = self.settings.get('data.dataset', absent_ok=False)
+        transformer = self.settings.get('data.transformer', absent_ok=True)
         model = self.settings.get('model', absent_ok=False)
+        desired_accuracy = self.settings.get('desired_accuracy', absent_ok=True) or 0.99
         trainer_params = TrainerParams(
             trainer_class=self.settings.get('trainer_class') or trainers.TorchTrainer,
             batch_size=self.settings.get('batch_size', absent_ok=False),
@@ -41,9 +43,9 @@ class FederatedApp:
         metric = metrics.AccLoss(batch_size=self.settings.get('batch_size', absent_ok=False),
                                  criterion=nn.CrossEntropyLoss(), device=self.settings.get('device') or None)
         selector = client_selectors.Random(self.settings.get('client_ratio', absent_ok=False))
-        distributed_data = preload(dataset_name, distributor)
+        distributed_data = preload(dataset_name, distributor, transformer=transformer)
         federated = FederatedLearning(
-            trainer_manager=SeqTrainerManager(),
+            trainer_manager=self._trainer_manager(),
             trainer_config=trainer_params,
             aggregator=aggregator,
             metrics=metric,
@@ -51,12 +53,15 @@ class FederatedApp:
             trainers_data_dict=distributed_data,
             initial_model=lambda: model,
             num_rounds=self.settings.get('rounds'),
-            desired_accuracy=0.99,
+            desired_accuracy=desired_accuracy,
             accepted_accuracy_margin=self.settings.get('accepted_accuracy_margin') or -1,
         )
         return federated
 
-    def start_with_subscribers(self, subscribers=None):
+    def _trainer_manager(self):
+        return SeqTrainerManager()
+
+    def _start(self, subscribers=None):
         if subscribers and not isinstance(subscribers, list):
             subscribers = [subscribers]
 
@@ -69,12 +74,12 @@ class FederatedApp:
         federated.start()
 
     def start(self):
-        self.start_with_subscribers(None)
+        self._start(None)
 
     def start_all(self, subscribers=None):
         for index, st in enumerate(self.settings):
             self.logger.info(f'starting config {index}: {str(st.get_config())}')
-            self.start_with_subscribers(subscribers)
+            self._start(subscribers)
 
     def _attach_subscribers(self, federated: FederatedLearning, subscribers, session):
         self.logger.info('attaching subscribers...')
@@ -101,5 +106,5 @@ class FederatedApp:
             FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]),
             Timer([Timer.FEDERATED, Timer.ROUND]),
             Resumable(io=session.cache),
-            SQLiteLogger(session.session_id(), db_path='./log.db', tag=str(session.settings.get_config()))
+            SQLiteLogger(session.session_id(), db_path='./cache/perf.db', tag=str(session.settings.get_config()))
         ]

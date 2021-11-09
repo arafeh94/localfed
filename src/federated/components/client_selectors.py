@@ -8,6 +8,7 @@ class All(ClientSelector):
         return trainer_ids
 
 
+
 class Random(ClientSelector):
     def __init__(self, num):
         self.num = num
@@ -19,3 +20,4 @@ class Random(ClientSelector):
         select_size = 1 if select_size < 1 else select_size
         selected_trainers = random.sample(trainer_ids, select_size)
         return selected_trainers
+

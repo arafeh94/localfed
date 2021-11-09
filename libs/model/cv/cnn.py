@@ -92,7 +92,6 @@ class CNN32(torch.nn.Module):
         x = self.softmax(self.linear_2(x))
         return x
 
-
 class Cifar10Model(torch.nn.Module):
     def __init__(self):
         super().__init__()

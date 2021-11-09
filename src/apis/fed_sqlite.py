@@ -3,6 +3,7 @@ import sqlite3
 
 class FedDB:
     def __init__(self, db_path):
+        self.db_path = db_path
         self.con = sqlite3.connect(db_path)
 
     def execute(self, query, params=None):
@@ -32,3 +33,17 @@ class FedDB:
         for r in records:
             tables.update(r)
         return tables
+
+    def merge(self, fed_db: 'FedDB'):
+        self.execute(f'ATTACH "{fed_db.db_path}" AS db2')
+        q1 = 'select session_id, config from session'
+        q2 = 'CREATE TABLE if not exists [t] AS SELECT * FROM db2.[t];'
+        q3 = 'insert or ignore into session values (?,?)'
+        tables = fed_db.execute(q1)
+        for table in tables:
+            session_id, config = table
+            create_table = q2.replace('[t]', session_id)
+            print(f'executing {create_table}')
+            self.execute(create_table)
+            self.execute(q3, [session_id, config])
+        self.con.commit()

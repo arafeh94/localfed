@@ -36,7 +36,7 @@ class FederatedLearning(Broadcaster):
         self.args = kwargs
         self.events = {}
         self._check_params()
-        self.context = FederatedLearning.Context(self)
+        self.context = FederatedLearning.Context()
         self.test_data = test_data
         self.trainers_train = self.trainers_data_dict
         self.is_finished = False
@@ -100,7 +100,7 @@ class FederatedLearning(Broadcaster):
                            local_acc={}, local_loss={})
 
         self.context.new_round()
-        is_done = self.context.stop(accuracy)
+        is_done = self.context.stop(self, accuracy)
         if is_done:
             self.is_finished = True
             self.broadcast(Events.ET_FED_END, aggregated_model=self.context.model)
@@ -183,8 +183,7 @@ class FederatedLearning(Broadcaster):
         super(FederatedLearning, self).broadcast(event_name, **args)
 
     class Context:
-        def __init__(self, federated):
-            self.federated = federated
+        def __init__(self):
             self.round_id = 0
             self.model = None
             self.history = src.apis.extensions.Dict()
@@ -217,8 +216,8 @@ class FederatedLearning(Broadcaster):
                 return 0
             return self.history[list(self.history)[-1]]['loss']
 
-        def stop(self, acc: float):
-            return (0 < self.federated.num_rounds <= self.round_id) or acc >= self.federated.desired_accuracy
+        def stop(self, federated, acc: float):
+            return (0 < federated.num_rounds <= self.round_id) or acc >= federated.desired_accuracy
 
         def build(self, federated):
             self.reset()

@@ -11,13 +11,14 @@ from src.data.data_provider import PickleDataProvider
 logger = logging.getLogger('data_loader')
 
 
-def preload(dataset, distributor: Distributor = None, tag=None) -> typing.Union[
+def preload(dataset, distributor: Distributor = None, tag=None, transformer=None) -> typing.Union[
     Dict[int, DataContainer], DataContainer]:
     """
     Args:
         tag: file name without postfix (file type, auto-filled with .pkl)
         dataset: dataset used, should be exists inside urls
         distributor: distribution function, dg.distribute_shards or dg.distribute_size ...
+        transformer: transform data
 
     Returns: clients data of type typing.Dict[int, DataContainer]
 
@@ -25,18 +26,19 @@ def preload(dataset, distributor: Distributor = None, tag=None) -> typing.Union[
     tag = tag or dataset + '_' + distributor.id() if distributor else ''
     file_path = manifest.DATA_PATH + tag + ".pkl"
     logger.info(f'searching for {file_path}...')
+    data = None
     if os.path.exists(file_path):
         logger.info('distributed data file exists, loading...')
         data = pickle.load(open(file_path, 'rb'))
         logger.info(data)
-        return data
     else:
         logger.info('distributed data file does not exists, distributing...')
         data = PickleDataProvider(manifest.datasets_urls[dataset]).collect()
         if distributor:
             data = distributor.distribute(data)
         pickle.dump(data, open(file_path, 'wb'))
-        return data
+    data = transformer(data) if callable(transformer) else data
+    return data
 
 
 def mnist_10shards_100c_400min_400max() -> Dict[int, DataContainer]:

@@ -1,6 +1,10 @@
 class Comm:
     def __init__(self):
-        from mpi4py import MPI
+        try:
+            from mpi4py import MPI
+        except Exception as e:
+            raise Exception(str(e) + ' No MPI module found, please install using: pip install mpi4py, '
+                                     'also make sure host support mpi module')
         self.mpi: MPI.Intracomm = MPI.COMM_WORLD
 
     def size(self):
@@ -23,4 +27,3 @@ class Comm:
 
     def stop(self):
         self.mpi.Abort()
-

@@ -253,3 +253,7 @@ class TorchModel:
 
     def extract(self):
         return self.model
+
+
+def first(items: list):
+    return next(filter(lambda x: x, items))
