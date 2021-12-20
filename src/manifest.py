@@ -10,7 +10,7 @@ DEFAULT_DIV_PATH = COMPARE_PATH + "div.pkl"
 class WandbAuth:
     key = '24db2a5612aaf7311dd29a5178f252a1c0a351a9'
     # localfed_ca01 localfed_ubuntu_test05
-    project = 'localfed_ca01'
+    project = 'localfed_ubuntu_test05'
     entity = 'mwazzeh'
 
 

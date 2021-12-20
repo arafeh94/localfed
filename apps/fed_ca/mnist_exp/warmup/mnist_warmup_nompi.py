@@ -1,71 +1,63 @@
-# mpiexec -n 11 python cifar10_nompi.py
+# mpiexec -n 11 python femnist_mpi.py
 
 import logging
 import pickle
 import platform
-import sys
-from os.path import dirname
+
 from torch import nn
-from libs.model.cv.resnet import CNN_Cifar10
+
 from src import tools
-from src.apis import lambdas
 from src.data.data_distributor import UniqueDistributor
 from src.data.data_loader import preload
-from src.federated import subscribers
+from src.federated import subscribers, fedruns
 from src.federated.components.trainer_manager import SeqTrainerManager
-
-sys.path.append(dirname(__file__) + '../')
 
 from apps.fed_ca.utilities.hp_generator import generate_configs, calculate_max_rounds
 from src.federated.components import metrics, client_selectors, aggregators, trainers
+from libs.model.cv.cnn import CNN_OriginalFedAvg, CNN_DropOut
 from src.federated.federated import Events, FederatedLearning
 from src.federated.protocols import TrainerParams
-
-def load_warmup():
-    model = pickle.load(open("../utilities/cifar10_pretrained_models/warmup_unique_10c_380mn_380mx_CNN_Cifar10()_lr_0.1_e_600_b_100_acc_0.6513.pkl", 'rb'))
-    return model
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-dist = UniqueDistributor(10, 6000, 6000)
-dataset_name = 'cifar10'
+dist = UniqueDistributor(10, 800, 1000)
+dataset_name = 'mnist'
 
 client_data = preload(dataset_name, dist)
-dataset_used_wd = 'cifar10_' + dist.id() + '_warmup_300'
+dataset_used_wd = 'mnist_' + dist.id() + '_warmup_60'
+
+# ld = LoadData(dataset_name='mnist', shards_nb=0, clients_nb=10, min_samples=800, max_samples=1000)
+
+# dataset_used = ld.filename
+# client_data = ld.pickle_distribute_continuous()
 
 tools.detail(client_data)
-client_data = client_data.map(lambdas.reshape((-1, 32, 32, 3))).map(lambdas.transpose((0, 3, 1, 2)))
 
-# client_data = client_data.map(lambdas.reshape((32, 32, 3))).map(lambdas.transpose((2, 0, 1)))
+
+def load_warmup():
+    model = pickle.load(open(
+        "mnist_pretrained_models/warmup_unique_10c_140mn_140mx_CNN_OriginalFedAvg()_lr_0.001_e_600_b_100_acc_0.8214.pkl", 'rb'))
+    return model
+
 
 # building Hyperparameters
-input_shape = 32 * 32
+input_shape = 28 * 28
 labels_number = 10
-percentage_nb_client = 10
+percentage_nb_client = 2
 
 # number of models that we are using
 initial_models = {
     # 'LR': LogisticRegression(input_shape, labels_number),
     # 'MLP': MLP(input_shape, labels_number)
-    # 'CNNCifar': CNNCifar(labels_number)
-    #  'CNN': CNN_DropOut(False)
-    # 'ResNet': resnet56(labels_number, 3, 32)
-    # 'SimpleCNN': SimpleCNN(input_dim=(16 * 5 * 5), hidden_dims=[120, 84], output_dim=10)
-    # 'Cifar10': CNN_batch_norm_cifar10()
-    # 'CNN_85': CNN_85()
-    # 'Cifar10Model': Cifar10Model()  #ok
-    'CNN_Cifar10()': CNN_Cifar10() #ok
-    # 'CNN32': CNN32(3, 10)
-
+    #  'CNN': CNN_DropOut(False),
+    'CNN_OriginalFedAvg': CNN_OriginalFedAvg()
 }
 
 # runs = {}
-
 for model_name, gen_model in initial_models.items():
 
-    hyper_params = {'batch_size': [100], 'epochs': [1], 'num_rounds': [800], 'learn_rate': [0.1]}
-
+    hyper_params = {'batch_size': [10], 'epochs': [1], 'num_rounds': [800]}
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 
     logger.info(calculate_max_rounds(hyper_params))
@@ -74,14 +66,11 @@ for model_name, gen_model in initial_models.items():
         epochs = config['epochs']
         num_rounds = config['num_rounds']
         initial_model = config['initial_model']
-        learn_rate = config['learn_rate']
+        learn_rate = 0.1
 
-        print("------------------------------------------------------------------------------------------------")
         print(
             f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds},'
             f' initial_model={model_name} ')
-        print("------------------------------------------------------------------------------------------------")
-
         trainer_manager = SeqTrainerManager()
         trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=batch_size,
                                        epochs=epochs, optimizer='sgd', criterion='cel', lr=learn_rate)
@@ -94,20 +83,12 @@ for model_name, gen_model in initial_models.items():
             # client_selector=client_selectors.All(),
             client_selector=client_selectors.Random(percentage_nb_client),
             trainers_data_dict=client_data,
-            initial_model=lambda: load_warmup(),
+            initial_model=load_warmup,
             num_rounds=num_rounds,
-            desired_accuracy=0.99,
-            accepted_accuracy_margin=0.15
+            desired_accuracy=0.99
         )
 
-        # use flush=True if you don't want to continue from the last round
-        # federated.add_subscriber(
-        #     subscribers.Resumable('cifar10_batch_normalization_test_10c_6000.pkl', federated, flush=True))
-
-        # show weight divergence in each round
-        # federated.add_subscriber(subscribers.ShowWeightDivergence(save_dir='./pics'))
-        # show data distrubition of each clients
-        # federated.add_subscriber(subscribers.ShowDataDistribution(label_count=62, save_dir='./pics'))
+        # federated.add_subscriber(subscribers.Resumable('warmup_femnist200', federated, flush=False))
 
         federated.add_subscriber(subscribers.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
         federated.add_subscriber(

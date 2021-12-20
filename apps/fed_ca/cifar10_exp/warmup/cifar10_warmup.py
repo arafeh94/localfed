@@ -1,63 +1,71 @@
+# mpiexec -n 11 python cifar10_nompi.py
+
 import logging
+import pickle
 import platform
 import sys
-
-from apps.fed_ca.utilities.hp_generator import generate_configs, calculate_max_rounds
+from os.path import dirname
+from torch import nn
 from libs.model.cv.resnet import CNN_Cifar10
 from src import tools
+from src.apis import lambdas
+from src.data.data_distributor import UniqueDistributor
 from src.data.data_loader import preload
-
-sys.path.append('../../')
-
-from typing import Callable
-from torch import nn
-from src.apis import lambdas, files
-from src.apis.extensions import TorchModel
-from libs.model.linear.lr import LogisticRegression
-from src.data import data_loader
-from src.federated.components import metrics, client_selectors, aggregators, trainers
 from src.federated import subscribers
-from src.federated.federated import Events
-from src.federated.federated import FederatedLearning
+from src.federated.components.trainer_manager import SeqTrainerManager
+
+sys.path.append(dirname(__file__) + '../')
+
+from apps.fed_ca.utilities.hp_generator import generate_configs, calculate_max_rounds
+from src.federated.components import metrics, client_selectors, aggregators, trainers
+from src.federated.federated import Events, FederatedLearning
 from src.federated.protocols import TrainerParams
-from src.federated.components.trainer_manager import SeqTrainerManager, SharedTrainerProvider
-from src.federated.subscribers import Timer, ShowWeightDivergence
+
+def load_warmup():
+    model = pickle.load(open(
+        "cifar10_pretrained_models/warmup_unique_10c_380mn_380mx_CNN_Cifar10()_lr_0.1_e_600_b_100_acc_0.6513.pkl", 'rb'))
+    return model
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
-tag = 'federated_cifar10_240'
-is_warmup = True
 
-logger.info('Generating Data --Started')
-client_data = data_loader.cifar10_10c_6000min_6000max()
-logger.info('Generating Data --Ended')
+dist = UniqueDistributor(10, 6000, 6000)
+dataset_name = 'cifar10'
 
-dataset_used_wd = 'federated_cifar10_240'
+client_data = preload(dataset_name, dist)
+dataset_used_wd = 'cifar10_' + dist.id() + '_warmup_300'
+
+tools.detail(client_data)
+client_data = client_data.map(lambdas.reshape((-1, 32, 32, 3))).map(lambdas.transpose((0, 3, 1, 2)))
+
+# client_data = client_data.map(lambdas.reshape((32, 32, 3))).map(lambdas.transpose((2, 0, 1)))
 
 # building Hyperparameters
 input_shape = 32 * 32
 labels_number = 10
 percentage_nb_client = 10
 
-if is_warmup:
-    warmup_data = client_data.map(lambda ci, dc: dc.shuffle(42).split(0.05)[0]).reduce(lambdas.dict2dc).as_tensor()
-    tools.detail(warmup_data)
-    warmup_data = client_data.map(lambdas.reshape((-1, 32, 32, 3))).map(lambdas.transpose((0, 3, 1, 2)))
-    client_data = client_data.map(lambda ci, dc: dc.shuffle(42).split(0.2)[1]).map(lambdas.as_tensor)
+# number of models that we are using
+initial_models = {
+    # 'LR': LogisticRegression(input_shape, labels_number),
+    # 'MLP': MLP(input_shape, labels_number)
+    # 'CNNCifar': CNNCifar(labels_number)
+    #  'CNN': CNN_DropOut(False)
+    # 'ResNet': resnet56(labels_number, 3, 32)
+    # 'SimpleCNN': SimpleCNN(input_dim=(16 * 5 * 5), hidden_dims=[120, 84], output_dim=10)
+    # 'Cifar10': CNN_batch_norm_cifar10()
+    # 'CNN_85': CNN_85()
+    # 'Cifar10Model': Cifar10Model()  #ok
+    'CNN_Cifar10()': CNN_Cifar10() #ok
+    # 'CNN32': CNN32(3, 10)
 
-    tools.detail(client_data)
-    client_data = client_data.map(lambdas.reshape((-1, 32, 32, 3))).map(lambdas.transpose((0, 3, 1, 2)))
-    initial_model = TorchModel(CNN_Cifar10())
-    initial_model.train(warmup_data.batch(100), epochs=1)
-    initial_model = initial_model.extract()
-    initial_models = {'CNN_Cifar10()': initial_model}
-else:
-    initial_models = {'CNN_Cifar10()': CNN_Cifar10() }
+}
 
+# runs = {}
 
 for model_name, gen_model in initial_models.items():
 
-    hyper_params = {'batch_size': [100], 'epochs': [1], 'num_rounds': [800], 'learn_rate': [0.01]}
+    hyper_params = {'batch_size': [100], 'epochs': [1], 'num_rounds': [800], 'learn_rate': [0.1]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 
@@ -87,10 +95,10 @@ for model_name, gen_model in initial_models.items():
             # client_selector=client_selectors.All(),
             client_selector=client_selectors.Random(percentage_nb_client),
             trainers_data_dict=client_data,
-            initial_model=lambda: initial_model,
+            initial_model=lambda: load_warmup(),
             num_rounds=num_rounds,
-            desired_accuracy=0.99
-            # accepted_accuracy_margin=0.05
+            desired_accuracy=0.99,
+            accepted_accuracy_margin=0.15
         )
 
         # use flush=True if you don't want to continue from the last round

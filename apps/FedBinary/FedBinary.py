@@ -7,9 +7,9 @@ from src.data.data_loader import preload
 
 # clients_data = preload('xs1', 'cifar10', lambda dg: dg.distribute_shards(10, 1, 600, 600)) \
 #     .map(lambdas.take_only_features(1024)).map(lambdas.dc_split(0.1, 1))
-clients_data = preload('femnist_62c_1000mn_1000mx', 'cifar10', lambda dg: dg.distribute_shards(10, 1, 600, 600)).map(
+clients_data = preload('femnist_62c_1000mn_1000mx', 'femnist', lambda dg: dg.distribute_shards(62, 1, 600, 600)).map(
     lambdas.dc_split(0.1, 1))
-test_data = preload('femnist_62c_1000mn_1000mx', 'cifar10', lambda dg: dg.distribute_shards(10, 1, 600, 600)).map(
+test_data = preload('femnist_62c_1000mn_1000mx', 'femnist', lambda dg: dg.distribute_shards(62, 1, 600, 600)).map(
     lambdas.dc_split(0.1, 0))
 # test_data = preload('xs1', 'cifar10', lambda dg: dg.distribute_shards(10, 1, 600, 600))\
 #     .map(lambdas.take_only_features(1024)).map(lambdas.dc_split(0.1, 0))

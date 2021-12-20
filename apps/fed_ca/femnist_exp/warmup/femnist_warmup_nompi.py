@@ -30,7 +30,7 @@ tools.detail(client_data)
 
 
 def load_warmup():
-    model = pickle.load(open("../utilities/warmup_model_femnist200.pkl", 'rb'))
+    model = pickle.load(open("warmup_model_femnist200.pkl", 'rb'))
     return model
 
 

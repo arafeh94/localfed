@@ -56,8 +56,8 @@ federated = FederatedLearning(
     client_selector=client_selectors.Random(number_of_clients_per_round),
     trainers_data_dict=client_data,
     # initial_model=lambda: LogisticRegression(28 * 28, 10),
-    initial_model=lambda: MLP(28 * 28, 64, 10),
-    # initial_model=lambda: CNN_OriginalFedAvg(),
+    # initial_model=lambda: MLP(28 * 28, 64, 10),
+    initial_model=lambda: CNN_OriginalFedAvg(),
     num_rounds=num_rounds,
     desired_accuracy=0.99
 )
