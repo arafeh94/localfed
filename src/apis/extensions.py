@@ -4,7 +4,6 @@ import os
 import pickle
 import typing
 from abc import abstractmethod
-from collections import defaultdict
 
 import numpy as np
 import torch
@@ -135,12 +134,15 @@ class Serializable:
         pickle.dump(to_save, open(self.file_path, 'wb'))
 
     def load(self):
-        if os.path.exists(self.file_path):
+        if self.exists():
             try:
                 for key, item in pickle.load(open(self.file_path, 'rb')).items():
                     self.__dict__[key] = item
             except Exception as e:
                 print(e)
+
+    def exists(self):
+        return os.path.exists(self.file_path)
 
     def sync(self, func, *params):
         self.load()
@@ -251,3 +253,7 @@ class TorchModel:
 
     def extract(self):
         return self.model
+
+
+def first(items: list):
+    return next(filter(lambda x: x, items))

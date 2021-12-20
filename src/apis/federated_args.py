@@ -46,6 +46,7 @@ class FederatedArgs:
         self.clients = args.clients_number
         self.learn_rate = args.learn_rate
         self.tag = args.tag
+        self.timestamp = defaults['timestamp'] if 'timestamp' in defaults else ''
 
     def _validate(self, args):
         for key, item in args.__dict__.items():
@@ -55,4 +56,4 @@ class FederatedArgs:
     def __repr__(self):
         return f'{self.tag}_e{self.epoch}_b{self.batch}_r{self.round}_s{self.shard}' \
                f'_{self.dataset}_cr{str(self.clients_ratio).replace(".", "")}' \
-               f'_lr{str(self.learn_rate)}'.replace('cr1', 'cr10')
+               f'_lr{str(self.learn_rate)}{self.timestamp}'.replace('cr1', 'cr10')

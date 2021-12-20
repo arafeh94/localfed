@@ -1,26 +1,21 @@
 import logging
 import sys
 
-import matplotlib.pyplot as plt
-from torch import nn
-
-import libs.model.cv.cnn
 
 sys.path.append('../../')
 
-from libs.model.cv.resnet import ResNet, resnet56
+from libs.model.cv.resnet import resnet56
+from torch import nn
+import libs.model.cv.cnn
+from src.federated.subscribers.logger import FederatedLogger
+from src.federated.subscribers.timer import Timer
 from src.apis import lambdas
-from src.data.data_provider import PickleDataProvider
-from libs.model.linear.lr import LogisticRegression
-from src import tools
 from src.data import data_loader
 from src.federated.components import metrics, client_selectors, aggregators, trainers
-from src.federated import subscribers
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
-from src.federated.components.trainer_manager import SeqTrainerManager, SharedTrainerProvider
-from src.federated.subscribers import Timer
+from src.federated.components.trainer_manager import SeqTrainerManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
@@ -56,11 +51,8 @@ federated = FederatedLearning(
     num_rounds=50,
     desired_accuracy=0.99,
 )
-# federated.add_subscriber(subscribers.ShowDataDistribution(10, per_round=True, save_dir='./exp_pct2'))
-federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
+federated.add_subscriber(FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
-federated.add_subscriber(subscribers.FedPlot(plot_each_round=True, show_loss=False))
-# federated.add_subscriber(subscribers.ShowWeightDivergence(save_dir="./exp_pct2"))
 logger.info("----------------------")
 logger.info("start federated 1")
 logger.info("----------------------")

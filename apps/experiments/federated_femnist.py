@@ -1,19 +1,19 @@
 import logging
 import sys
 
+
 sys.path.append('../../')
 from libs.model.cv.cnn import CNN_OriginalFedAvg
-
+from src.federated.subscribers.logger import FederatedLogger
+from src.federated.subscribers.timer import Timer
 from torch import nn
 from src.apis.mpi import Comm
 from src.data import data_loader
 from src.federated.components import metrics, client_selectors, aggregators, trainers
-from src.federated import subscribers
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
-from src.federated.components.trainer_manager import SeqTrainerManager, MPITrainerManager
-from src.federated.subscribers import Timer
+from src.federated.components.trainer_manager import MPITrainerManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
@@ -39,10 +39,8 @@ if comm.pid() == 0:
         desired_accuracy=0.99,
     )
 
-    federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
+    federated.add_subscriber(FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
     federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND, Timer.TRAINER]))
-    federated.add_subscriber(subscribers.FedPlot())
-    federated.add_subscriber(subscribers.FedSave('femnist'))
 
     logger.info("----------------------")
     logger.info("start federated 1")

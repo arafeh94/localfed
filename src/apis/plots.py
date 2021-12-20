@@ -1,11 +1,6 @@
-import os
 from typing import List, Union
-
-import numpy as np
 from matplotlib import pyplot as plt
 from numpy import ndarray
-
-from src import tools
 
 
 def heatmap(matrix: Union[List[List], ndarray], title="", xlabel="", file_path=None):

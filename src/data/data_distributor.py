@@ -2,15 +2,11 @@ import logging
 import random
 from abc import abstractmethod
 from collections import defaultdict
-
-import numpy
 import numpy as np
 import typing
-
 from libs.data_distribute import non_iid_partition_with_dirichlet_distribution
 from src.apis.extensions import Dict
 from src.data.data_container import DataContainer
-from src import tools
 
 
 class Distributor:

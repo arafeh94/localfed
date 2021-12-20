@@ -1,5 +1,4 @@
 from abc import abstractmethod, ABC
-from functools import reduce
 from typing import Dict, Tuple, List
 
 from torch import nn, Tensor
@@ -28,6 +27,7 @@ class ModelInfer(ABC):
 
 
 class TrainerParams:
+
     def __init__(self, trainer_class: type, batch_size: int, epochs: int,
                  criterion: str, optimizer: str, **kwargs):
         self.epochs = epochs
@@ -44,14 +44,14 @@ class TrainerParams:
         return params.criterion(self.criterion, **self.args)
 
 
-class Trainer:
+class Trainer(ABC):
     @abstractmethod
     def train(self, model: nn.Module, train_data: DataContainer, context, config: TrainerParams) -> Tuple[
         Dict[str, Tensor], int]:
         pass
 
 
-class ClientSelector:
+class ClientSelector(ABC):
     @abstractmethod
     def select(self, client_ids: List[int], context) -> List[int]:
         pass

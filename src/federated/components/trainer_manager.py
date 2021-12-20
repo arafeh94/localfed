@@ -1,12 +1,5 @@
-import logging
 from abc import ABC, abstractmethod
-from functools import reduce
-from typing import List
-
-from torch import nn
-
 from src.apis.mpi import Comm
-from src.data.data_container import DataContainer
 from src.federated.protocols import Trainer, TrainerParams
 
 
@@ -55,8 +48,9 @@ class SeqTrainerManager(TrainerManager):
         trainers_trained_weights = {}
         trainers_sample_size = {}
         for trainer_id, request in self.train_requests.items():
+            train_func, model, train_data, context, config = request
             self.notify_trainer_started(trainer_id)
-            trained_weights, sample_size = request[0](request[1], request[2], request[3], request[4])
+            trained_weights, sample_size = train_func(model, train_data, context, config)
             self.notify_trainer_finished(trainer_id, trained_weights, sample_size)
             trainers_trained_weights[trainer_id] = trained_weights
             trainers_sample_size[trainer_id] = sample_size
@@ -103,7 +97,8 @@ class MPITrainerManager(TrainerManager):
             if proc not in self.used_procs:
                 self.used_procs.append(proc)
                 return proc
-        raise Exception("no more available processes to answer the request. Increase mpi nb proc")
+        raise Exception("No more available processes to answer the request. "
+                        "Increase mpi nb proc or decrease selected clients number for each round")
 
     def reset(self):
         self.used_procs = []
@@ -125,7 +120,6 @@ class MPITrainerManager(TrainerManager):
         trainer: Trainer = None
         while True:
             model, train_data, context, config = comm.recv(0, 1)
-            if trainer is None:
-                trainer = config.trainer_class()
+            trainer = trainer or config.trainer_class()
             trained_weights, sample_size = trainer.train(model, train_data, context, config)
             comm.send(0, (trained_weights, sample_size), 2)
