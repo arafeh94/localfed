@@ -9,7 +9,7 @@ from torch import nn
 from src import tools
 from src.data.data_distributor import UniqueDistributor
 from src.data.data_loader import preload
-from src.federated import subscribers, fedruns
+from src.federated import subscribers
 from src.federated.components.trainer_manager import SeqTrainerManager
 
 from apps.fed_ca.utilities.hp_generator import generate_configs, calculate_max_rounds
@@ -17,6 +17,8 @@ from src.federated.components import metrics, client_selectors, aggregators, tra
 from libs.model.cv.cnn import CNN_OriginalFedAvg, CNN_DropOut
 from src.federated.federated import Events, FederatedLearning
 from src.federated.protocols import TrainerParams
+from src.federated.subscribers.logger import FederatedLogger
+from src.federated.subscribers.wandb_logger import WandbLogger
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
@@ -90,9 +92,9 @@ for model_name, gen_model in initial_models.items():
 
         # federated.add_subscriber(subscribers.Resumable('warmup_femnist200', federated, flush=False))
 
-        federated.add_subscriber(subscribers.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
+        federated.add_subscriber(FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
         federated.add_subscriber(
-            subscribers.WandbLogger(config={'lr': learn_rate, 'batch_size': batch_size, 'epochs': epochs,
+            WandbLogger(config={'lr': learn_rate, 'batch_size': batch_size, 'epochs': epochs,
                                             'num_rounds': num_rounds, 'data_file': dataset_used_wd,
                                             'model': model_name, 'os': platform.system() + '',
                                             'selected_clients': percentage_nb_client}))

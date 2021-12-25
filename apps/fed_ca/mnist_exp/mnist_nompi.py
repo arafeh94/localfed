@@ -2,18 +2,19 @@ import logging
 
 from torch import nn
 
+from apps.fed_ca.utilities.hp_generator import generate_configs, calculate_max_rounds
+from libs.model.cv.cnn import CNN_OriginalFedAvg
 from libs.model.linear.lr import LogisticRegression
 from src import tools
 from src.data.data_distributor import UniqueDistributor
 from src.data.data_loader import preload
-from src.federated import subscribers
-from src.federated.components.trainer_manager import SeqTrainerManager
-from apps.fed_ca.utilities.hp_generator import generate_configs, build_random, calculate_max_rounds
 from src.federated.components import metrics, client_selectors, aggregators, trainers
-from libs.model.cv.cnn import CNN_OriginalFedAvg
+from src.federated.components.trainer_manager import SeqTrainerManager
 from src.federated.events import Events
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
+from src.federated.subscribers.logger import FederatedLogger
+from src.federated.subscribers.wandb_logger import WandbLogger
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
@@ -83,9 +84,9 @@ for model_name, gen_model in initial_models.items():
         # use flush=True if you don't want to continue from the last round
         # federated.add_subscriber(subscribers.Resumable(federated, tag='002', save_each=5))
 
-        federated.add_subscriber(subscribers.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
+        federated.add_subscriber(FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
 
-        federated.add_subscriber(subscribers.WandbLogger(config={
+        federated.add_subscriber(WandbLogger(config={
             'lr': learn_rate, 'batch_size': batch_size,
             'epochs': epochs,
             'num_rounds': num_rounds, 'data_file': dataset_used,

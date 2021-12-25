@@ -1,19 +1,12 @@
-import copy
 import logging
 import pickle
-import sys
 
 from libs.model.cv.cnn import CNN_OriginalFedAvg
-from libs.model.cv.resnet import CNN_Cifar10
-from libs.model.linear.lr import LogisticRegression
 from src import tools
 from src.apis import lambdas
 from src.apis.extensions import TorchModel
 from src.data.data_distributor import UniqueDistributor
 from src.data.data_loader import preload
-from src.data.data_provider import PickleDataProvider
-from src.federated.components.trainers import TorchTrainer
-from src.manifest import dataset_urls
 
 # client_data = data_loader.cifar10_10shards_100c_400min_400max()
 

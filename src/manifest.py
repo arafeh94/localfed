@@ -12,9 +12,10 @@ DB_PATH = COMPARE_PATH + "perf.db"
 __urls_datasets_links_ = None
 
 wandb_config = {
-    'key': '3c35c1f04ebc7ffc1825f3056a6aabe714a1ccdc',
-    'project': 'geneticfed',
-    'entity': 'arafeh',
+    'key': '24db2a5612aaf7311dd29a5178f252a1c0a351a9',
+    # localfed_ca01 localfed_ubuntu_test05
+    'project': 'localfed_ubuntu_test05',
+    'entity': 'mwazzeh',
 }
 
 datasets_urls = {
