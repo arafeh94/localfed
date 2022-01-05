@@ -1,11 +1,12 @@
 import copy
 import math
+import statistics
 import typing
 import numpy as np
 import torch
 import tqdm
 from sklearn import decomposition
-from torch import nn
+from torch import nn, tensor
 import logging
 from src.data.data_container import DataContainer
 
@@ -48,7 +49,7 @@ def train(model, train_data, epochs=10, lr=0.1):
     device = torch.device('cpu')
     model.to(device)
     model.train()
-    optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+    optimizer = torch.optim.SGD(model.parameters(), lr=lr)
     criterion = nn.CrossEntropyLoss()
 
     epoch_loss = []
@@ -91,6 +92,35 @@ def aggregate(models_dict: dict, sample_dict: dict):
 
     return averaged_params
 
+def mode(models_dict: dict, sample_dict: dict):
+    model_list = []
+    training_num = 0
+
+    for idx in models_dict.keys():
+        model_list.append((sample_dict[idx], copy.deepcopy(models_dict[idx])))
+        training_num += sample_dict[idx]
+
+    # logging.info("################aggregate: %d" % len(model_list))
+    (num0, averaged_params) = model_list[0]
+    all_layers_weights={}
+    for k in averaged_params.keys():
+        new_array = []
+        shape = averaged_params[k].numpy().shape
+        for i in range(0, len(model_list)):
+            local_sample_number, local_model_params = model_list[i]
+            layer_weights = local_model_params[k].numpy()
+            layer_weights = layer_weights.flatten()
+            new_array.append(layer_weights)
+        moded_array = []
+        for i in range(len(new_array[0])):
+            fake_array = []
+            for j in range(len(new_array)):
+                fake_array.append(new_array[j][i])
+            moded_array.append(statistics.mode(fake_array))
+        moded_array = np.array(moded_array).reshape((shape))
+        averaged_params[k] = tensor(moded_array)
+    return averaged_params
+
 
 def infer(model, test_data):
     model.eval()
@@ -108,6 +138,28 @@ def infer(model, test_data):
             test_total += target.size(0)
 
     return test_acc / test_total, test_loss / test_total
+
+
+def infer_detailed(model, test_data):
+    model.eval()
+    test_loss = test_acc = test_total = 0.
+    criterion = nn.CrossEntropyLoss()
+    targets = []
+    predicts = []
+    with torch.no_grad():
+        for batch_idx, (x, target) in enumerate(test_data):
+            pred = model(x)
+            loss = criterion(pred, target)
+            _, predicted = torch.max(pred, -1)
+            correct = predicted.eq(target).sum()
+
+            test_acc += correct.item()
+            test_loss += loss.item() * target.size(0)
+            test_total += target.size(0)
+            targets.append(target)
+            predicts.append(predicted)
+
+    return test_acc / test_total, test_loss / test_total, targets, predicts
 
 
 def load(model, stats):

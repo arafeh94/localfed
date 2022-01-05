@@ -1,7 +1,7 @@
 import re
 
 # ------------------------
-# utils for shakespeare dataset
+# utils1 for shakespeare dataset
 
 # Vocabulary re-used from the Federated Learning for Text Generation tutorial.
 # https://www.tensorflow.org/federated/tutorials/federated_learning_for_text_generation
@@ -53,7 +53,7 @@ def word_to_indices(word):
 
 
 # ------------------------
-# utils for sent140 dataset
+# utils1 for sent140 dataset
 
 
 def split_line(line):

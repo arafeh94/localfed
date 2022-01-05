@@ -11,7 +11,7 @@ def heatmap(matrix: Union[List[List], ndarray], title="", xlabel="", file_path=N
     plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
     for i in range(len(matrix)):
         for j in range(len(matrix[0])):
-            ax.text(j, i, '', ha="center", va="center", color="w")
+            ax.text(j, i, round(matrix[i][j],2), ha="center", va="center", color="w")
     ax.set_title(title)
     ax.set_xlabel(xlabel)
     fig.tight_layout()

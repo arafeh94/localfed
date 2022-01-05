@@ -189,6 +189,7 @@ class SizeDistributor(Distributor):
         return f'size_{self.num_clients}c_{self.min_size}mn_{self.max_size}mx'
 
 
+# Distribute one unique label to each client
 class UniqueDistributor(Distributor):
     def __init__(self, num_clients, min_size, max_size):
         super().__init__()

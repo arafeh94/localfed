@@ -42,6 +42,7 @@ cifar-10-batches-py
 /apps/experiments/logs
 /apps/experiments/logs/*
 /apps/experiments/wandb
+/apps/fed_ca/wandb
 /datasets/pickles/mnist_10shards_100c_400mn_400mx.pkl
 /datasets/pickles/mnist_2shards_70c_600mn_600mx.pkl
 /datasets/pickles/femnist.pkl
@@ -63,6 +64,4 @@ cifar-10-batches-py
 /datasets/raw/cars/a7/
 /datasets/raw/cars/a8/
 /datasets/
-/tests/
-/tests/
 /checkpoints/

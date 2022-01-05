@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from torch.autograd.grad_mode import F
+import torch.nn.functional as F
 
 
 class CNN_OriginalFedAvg(torch.nn.Module):
@@ -70,10 +70,10 @@ class CNN_OriginalFedAvg(torch.nn.Module):
         return x
 
 
-class CNN32(torch.nn.Module):
-    def __init__(self, channels, output_dim):
-        super(CNN32, self).__init__()
-        self.conv2d_1 = torch.nn.Conv2d(channels, 32, kernel_size=5, padding=2)
+class CNN(torch.nn.Module):
+    def __init__(self, output_dim):
+        super(CNN, self).__init__()
+        self.conv2d_1 = torch.nn.Conv2d(1, 32, kernel_size=5, padding=2)
         self.max_pooling = nn.MaxPool2d(2, stride=2)
         self.conv2d_2 = torch.nn.Conv2d(32, 64, kernel_size=5, padding=2)
         self.flatten = nn.Flatten()
@@ -83,6 +83,8 @@ class CNN32(torch.nn.Module):
         self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
+        x = x.view(-1, 28, 28)
+        x = torch.unsqueeze(x, 1)
         x = self.conv2d_1(x)
         x = self.max_pooling(x)
         x = self.conv2d_2(x)
@@ -90,25 +92,6 @@ class CNN32(torch.nn.Module):
         x = self.flatten(x)
         x = self.relu(self.linear_1(x))
         x = self.softmax(self.linear_2(x))
-        return x
-
-class Cifar10Model(torch.nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.conv1 = nn.Conv2d(3, 6, 5)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 5)
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
-
-    def forward(self, x):
-        x = self.pool(torch.relu(self.conv1(x)))
-        x = self.pool(torch.relu(self.conv2(x)))
-        x = torch.flatten(x, 1)  # flatten all dimensions except batch
-        x = torch.relu(self.fc1(x))
-        x = torch.relu(self.fc2(x))
-        x = self.fc3(x)
         return x
 
 
@@ -155,9 +138,9 @@ class CNN_DropOut(torch.nn.Module):
 
     def __init__(self, only_digits=True):
         super(CNN_DropOut, self).__init__()
-        self.conv2d_1 = torch.nn.Conv2d(1, 32, kernel_size=3)
+        self.conv2d_1 = torch.nn.Conv2d(1, 32, kernel_size=(3, 3), stride=(1, 1))
         self.max_pooling = nn.MaxPool2d(2, stride=2)
-        self.conv2d_2 = torch.nn.Conv2d(32, 64, kernel_size=3)
+        self.conv2d_2 = torch.nn.Conv2d(32, 64, kernel_size=(3, 3), stride=(1, 1))
         self.dropout_1 = nn.Dropout(0.25)
         self.flatten = nn.Flatten()
         self.linear_1 = nn.Linear(9216, 128)
@@ -167,6 +150,7 @@ class CNN_DropOut(torch.nn.Module):
         self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
+        x = x.view(-1, 28, 28)
         x = torch.unsqueeze(x, 1)
         x = self.conv2d_1(x)
         x = self.conv2d_2(x)
@@ -175,5 +159,98 @@ class CNN_DropOut(torch.nn.Module):
         x = self.flatten(x)
         x = self.relu(self.linear_1(x))
         x = self.dropout_2(x)
+        x = self.softmax(self.linear_2(x))
+        return x
+
+
+class SimpleCNN(nn.Module):
+    def __init__(self, input_dim, hidden_dims, output_dim=10):
+        super(SimpleCNN, self).__init__()
+        self.conv1 = nn.Conv2d(3, 6, 5)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.conv2 = nn.Conv2d(6, 16, 5)
+
+        # for now, we hard coded this network
+        # i.e. we fix the number of hidden layers i.e. 2 layers
+        self.fc1 = nn.Linear(input_dim, hidden_dims[0])
+        self.fc2 = nn.Linear(hidden_dims[0], hidden_dims[1])
+        self.fc3 = nn.Linear(hidden_dims[1], output_dim)
+
+    def forward(self, x):
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = x.view(-1, 16 * 5 * 5)
+
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
+
+
+class Net(nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        self.conv1 = nn.Conv2d(1, 32, 3, 1)
+        self.conv2 = nn.Conv2d(32, 64, 3, 1)
+        self.dropout1 = nn.Dropout(0.25)
+        self.dropout2 = nn.Dropout(0.5)
+        self.fc1 = nn.Linear(9216, 128)
+        self.fc2 = nn.Linear(128, 10)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = F.relu(x)
+        x = self.conv2(x)
+        x = F.relu(x)
+        x = F.max_pool2d(x, 2)
+        x = self.dropout1(x)
+        x = torch.flatten(x, 1)
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.dropout2(x)
+        x = self.fc2(x)
+        output = F.log_softmax(x, dim=1)
+        return output
+
+
+class Cifar10Model(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv1 = nn.Conv2d(3, 6, 5)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.conv2 = nn.Conv2d(6, 16, 5)
+        self.fc1 = nn.Linear(16 * 5 * 5, 120)
+        self.fc2 = nn.Linear(120, 84)
+        self.fc3 = nn.Linear(84, 10)
+
+    def forward(self, x):
+        x = self.pool(torch.relu(self.conv1(x)))
+        x = self.pool(torch.relu(self.conv2(x)))
+        x = torch.flatten(x, 1)  # flatten all dimensions except batch
+        x = torch.relu(self.fc1(x))
+        x = torch.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
+
+
+class CNN32(torch.nn.Module):
+    def __init__(self, channels, output_dim):
+        super(CNN32, self).__init__()
+        self.conv2d_1 = torch.nn.Conv2d(channels, 32, kernel_size=5, padding=2)
+        self.max_pooling = nn.MaxPool2d(2, stride=2)
+        self.conv2d_2 = torch.nn.Conv2d(32, 64, kernel_size=5, padding=2)
+        self.flatten = nn.Flatten()
+        self.linear_1 = nn.Linear(3136, 512)
+        self.linear_2 = nn.Linear(512, output_dim)
+        self.relu = nn.ReLU()
+        self.softmax = nn.Softmax(dim=1)
+
+    def forward(self, x):
+        x = self.conv2d_1(x)
+        x = self.max_pooling(x)
+        x = self.conv2d_2(x)
+        x = self.max_pooling(x)
+        x = self.flatten(x)
+        x = self.relu(self.linear_1(x))
         x = self.softmax(self.linear_2(x))
         return x

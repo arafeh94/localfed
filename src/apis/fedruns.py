@@ -46,11 +46,11 @@ class FedRuns:
         fig, axs = plt.subplots(2)
 
         for run_name, acc in acc_plot.items():
-            axs[0].plot(acc, label=run_name)
+            axs[0].row(acc, label=run_name)
             axs[0].set_title('Total Accuracy')
             axs[0].set_xticks(range(len(acc)))
         for run_name, loss in loss_plot.items():
-            axs[1].plot(loss, label=run_name)
+            axs[1].row(loss, label=run_name)
             axs[1].set_title('Total Loss')
             axs[1].set_xticks(range(len(loss)))
 
