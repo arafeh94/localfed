@@ -137,6 +137,8 @@ def infer(model, test_data):
             test_loss += loss.item() * target.size(0)
             test_total += target.size(0)
 
+
+
     return test_acc / test_total, test_loss / test_total
 
 
@@ -156,8 +158,8 @@ def infer_detailed(model, test_data):
             test_acc += correct.item()
             test_loss += loss.item() * target.size(0)
             test_total += target.size(0)
-            targets.append(target)
-            predicts.append(predicted)
+            targets.extend(target.numpy())
+            predicts.extend(predicted.numpy())
 
     return test_acc / test_total, test_loss / test_total, targets, predicts
 
