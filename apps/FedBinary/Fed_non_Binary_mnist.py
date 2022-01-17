@@ -82,7 +82,6 @@ matrix = []
 for i in range(max_clients):
     matrix.append([0] * max_clients)
 
-
 for cid, model in clients_model.items():
     # total_client_false_positives = 0
 
@@ -105,7 +104,7 @@ for cid, model in clients_model.items():
     from sklearn.metrics import confusion_matrix
     import matplotlib.pyplot as plt
 
-    cm = confusion_matrix(tt[2], tt[3], normalize= 'true')
+    cm = confusion_matrix(tt[2], tt[3], normalize='true')
     # print(cm)
 
     disp = ConfusionMatrixDisplay(confusion_matrix=cm)
@@ -138,16 +137,12 @@ for cid, model in clients_model.items():
         print(f'Precision: {precision}, Sensitivity: {sensitivity}, Specificity: {specificity}, Accuracy: {accuracy}')
         print('')
 
-
-
-
         # total_client_false_positives = total_client_false_positives + FP
 
     # Precision = TP / (TP + FP)
     # Sensitivity(recall) = TP / (TP + FN)
     # Specificity = TN / (TN + FP)
     # Accuracy = (TP + TN) / (TP + TN + FP + FN)
-
 
     # precision = TP / (TP + FP)
     # sensitivity = TP / (TP + FN)
@@ -161,3 +156,12 @@ for cid, model in clients_model.items():
     # print(f"Average Error for client ID: {cid}", total_accuracies / max_clients)
 
 heatmap(matrix)
+
+index = 0
+for columns in matrix:
+    FP = (sum(columns) - columns[index]) / (len(matrix) - 1)
+    TP = columns[index]
+
+    # Changing positional argument
+    print(f'average accuracy of Label {index} => TP: {round(TP, 4)}, FP: {round(FP, 4)}')
+    index = index + 1

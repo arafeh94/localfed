@@ -4,8 +4,9 @@ from matplotlib.pyplot import figure
 from numpy import ndarray
 
 
-def heatmap(matrix: Union[List[List], ndarray], title="", xlabel="", file_path=None):
-    # plt.rcParams["figure.figsize"] = (20,20)
+def heatmap(matrix: Union[List[List], ndarray], title="", xlabel="", file_path=None, large_size=False):
+    if (large_size):
+        plt.rcParams["figure.figsize"] = (20,20)
     fig, ax = plt.subplots()
     ax.imshow(matrix)
     # ax.set_xticks(np.arange(len(matrix[0])))
