@@ -225,6 +225,29 @@ def resnet56(class_num, channels: int, xy_size: int, pretrained=False, path=None
     return model
 
 
+def resnet56_test(class_num, channels: int, xy_size: int, pretrained=False, path=None, **kwargs):
+    """
+    Constructs a ResNet-110 model.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained.
+    """
+    model = ResNet(channels, xy_size, Bottleneck, [6, 6, 6], class_num, **kwargs)
+    if pretrained:
+        checkpoint = torch.load(path)
+        state_dict = checkpoint['state_dict']
+
+        from collections import OrderedDict
+        new_state_dict = OrderedDict()
+        for k, v in state_dict.items():
+            # name = k[7:]  # remove 'module.' of dataparallel
+            name = k.replace("module.", "")
+            new_state_dict[name] = v
+
+        model.load_state_dict(new_state_dict)
+    return model
+
+
 def resnet110(class_num, channels: int, xy_size: int, pretrained=False, path=None, **kwargs):
     """
     Constructs a ResNet-110 model.
