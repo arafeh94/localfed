@@ -25,9 +25,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 dataset = 'umdaa002fd'
 labels_number = 44
-ud = UniqueDistributor(labels_number, 300, 300)
-client_data = PickleDataProvider('D:\\Github\\my_repository\\localfed\\datasets\\pickles\\umdaa002_FD.pkl').collect()
-# tools.detail(client_data)
+ud = UniqueDistributor(labels_number, 5, 5)
+client_data = PickleDataProvider("../../../datasets/pickles/umdaa02_fd.pkl").collect()
+tools.detail(client_data)
 client_data = ud.distribute(client_data)
 dataset_used = dataset + '_' + ud.id()
 
@@ -49,7 +49,7 @@ initial_models = {
 for model_name, gen_model in initial_models.items():
 
     # hyper_params = {'batch_size': [10, 50, 1000], 'epochs': [1, 5, 20], 'num_rounds': [1200]}
-    hyper_params = {'batch_size': [25], 'epochs': [5], 'num_rounds': [100]}
+    hyper_params = {'batch_size': [5], 'epochs': [1], 'num_rounds': [100]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 
