@@ -49,7 +49,7 @@ initial_models = {
 for model_name, gen_model in initial_models.items():
 
     # hyper_params = {'batch_size': [10, 50, 1000], 'epochs': [1, 5, 20], 'num_rounds': [1200]}
-    hyper_params = {'batch_size': [5], 'epochs': [1], 'num_rounds': [100],
+    hyper_params = {'batch_size': [32], 'epochs': [1], 'num_rounds': [100],
                     'learn_rate': [0.00001, 0.0001, 0.001, 0.01, 0.1]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
@@ -63,8 +63,7 @@ for model_name, gen_model in initial_models.items():
         learn_rate = config['learn_rate']
 
         print(
-            f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds}, '
-            f'initial_model={initial_model} ')
+            f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds}')
 
         trainer_manager = SeqTrainerManager()
         trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=batch_size,
