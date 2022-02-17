@@ -26,12 +26,11 @@ logger = logging.getLogger('main')
 dataset = 'umdaa002fd'
 # total number of clients from umdaa02-fd is 44
 labels_number = 10
-ud = UniqueDistributor(labels_number, 10, 10)
+ud = UniqueDistributor(labels_number, 500, 500)
 client_data = PickleDataProvider("../../../datasets/pickles/umdaa02_fd.pkl").collect()
 # tools.detail(client_data)
 client_data = ud.distribute(client_data)
 dataset_used = dataset + '_' + ud.id()
-
 
 tools.detail(client_data)
 
@@ -50,7 +49,8 @@ initial_models = {
 for model_name, gen_model in initial_models.items():
 
     # hyper_params = {'batch_size': [10, 50, 1000], 'epochs': [1, 5, 20], 'num_rounds': [1200]}
-    hyper_params = {'batch_size': [5], 'epochs': [1], 'num_rounds': [100]}
+    hyper_params = {'batch_size': [5], 'epochs': [1], 'num_rounds': [100],
+                    'learn_rate': [0.00001, 0.0001, 0.001, 0.01, 0.1]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 
@@ -60,7 +60,7 @@ for model_name, gen_model in initial_models.items():
         epochs = config['epochs']
         num_rounds = config['num_rounds']
         initial_model = config['initial_model']
-        learn_rate = 0.0001
+        learn_rate = config['learn_rate']
 
         print(
             f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds}, '
@@ -90,8 +90,6 @@ for model_name, gen_model in initial_models.items():
         # federated.add_subscriber(subscribers.Resumable(federated, tag='002', save_each=5))
 
         federated.add_subscriber(FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
-
-
 
         federated.add_subscriber(WandbLogger(config={
             'lr': learn_rate, 'batch_size': batch_size,
