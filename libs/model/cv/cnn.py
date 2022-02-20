@@ -260,12 +260,13 @@ class CNN_OriginalFedAvg_umdaa02fd(torch.nn.Module):
 
     def __init__(self, classes=44):
         super(CNN_OriginalFedAvg_umdaa02fd, self).__init__()
-        self.conv2d_1 = torch.nn.Conv2d(1, 128, kernel_size=5, padding=2)
+        self.conv2d_1 = torch.nn.Conv2d(3, 128, kernel_size=5, padding=2)
         self.max_pooling = nn.MaxPool2d(2, stride=2)
         self.conv2d_2 = torch.nn.Conv2d(128, 256, kernel_size=5, padding=2)
         self.flatten = nn.Flatten()
-        self.linear_1 = nn.Linear(12_544, 1024)
-        self.linear_2 = nn.Linear(1024, classes)
+        self.linear_1 = nn.Linear(12_544, 512)
+        # self.linear_1 = nn.Linear(49,152, 512)
+        self.linear_2 = nn.Linear(512, classes)
         self.relu = nn.ReLU()
         self.softmax = nn.Softmax(dim=1)
 
@@ -279,4 +280,64 @@ class CNN_OriginalFedAvg_umdaa02fd(torch.nn.Module):
         x = self.flatten(x)
         x = self.relu(self.linear_1(x))
         x = self.softmax(self.linear_2(x))
+        return x
+
+
+class CNN_umdaa02fd_test2(nn.Module):
+    """CNN."""
+
+    def __init__(self):
+        """CNN Builder."""
+        super(CNN_umdaa02fd_test2, self).__init__()
+
+        self.conv_layer = nn.Sequential(
+
+            # Conv Layer block 1
+            nn.Conv2d(in_channels=3, out_channels=128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(in_channels=128, out_channels=256, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+
+            # Conv Layer block 2
+            nn.Conv2d(in_channels=256, out_channels=512, kernel_size=3, padding=1),
+            nn.BatchNorm2d(512),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Dropout2d(p=0.05),
+
+            # Conv Layer block 3
+            nn.Conv2d(in_channels=512, out_channels=1024, kernel_size=3, padding=1),
+            nn.BatchNorm2d(1024),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(in_channels=1024, out_channels=1024, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+        )
+
+        self.fc_layer = nn.Sequential(
+            nn.Dropout(p=0.1),
+            nn.Linear(50176, 1024),
+            nn.ReLU(inplace=True),
+            nn.Linear(1024, 512),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.1),
+            nn.Linear(512, 3)
+        )
+
+    def forward(self, x):
+        """Perform forward."""
+
+        # conv layers
+        x = self.conv_layer(x)
+
+        # flatten
+        x = x.reshape(x.size(0), -1)
+
+        # fc layer
+        x = self.fc_layer(x)
+
         return x

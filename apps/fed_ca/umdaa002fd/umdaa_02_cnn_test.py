@@ -3,10 +3,11 @@ import logging
 from torch import nn
 
 from apps.fed_ca.utilities.hp_generator import generate_configs, calculate_max_rounds
-from libs.model.cv.cnn import CNN_OriginalFedAvg
+from libs.model.cv.cnn import CNN_OriginalFedAvg, CNN_OriginalFedAvg_umdaa02fd, CNN_umdaa02fd_test2
 from libs.model.cv.resnet import resnet56, ResNet
 from libs.model.linear.lr import LogisticRegression
 from src import tools
+from src.apis import lambdas
 from src.data.data_distributor import UniqueDistributor
 from src.data.data_loader import preload
 from src.data.data_provider import PickleDataProvider
@@ -25,13 +26,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 dataset = 'umdaa002fd'
 # total number of clients from umdaa02-fd is 44
-labels_number = 10
+labels_number = 3
 ud = UniqueDistributor(labels_number, 10, 10)
 client_data = PickleDataProvider("../../../datasets/pickles/umdaa02_fd.pkl").collect()
 # tools.detail(client_data)
 client_data = ud.distribute(client_data)
 dataset_used = dataset + '_' + ud.id()
-
 
 tools.detail(client_data)
 
@@ -41,7 +41,9 @@ percentage_nb_client = labels_number
 
 # number of models that we are using
 initial_models = {
-    'resnet56': resnet56(labels_number, 3, 128),
+    # 'resnet56': resnet56(labels_number, 3, 128),
+    # 'CNN_OriginalFedAvg_umdaa02fd': CNN_OriginalFedAvg_umdaa02fd(classes=labels_number),
+    'CNN_umdaa02fd_test2': CNN_umdaa02fd_test2(),
     # 'LR': LogisticRegression(input_shape, labels_number),
     # 'MLP': MLP(input_shape, labels_number)
     # 'CNN_OriginalFedAvg': CNN_OriginalFedAvg()
@@ -60,7 +62,7 @@ for model_name, gen_model in initial_models.items():
         epochs = config['epochs']
         num_rounds = config['num_rounds']
         initial_model = config['initial_model']
-        learn_rate =  0.0001
+        learn_rate = 0.0001
 
         print(
             f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds}, '
@@ -90,8 +92,6 @@ for model_name, gen_model in initial_models.items():
         # federated.add_subscriber(subscribers.Resumable(federated, tag='002', save_each=5))
 
         federated.add_subscriber(FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
-
-
 
         federated.add_subscriber(WandbLogger(config={
             'lr': learn_rate, 'batch_size': batch_size,
