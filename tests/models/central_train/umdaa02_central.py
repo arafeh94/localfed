@@ -1,37 +1,63 @@
 import atexit
 import logging
+from os import path
 
+import wandb
+
+from libs.model.cv.resnet import resnet56
 from libs.model.linear.lr import LogisticRegression
 from src import tools, manifest
+from src.apis import lambdas
+from src.data.data_distributor import UniqueDistributor
 from src.data.data_provider import PickleDataProvider
 from apps.fed_ca.utilities.hp_generator import generate_configs, build_random, calculate_max_rounds
-from libs.model.cv.cnn import CNN_OriginalFedAvg
-import wandb
-# from src.manifest import WandbAuth
+
+from datetime import datetime
+
+start_time = datetime.now()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-dataset_used = 'mnist'
-train, test = PickleDataProvider(manifest.datasets_urls[dataset_used]).collect().shuffle(47).as_tensor().split(0.8)
+labels_number = 10
+input_shape = 128 * 128
+
+dataset_used = 'umdaa002fd'
+ud = UniqueDistributor(labels_number, 500, 500)
+client_data = PickleDataProvider("../../../datasets/pickles/umdaa02_fd.pkl").collect()
+client_data = ud.distribute(client_data)
+dataset_used = dataset_used + '_' + ud.id() + '_central'
+
+generated_filename = "../../../datasets/pickles/"+ dataset_used +".pkl"
+if(path.exists(generated_filename) == False):
+    PickleDataProvider.save(client_data, generated_filename)
+
+
+train, test = PickleDataProvider(generated_filename).collect().reduce(lambdas.dict2dc).shuffle(47).as_tensor().split(
+    0.8)
+
+# train, test = PickleDataProvider(generated_filename).collect().shuffle(47).as_tensor().split(
+#     0.8)
+
+
 # tools.detail(train)
 # tools.detail(test)
 
 # number of models that we are using
 initial_models = {
     # 'CNN_OriginalFedAvg': CNN_OriginalFedAvg(),
-    'LogisticsRegression': LogisticRegression(28 * 28, 10)
+    # 'LogisticsRegression': LogisticRegression(28 * 28, 10),
+    'resnet56': resnet56(labels_number, 3, 128)
+
 }
 
 # building Hyperparameters
-input_shape = 28 * 28
-labels_number = 10
-percentage_nb_client = 10
+percentage_nb_client = labels_number
 
 for model_name, gen_model in initial_models.items():
 
     # hyper_params = {'batch_size': [10, 50], 'epochs': [1, 5, 20], 'num_rounds': [800], 'learn_rate': [0.01, 0.001]}
-    hyper_params = {'batch_size': [10], 'epochs': [1], 'num_rounds': [800], 'learn_rate': [0.001]}
+    hyper_params = {'batch_size': [16], 'epochs': [1], 'num_rounds': [100], 'learn_rate': [0.0001]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 
@@ -44,11 +70,10 @@ for model_name, gen_model in initial_models.items():
         learn_rate = config['learn_rate']
 
         print(
-            f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds}, '
-            f'initial_model={initial_model} ')
+            f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds}')
 
         wandb.login(key=manifest.wandb_config['key'])
-        wandb.init(project='localfed_ubuntu_test05', entity=manifest.wandb_config['entity'], config={
+        wandb.init(project='umdaa-02-fd', entity=manifest.wandb_config['entity'], config={
             'lr': learn_rate, 'batch_size': batch_size,
             'epochs': epochs,
             'num_rounds': num_rounds, 'data_file': dataset_used,
@@ -63,3 +88,6 @@ for model_name, gen_model in initial_models.items():
             wandb.log({'acc': acc, 'loss': loss, 'last_round': i + 1})
             atexit.register(lambda: wandb.finish())
         wandb.finish()
+
+        end_time = datetime.now()
+        print('Total Duration: {}'.format(end_time - start_time))

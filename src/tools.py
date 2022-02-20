@@ -46,7 +46,7 @@ def compress_weights(flattened_weights):
 def train(model, train_data, epochs=10, lr=0.1):
     torch.cuda.empty_cache()
     # change to train mode
-    device = torch.device('cpu')
+    device = torch.device('cuda')
     model.to(device)
     model.train()
     optimizer = torch.optim.SGD(model.parameters(), lr=lr)

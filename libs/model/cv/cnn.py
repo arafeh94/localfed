@@ -254,3 +254,29 @@ class CNN32(torch.nn.Module):
         x = self.relu(self.linear_1(x))
         x = self.softmax(self.linear_2(x))
         return x
+
+
+class CNN_OriginalFedAvg_umdaa02fd(torch.nn.Module):
+
+    def __init__(self, classes=44):
+        super(CNN_OriginalFedAvg_umdaa02fd, self).__init__()
+        self.conv2d_1 = torch.nn.Conv2d(1, 128, kernel_size=5, padding=2)
+        self.max_pooling = nn.MaxPool2d(2, stride=2)
+        self.conv2d_2 = torch.nn.Conv2d(128, 256, kernel_size=5, padding=2)
+        self.flatten = nn.Flatten()
+        self.linear_1 = nn.Linear(12_544, 1024)
+        self.linear_2 = nn.Linear(1024, classes)
+        self.relu = nn.ReLU()
+        self.softmax = nn.Softmax(dim=1)
+
+    def forward(self, x):
+        x = x.view(-1, 128, 128)
+        x = torch.unsqueeze(x, 1)
+        x = self.conv2d_1(x)
+        x = self.max_pooling(x)
+        x = self.conv2d_2(x)
+        x = self.max_pooling(x)
+        x = self.flatten(x)
+        x = self.relu(self.linear_1(x))
+        x = self.softmax(self.linear_2(x))
+        return x
