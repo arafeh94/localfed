@@ -4,15 +4,13 @@ import sys
 sys.path.append('../../')
 
 from torch import nn
-from src.federated.subscribers.fed_plots import EMDWeightDivergence, RoundAccuracy, RoundLoss
+from src.federated.subscribers.fed_plots import RoundAccuracy, RoundLoss
 from src.federated.subscribers.logger import FederatedLogger
-from src.federated.subscribers.sqlite_logger import SQLiteLogger
 from src.federated.subscribers.timer import Timer
 from src.data.data_distributor import LabelDistributor
 from src.data.data_loader import preload
 from libs.model.linear.lr import LogisticRegression
 from src.federated.components import metrics, client_selectors, aggregators, trainers
-from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
 from src.federated.components.trainer_manager import SeqTrainerManager
@@ -20,12 +18,9 @@ from src.federated.components.trainer_manager import SeqTrainerManager
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-# (1)
 client_data = preload('mnist', LabelDistributor(num_clients=100, label_per_client=5, min_size=600, max_size=600))
-# (2)
 trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=50, epochs=25, optimizer='sgd',
                                criterion='cel', lr=0.1)
-# (3)
 federated = FederatedLearning(
     trainer_manager=SeqTrainerManager(),
     trainer_config=trainer_params,
@@ -35,7 +30,7 @@ federated = FederatedLearning(
     trainers_data_dict=client_data,
     initial_model=lambda: LogisticRegression(28 * 28, 10),
     num_rounds=50,
-    desired_accuracy=0.99
+    desired_accuracy=0.99,
 )
 
 # (4)
