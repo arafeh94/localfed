@@ -236,5 +236,20 @@ federated.add_subscriber(RoundLoss(plot_ratio=1))
 
 ## Federated Example
 
-For more example, refer to ./apps/experiments
+For more example, refer to apps/experiments
 
+<u><b>Important Examples:</b></u>
+
+<b>Simple example:</b> apps/experiments/federated_averaging.py<br>
+<b>Description:</b> FederatedLearning using mnist dataset distributed to 100 clients with 600 records each.
+
+<b>Distributed example:</b> apps/experiments/distributed_averaging.py<br>
+<b>Description:</b> same as simple example but using MPI for parallel training.Using MPI requires an additional software
+on the host. Please refer to MPI documentation for additional information. You may find the command required to run the
+script at the top of the script
+
+```bash
+# run 11 instance of the script the first one will be considered the server while the rest 10 will be considered 
+# as clients, make sure client selector select 10 clients each round to benefits from all instances
+mpiexec -n 11 python distributed_averaging.py
+```
