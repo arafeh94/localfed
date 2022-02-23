@@ -1,5 +1,6 @@
 import hashlib
 import typing
+from functools import reduce
 
 
 def smooth(vals, sigma=2):
@@ -27,3 +28,8 @@ def fed_avg(runs: typing.List['FederatedLearning.Context']):
         avg_acc[round_id] = np.average(avg_acc[round_id])
         avg_loss[round_id] = np.average(avg_loss[round_id])
     return avg_acc, avg_loss
+
+
+def factors(n):
+    return set(reduce(list.__add__,
+                      ([i, n // i] for i in range(1, int(n ** 0.5) + 1) if n % i == 0)))

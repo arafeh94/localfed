@@ -260,7 +260,7 @@ class CNN_OriginalFedAvg_umdaa02fd(torch.nn.Module):
 
     def __init__(self, classes=44):
         super(CNN_OriginalFedAvg_umdaa02fd, self).__init__()
-        self.conv2d_1 = torch.nn.Conv2d(3, 128, kernel_size=5, padding=2)
+        self.conv2d_1 = torch.nn.Conv2d(3, 128, kernel_size=(5, 5), padding=2)
         self.max_pooling = nn.MaxPool2d(2, stride=2)
         self.conv2d_2 = torch.nn.Conv2d(128, 256, kernel_size=5, padding=2)
         self.flatten = nn.Flatten()
@@ -340,4 +340,31 @@ class CNN_umdaa02fd_test2(nn.Module):
         # fc layer
         x = self.fc_layer(x)
 
+        return x
+
+
+class CNN_OriginalFedAvg_fall(torch.nn.Module):
+
+    def __init__(self, classes=44, features=11):
+        super(CNN_OriginalFedAvg_fall, self).__init__()
+        self.conv2d_1 = torch.nn.Conv1d(3, features, kernel_size=(5, 5), padding=2)
+        self.max_pooling = nn.MaxPool1d(2, stride=2)
+        self.conv2d_2 = torch.nn.Conv1d(features, features*2, kernel_size=5, padding=2)
+        self.flatten = nn.Flatten()
+        self.linear_1 = nn.Linear(features*2*5*5*2 - features, 128  )
+        # self.linear_1 = nn.Linear(49,152, 512)
+        self.linear_2 = nn.Linear(128, classes)
+        self.relu = nn.ReLU()
+        self.softmax = nn.Softmax(dim=1)
+
+    def forward(self, x):
+        # x = x.view(-1, 128, 128)
+        # x = torch.unsqueeze(x, 1)
+        x = self.conv2d_1(x)
+        x = self.max_pooling(x)
+        x = self.conv2d_2(x)
+        x = self.max_pooling(x)
+        x = self.flatten(x)
+        x = self.relu(self.linear_1(x))
+        x = self.softmax(self.linear_2(x))
         return x

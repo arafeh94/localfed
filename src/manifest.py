@@ -28,5 +28,7 @@ datasets_urls = {
     "fekdd_test": "https://www.dropbox.com/s/ijqxm1x5sy1us5n/fekdd_test.zip?dl=1",
     "fekdd_train": "https://www.dropbox.com/s/su1uucnd3z2072z/fekdd_train.zip?dl=1",
     "signs": "https://www.dropbox.com/s/ni85ukowhs9ghkb/signs.zip?dl=1",
-    "cifar10": "https://www.dropbox.com/s/2x8176jyrs6ydqi/cifar10.zip?dl=1"
+    "cifar10": "https://www.dropbox.com/s/2x8176jyrs6ydqi/cifar10.zip?dl=1",
+    "fall_ar_by_client": "https://www.dropbox.com/s/fqnes7ohlbi6nbz/fall_ar_by_client.zip?dl=1",
+    "fall_by_client": "https://www.dropbox.com/s/3dypajqvzmtzkvk/fall_by_client.zip?dl=1"
 }

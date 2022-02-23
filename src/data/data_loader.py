@@ -23,7 +23,7 @@ def preload(dataset, distributor: Distributor = None, tag=None, transformer=None
     Returns: clients data of type typing.Dict[int, DataContainer]
 
     """
-    tag = tag or dataset + '_' + distributor.id() if distributor else ''
+    tag = tag or (dataset + '_' + distributor.id() if distributor else dataset)
     file_path = manifest.DATA_PATH + tag + ".pkl"
     logger.info(f'searching for {file_path}...')
     data = None
@@ -36,8 +36,8 @@ def preload(dataset, distributor: Distributor = None, tag=None, transformer=None
         data = PickleDataProvider(manifest.datasets_urls[dataset]).collect()
         if distributor:
             data = distributor.distribute(data)
+        data = transformer(data) if callable(transformer) else data
         pickle.dump(data, open(file_path, 'wb'))
-    data = transformer(data) if callable(transformer) else data
     return data
 
 

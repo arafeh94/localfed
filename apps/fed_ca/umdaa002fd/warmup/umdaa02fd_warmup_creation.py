@@ -15,7 +15,7 @@ from src.data.data_loader import preload
 # 5% of 1000 from mnist, that's 50 data sample, plus 10 for testing
 from src.data.data_provider import PickleDataProvider
 
-ratio = 0.25
+ratio = 0.5
 labels_number = 3
 ud = UniqueDistributor(labels_number, 500 * ratio, 500* ratio)
 dataset_name = 'umdaa02fd'
@@ -46,6 +46,6 @@ for learn_rate in learn_rates:
     acc = round(acc, 4)
     loss = round(loss, 4)
     file_name = 'warmup_' + ud.id() + '_' + model_name + '_lr_' + str(learn_rate) + '_e_' + str(epochs) + '_b_' + str(
-        batch_size) + '_acc_' + str(acc) + '.pkl'
+        batch_size) + '_acc_' + str(acc) + '_loss_' + str(loss) + '.pkl'
     print(file_name, '\n', 'acc = ', acc, ' loss = ', loss)
     pickle.dump(model, open('umdaa02fd_pretrained_models\\' + file_name, 'wb'))
