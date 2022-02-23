@@ -1,5 +1,4 @@
-For this session, we will talk in detail about the architecture of the framework. We have an image that shows the
-hierarchical structure of the layers. Our federated framework is composed of multiple components. Each one is a driver
+Our federated framework is composed of multiple components. Each one is a driver
 with multiple implementations that can be used and changed. The second layer is the driver layer, where we define the
 protocols that need to be implemented. The federated will delegate the work to these drivers considering that they
 implemented all the required methods. Each driver is needed in the federated learning to complete a specific work. We

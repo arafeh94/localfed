@@ -150,12 +150,13 @@ class Serializable:
         self.save()
 
 
+# noinspection PyUnresolvedReferences
 class TorchModel:
     def __init__(self, model):
         self.model = model
         self.logger = logging.getLogger('TorchModel')
 
-    def train(self, batched, **kwargs):
+    def train(self, batched: 'DataContainer', **kwargs):
         r"""
         Args:
             batched:
@@ -175,7 +176,8 @@ class TorchModel:
         momentum = kwargs.get('momentum', 0)
         optimizer = kwargs.get('optimizer', torch.optim.SGD(model.parameters(), lr=learn_rate, momentum=momentum))
         criterion = kwargs.get('criterion', nn.CrossEntropyLoss())
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        device = torch.device(kwargs['device'] if 'device' in kwargs['device'] else
+                              'cuda' if torch.cuda.is_available() else 'cpu')
         verbose = kwargs.get('verbose', 1)
         model.to(device)
         model.train()

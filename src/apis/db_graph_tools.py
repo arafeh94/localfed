@@ -51,7 +51,7 @@ class Graphs:
             print(values)
             session_values[f'{session_id}_{field}_{str(transform)}'] = values
         if animated:
-            pause = 0.05
+            pause = animated if isinstance(animated, (int, float)) else 0.05
             session_end = [False] * len(sessions)
             round_id = 0
             session_plot_values = defaultdict(list)

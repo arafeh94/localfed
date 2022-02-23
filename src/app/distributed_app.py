@@ -45,7 +45,7 @@ class DistributedApp:
             if self.comm.pid() == 0:
                 self.logger.info(f'server start: {self.settings}')
                 app = MPIApp(self.settings, self.comm)
-                app.start_all()
+                app.start()
             else:
                 self.logger.info(f'child start: {self.comm.pid()}')
                 MPITrainerManager.mpi_trainer_listener(self.comm)

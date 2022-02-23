@@ -45,4 +45,4 @@ def optimizer(name, **kwargs):
 def criterion(name, **kwargs):
     if name in ['cross_entropy_loss', 'cel']:
         return nn.CrossEntropyLoss()
-    Exception(f'unknown criterion {name}')
+    raise Exception(f'unknown criterion {name}')

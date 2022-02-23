@@ -9,7 +9,6 @@ CHECKPOINTS_PATH = f'{ROOT_PATH}/checkpoints.fed'
 DEFAULT_ACC_PATH = COMPARE_PATH + "acc.pkl"
 DEFAULT_DIV_PATH = COMPARE_PATH + "div.pkl"
 DB_PATH = COMPARE_PATH + "perf.db"
-__urls_datasets_links_ = None
 
 wandb_config = {
     'key': '3c35c1f04ebc7ffc1825f3056a6aabe714a1ccdc',
@@ -27,5 +26,8 @@ datasets_urls = {
     "fekdd_test": "https://www.dropbox.com/s/ijqxm1x5sy1us5n/fekdd_test.zip?dl=1",
     "fekdd_train": "https://www.dropbox.com/s/su1uucnd3z2072z/fekdd_train.zip?dl=1",
     "signs": "https://www.dropbox.com/s/ni85ukowhs9ghkb/signs.zip?dl=1",
-    "cifar10": "https://www.dropbox.com/s/2x8176jyrs6ydqi/cifar10.zip?dl=1"
+    "cifar10": "https://www.dropbox.com/s/2x8176jyrs6ydqi/cifar10.zip?dl=1",
+    "fall_by_client": "https://www.dropbox.com/s/y7glz4pnzflbha4/fall_by_client.zip?dl=1",
+    "fall_ar_by_client": "https://www.dropbox.com/s/txo6e1noq6gbrvz/fall_ar_by_client.zip?dl=1",
+    "mnist10k_mr1": "https://mega.nz/file/nxE32SDA#aKxvOQ_Aq2ypFpO8pNJdpte8ScuxjD8fNbdTCxfclbk"
 }

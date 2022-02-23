@@ -1,6 +1,5 @@
 import copy
 import typing
-
 import numpy as np
 import torch
 from src.apis.extensions import Functional
@@ -12,7 +11,7 @@ class DataContainer(Functional):
         self.x = x
         self.y = y
 
-    def batch(self, batch_size):
+    def batch(self, batch_size=0):
         if len(self.x) == 0:
             return list()
         batch_data = list()
@@ -136,6 +135,9 @@ class DataContainer(Functional):
         new_x = other.x if self.is_empty() else np.concatenate((self.x, other.x))
         new_y = other.y if self.is_empty() else np.concatenate((self.y, other.y))
         return DataContainer(new_x, new_y)
+
+    def __getitem__(self, key):
+        return DataContainer(self.x[key], self.y[key])
 
     def __repr__(self):
         return f'Size:{len(self)}, Unique:{np.unique(self.y)}, Features:{None if self.is_empty() else np.shape(self.x[0])}'

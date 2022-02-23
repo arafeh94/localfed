@@ -6,6 +6,7 @@ from scipy.stats import wasserstein_distance
 from src import tools
 from src.federated.events import FederatedEventPlug
 from src.federated.federated import FederatedLearning
+import os, psutil
 
 
 class BasePlotter(FederatedEventPlug):
@@ -110,6 +111,25 @@ class RoundLoss(BasePlotter):
         return f'loss_{context.round_id}'
 
 
+class CPUUsage(BasePlotter):
+    def __init__(self):
+        super().__init__()
+        self.process = psutil.Process(os.getpid())
+        self.usage = []
+
+    def round_plot(self, params):
+        self.usage.append(self.process.cpu_percent())
+        return None
+
+    def final_plot(self, params):
+        plt.title('CPU Usage')
+        plt.plot(self.usage)
+        return plt
+
+    def save_file_name(self, context: FederatedLearning.Context):
+        return f'ram_{context.round_id}'
+
+
 class EMDWeightDivergence(BasePlotter):
     def __init__(self, plot_ratio=1, show_plot=True, save_dir=None):
         super().__init__(plot_ratio=plot_ratio, show_plot=show_plot, save_dir=save_dir)
@@ -133,9 +153,11 @@ class EMDWeightDivergence(BasePlotter):
         history = params['context'].history
         for round_id, item in history.items():
             wd.append(item['wd'])
-        plt.plot(wd)
-        plt.title('EMD Weight Divergence')
-        return plt
+        figure = plt.figure(1)
+        plot = figure.add_subplot()
+        plot.plot(wd)
+        plot.set_title('EMD Weight Divergence')
+        return figure
 
     def final_plot(self, params):
         return self.round_plot(params)

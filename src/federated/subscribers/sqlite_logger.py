@@ -1,4 +1,5 @@
 import logging
+import os.path
 import re
 import sqlite3
 from sqlite3 import OperationalError

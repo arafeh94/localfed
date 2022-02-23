@@ -1,6 +1,8 @@
 import copy
 import math
 import typing
+from datetime import datetime, timedelta
+
 import numpy as np
 import torch
 import tqdm
@@ -40,6 +42,12 @@ def compress_weights(flattened_weights):
     pca.fit(weights)
     weights = pca.transform(weights)
     return weights.flatten()
+
+
+def timed_func(seconds, callable: typing.Callable):
+    stop = datetime.now() + timedelta(seconds=seconds)
+    while datetime.now() < stop:
+        callable()
 
 
 def train(model, train_data, epochs=10, lr=0.1):

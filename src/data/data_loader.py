@@ -11,6 +11,26 @@ from src.data.data_provider import PickleDataProvider
 logger = logging.getLogger('data_loader')
 
 
+def get_dataset_path(dataset_name):
+    # try to load dataset from our dropbox urls, if it not exists it might be either a name in dataset path or a hole
+    # path. if it is a path we load it, otherwise we check if the dataset path contains such a dataset
+    # if all fails we raise an exception
+    if dataset_name in manifest.datasets_urls:
+        return manifest.datasets_urls[dataset_name]
+    if os.path.exists(dataset_name):
+        return dataset_name
+    file_path = manifest.DATA_PATH + dataset_name + ".pkl"
+    if os.path.exists(file_path):
+        return file_path
+    raise Exception('unknown dataset is requested')
+
+
+def load_tag(tag):
+    file_path = manifest.DATA_PATH + tag + ".pkl"
+    data = pickle.load(open(file_path, 'rb'))
+    return data
+
+
 def preload(dataset, distributor: Distributor = None, tag=None, transformer=None) -> typing.Union[
     Dict[int, DataContainer], DataContainer]:
     """
@@ -23,7 +43,8 @@ def preload(dataset, distributor: Distributor = None, tag=None, transformer=None
     Returns: clients data of type typing.Dict[int, DataContainer]
 
     """
-    tag = tag or dataset + '_' + distributor.id() if distributor else ''
+
+    tag = tag or (dataset + '_' + distributor.id() if distributor else dataset)
     file_path = manifest.DATA_PATH + tag + ".pkl"
     logger.info(f'searching for {file_path}...')
     data = None
@@ -33,12 +54,28 @@ def preload(dataset, distributor: Distributor = None, tag=None, transformer=None
         logger.info(data)
     else:
         logger.info('distributed data file does not exists, distributing...')
-        data = PickleDataProvider(manifest.datasets_urls[dataset]).collect()
+        data = PickleDataProvider(get_dataset_path(dataset)).collect(file_name=dataset)
         if distributor:
             data = distributor.distribute(data)
+        data = transformer(data) if callable(transformer) else data
         pickle.dump(data, open(file_path, 'wb'))
-    data = transformer(data) if callable(transformer) else data
     return data
+
+
+def mnist() -> DataContainer:
+    return preload('mnist', None)
+
+
+def cifar10() -> DataContainer:
+    return preload('cifar10', None)
+
+
+def fall() -> DataContainer:
+    return preload('fall_all_merged', None)
+
+
+def kdd() -> DataContainer:
+    return preload('kdd', None)
 
 
 def mnist_10shards_100c_400min_400max() -> Dict[int, DataContainer]:

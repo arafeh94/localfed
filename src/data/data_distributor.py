@@ -155,7 +155,7 @@ class LabelDistributor(Distributor):
             x = self.grouped[label][self.selected[label]:self.selected[label] + size]
             y = [label] * len(x)
             self.selected[label] += size
-            if len(x) == 0:
+            if len(x) == 0 and label in self.all_labels:
                 del self.all_labels[self.all_labels.index(label)]
             return x, y
 
@@ -273,3 +273,73 @@ class ShardDistributor(Distributor):
 
     def id(self):
         return f'shard_{self.shards_per_client}spp_{self.shard_size}ss'
+
+
+class ManualDistributor(Distributor):
+    def __init__(self, size_dict: Dict[int, int]):
+        """
+        distribute data to client manually based on dictionary
+        Args:
+            size_dict: a dictionary contains key:how much data, value:size of clients. example {10:100, 2:40} means 10
+            clients will receive 100 records and 2 clients will receive 40 records
+        """
+        super().__init__()
+        self.size_dict = size_dict
+
+    def distribute(self, data: DataContainer) -> Dict[int, DataContainer]:
+        data = data.as_list()
+        clients_data = Dict()
+        data_pos = 0
+        xs = data.x
+        ys = data.y
+        for i in self.size_dict:
+            client_data_size = self.size_dict[i]
+            client_x = xs[data_pos:data_pos + client_data_size]
+            client_y = ys[data_pos:data_pos + client_data_size]
+            data_pos += len(client_x)
+            clients_data[i] = DataContainer(client_x, client_y).as_tensor()
+        return clients_data
+
+    def id(self):
+        st = []
+        for key, val in self.size_dict.items():
+            st.append(key + ':' + val)
+        st = '_'.join(st)
+        return f'manual_{st}'
+
+
+class PipeDistributor(Distributor):
+    @staticmethod
+    def pick_by_label_id(label_ids: list, size, repeat):
+        def picker(grouper: LabelDistributor.Grouper):
+            per_label_size = int(size / len(label_ids))
+            clients = []
+            for r in range(repeat):
+                client_x = []
+                client_y = []
+                for label in label_ids:
+                    rx, ry = grouper.get(label, per_label_size)
+                    if len(rx) != 0:
+                        client_x = rx if len(client_x) == 0 else np.concatenate((client_x, rx))
+                        client_y = ry if len(client_y) == 0 else np.concatenate((client_y, ry))
+                clients.append(DataContainer(client_x, client_y))
+            return clients
+
+        return picker
+
+    def __init__(self, pipes: list):
+        super().__init__()
+        self.pipes = pipes
+
+    def id(self):
+        return f'pipe'
+
+    def distribute(self, data: DataContainer) -> Dict[int, DataContainer]:
+        all_clients = []
+        grouper = LabelDistributor.Grouper(data.x, data.y)
+        for pipe in self.pipes:
+            all_clients.extend(pipe(grouper))
+        client_dict = {}
+        for i in range(len(all_clients)):
+            client_dict[i] = all_clients[i]
+        return client_dict

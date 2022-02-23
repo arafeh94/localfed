@@ -38,7 +38,7 @@ def as_numpy(_, val: DataContainer) -> np.array:
 def as_tensor(_, val: DataContainer) -> 'Tensor':
     if not isinstance(val, DataContainer):
         raise Exception(f'as tensor lambdas work only on dictionaries with DataContainer as value, '
-                        f'current value type is {type(val)}')
+                        f'current value type is {type(val)}. try using .as_tensor() instead')
     return val.as_tensor()
 
 
@@ -49,3 +49,33 @@ def dict2dc(dc: DataContainer, key: int, val: DataContainer) -> DataContainer:
 
 def dc_split(percentage, take0or1) -> typing.Callable:
     return lambda cid, data: data.split(percentage)[take0or1]
+
+
+# noinspection PyPep8Naming
+class reducers:
+    @staticmethod
+    def dict2dc(dc: DataContainer, key: int, val: DataContainer) -> DataContainer:
+        return dict2dc(dc, key, val)
+
+
+# noinspection PyPep8Naming
+class mappers:
+    @staticmethod
+    def as_numpy(_, val: DataContainer) -> np.array:
+        return as_numpy(_, val)
+
+    @staticmethod
+    def as_tensor(_, val: DataContainer) -> 'Tensor':
+        return as_tensor(_, val)
+
+    @staticmethod
+    def dc_split(percentage, take0or1) -> typing.Callable:
+        return dc_split(percentage, take0or1)
+
+    @staticmethod
+    def reshape(shape: typing.Tuple) -> typing.Callable:
+        return reshape(shape)
+
+    @staticmethod
+    def transpose(shape: typing.Tuple) -> typing.Callable:
+        return transpose(shape)
