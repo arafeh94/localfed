@@ -1,4 +1,5 @@
 import logging
+import pickle
 
 from torch import nn
 
@@ -7,6 +8,7 @@ from libs.model.cv.cnn import CNN_OriginalFedAvg
 from libs.model.cv.resnet import resnet56, ResNet
 from libs.model.linear.lr import LogisticRegression
 from src import tools
+from src.apis.extensions import Dict
 from src.data.data_distributor import UniqueDistributor
 from src.data.data_loader import preload
 from src.data.data_provider import PickleDataProvider
