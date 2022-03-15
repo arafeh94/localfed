@@ -20,11 +20,11 @@ start_time = datetime.now()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-dataset = 'umdaa002fd'
+dataset = 'umdaa02_fd_filtered_cropped'
 # total number of clients from umdaa02-fd is 44
 labels_number = 3
 ud = UniqueDistributor(labels_number, 500, 500)
-client_data = PickleDataProvider("../../../../datasets/pickles/umdaa02_fd.pkl").collect()
+client_data = PickleDataProvider("../../../../datasets/pickles/umdaa02_fd_filtered_cropped.pkl").collect()
 # tools.detail(client_data)
 client_data = ud.distribute(client_data)
 dataset_used = dataset + '_' + ud.id()
@@ -32,7 +32,7 @@ dataset_used = dataset + '_' + ud.id()
 
 def load_warmup():
     model = pickle.load(open(
-        "umdaa02fd_pretrained_models\warmup_unique_3c_250.0mn_250.0mx_resnet56()_lr_0.0001_e_600_b_24_acc_0.4853_loss_1.0703.pkl",
+        "umdaa02fd_pretrained_models\warmup_umdaa02_fd_filtered_cropped_unique_3c_75.0mn_75.0mx_resnet56()_lr_0.001_e_2_b_24_acc_0.2889_loss_1.1095.pkl",
         'rb'))
     return model
 
@@ -62,7 +62,7 @@ for model_name, gen_model in initial_models.items():
         epochs = config['epochs']
         num_rounds = config['num_rounds']
         initial_model = config['initial_model']
-        learn_rate = 0.0001
+        learn_rate = 0.001
 
         print(
             f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds},'

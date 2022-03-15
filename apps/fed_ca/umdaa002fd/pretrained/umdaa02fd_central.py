@@ -4,6 +4,7 @@ from os import path
 
 import wandb
 
+from apps.fed_ca.umdaa002fd.pretrained.inception_resnet_v1 import InceptionResnetV1
 from libs.model.cv.resnet import resnet56
 from libs.model.linear.lr import LogisticRegression
 from src import tools, manifest
@@ -14,21 +15,27 @@ from apps.fed_ca.utilities.hp_generator import generate_configs, build_random, c
 
 from datetime import datetime
 
+
+
+def load_pretrained():
+    model = InceptionResnetV1(pretrained='vggface2', classify=True).eval()
+    return model
+
 start_time = datetime.now()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-labels_number = 3
+labels_number = 10
 input_shape = 128 * 128
 
-dataset_used = 'umdaa02_fd_filtered_cropped'
+dataset_used = 'umdaa002fd_filtered'
 ud = UniqueDistributor(labels_number, 500, 500)
-client_data = PickleDataProvider("../../../datasets/pickles/umdaa02_fd_filtered_cropped.pkl").collect()
+client_data = PickleDataProvider("../../../../datasets/pickles/umdaa02_fd_filtered.pkl").collect()
 client_data = ud.distribute(client_data)
 dataset_used = dataset_used + '_' + ud.id() + '_central'
 
-generated_filename = "../../../datasets/pickles/"+ dataset_used +".pkl"
+generated_filename = "../../../../datasets/pickles/"+ dataset_used +".pkl"
 if(path.exists(generated_filename) == False):
     PickleDataProvider.save(client_data, generated_filename)
 
@@ -40,14 +47,14 @@ train, test = PickleDataProvider(generated_filename).collect().reduce(lambdas.di
 #     0.8)
 
 
-tools.detail(train)
+# tools.detail(train)
 # tools.detail(test)
 
 # number of models that we are using
 initial_models = {
     # 'CNN_OriginalFedAvg': CNN_OriginalFedAvg(),
     # 'LogisticsRegression': LogisticRegression(28 * 28, 10),
-    'resnet56': resnet56(labels_number, 3, 128)
+    'vggface2': InceptionResnetV1(pretrained='vggface2').eval()
 
 }
 
@@ -56,7 +63,7 @@ percentage_nb_client = labels_number
 
 for model_name, gen_model in initial_models.items():
     # learn rate of 0.0001 is the best for umdaa02_filtered central
-    hyper_params = {'batch_size': [24], 'epochs': [1], 'num_rounds': [800], 'learn_rate': [0.01]}
+    hyper_params = {'batch_size': [24], 'epochs': [1], 'num_rounds': [5], 'learn_rate': [0.001]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 
@@ -72,7 +79,7 @@ for model_name, gen_model in initial_models.items():
             f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds}')
 
         wandb.login(key=manifest.wandb_config['key'])
-        wandb.init(project='umdaa-02-fd-filtered-cropped', entity=manifest.wandb_config['entity'], config={
+        wandb.init(project='umdaa-02-fd-filtered-pretrained', entity=manifest.wandb_config['entity'], config={
             'lr': learn_rate, 'batch_size': batch_size,
             'epochs': epochs,
             'num_rounds': num_rounds, 'data_file': dataset_used,

@@ -25,11 +25,11 @@ start_time = datetime.now()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
-dataset = 'umdaa002fd'
+dataset = 'umdaa02_fd_filtered_cropped'
 # total number of clients from umdaa02-fd is 44
-labels_number = 10
+labels_number = 3
 ud = UniqueDistributor(labels_number, 500, 500)
-client_data = PickleDataProvider("../../../datasets/pickles/umdaa02_fd.pkl").collect()
+client_data = PickleDataProvider("../../../datasets/pickles/umdaa02_fd_filtered_cropped.pkl").collect()
 # tools.detail(client_data)
 client_data = ud.distribute(client_data)
 dataset_used = dataset + '_' + ud.id()
@@ -51,8 +51,8 @@ initial_models = {
 for model_name, gen_model in initial_models.items():
 
     # hyper_params = {'batch_size': [10, 50, 1000], 'epochs': [1, 5, 20], 'num_rounds': [1200]}
-    hyper_params = {'batch_size': [32], 'epochs': [1], 'num_rounds': [100],
-                    'learn_rate': [0.00001, 0.0001, 0.001, 0.01]}
+    hyper_params = {'batch_size': [24], 'epochs': [1], 'num_rounds': [2],
+                    'learn_rate': [0.001, 0.01, 0.1]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 

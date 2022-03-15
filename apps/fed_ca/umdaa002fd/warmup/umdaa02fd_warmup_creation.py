@@ -15,12 +15,12 @@ from src.data.data_loader import preload
 # 5% of 1000 from mnist, that's 50 data sample, plus 10 for testing
 from src.data.data_provider import PickleDataProvider
 
-ratio = 0.5
+ratio = 0.15
 labels_number = 3
 ud = UniqueDistributor(labels_number, 500 * ratio, 500* ratio)
-dataset_name = 'umdaa02fd'
+dataset_name = 'umdaa02_fd_filtered_cropped'
 
-client_data = PickleDataProvider("../../../../datasets/pickles/umdaa02_fd.pkl").collect()
+client_data = PickleDataProvider("../../../../datasets/pickles/umdaa02_fd_filtered_cropped.pkl").collect()
 client_data = ud.distribute(client_data)
 dataset_used = dataset_name + '_' + ud.id()
 
@@ -33,7 +33,7 @@ tools.detail(train)
 tools.detail(test)
 
 # learn_rates = [0.1, 0.01, 0.001, 0.0001]
-learn_rates = [0.0001]
+learn_rates = [0.001]
 epochs = 600
 batch_size = 24
 for learn_rate in learn_rates:
@@ -45,7 +45,7 @@ for learn_rate in learn_rates:
     acc, loss = trainer.infer(test.batch(batch_size))
     acc = round(acc, 4)
     loss = round(loss, 4)
-    file_name = 'warmup_' + ud.id() + '_' + model_name + '_lr_' + str(learn_rate) + '_e_' + str(epochs) + '_b_' + str(
+    file_name = 'warmup_' + dataset_used + '_' + model_name + '_lr_' + str(learn_rate) + '_e_' + str(epochs) + '_b_' + str(
         batch_size) + '_acc_' + str(acc) + '_loss_' + str(loss) + '.pkl'
     print(file_name, '\n', 'acc = ', acc, ' loss = ', loss)
     pickle.dump(model, open('umdaa02fd_pretrained_models\\' + file_name, 'wb'))

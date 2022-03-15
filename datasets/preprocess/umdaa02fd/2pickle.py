@@ -142,6 +142,7 @@ all_train_y = []
 user_labels = 44
 for user_label in range(user_labels):
     xs, ys = get_data(filtered_clients, user_label)
+    xs_file_name = None
     all_train_x.append(xs)
     all_train_y.append(ys)
 
@@ -156,3 +157,12 @@ all_data = {'data': xs, 'label': ys}
 dc = DataContainer(xs, ys)
 print("saving...")
 PickleDataProvider.save(dc, '../../pickles/umdaa02_fd_filtered_test.pkl')
+
+# for user_id in users:
+#     for image_file, img in get_user_images(user_id):
+#         x1, y1, x2, y2 = get_bouding(image_file)
+#         img = crop(img, (x1, y1, x2, y2))
+#         img = rescale(img, (width, hight))
+#         img = flatten(img)
+#         xs.append(img)
+#         ys.append(user_id)
