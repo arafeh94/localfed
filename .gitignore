@@ -48,6 +48,7 @@ cifar-10-batches-py
 /datasets/pickles/femnist.pkl
 /datasets/pickles/mnist.pkl
 /datasets/pickles/cars.pkl
+/datasets/preprocess/umdaa02fd/umdaa02_fd_filtered_tmp.pkl
 
 #raw datasets
 /datasets/raw/femnist/fed_emnist_train.h5
