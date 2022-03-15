@@ -27,12 +27,12 @@ ud = UniqueDistributor(labels_number, 500, 500)
 client_data = PickleDataProvider("../../../../datasets/pickles/umdaa02_fd_filtered_cropped.pkl").collect()
 # tools.detail(client_data)
 client_data = ud.distribute(client_data)
-dataset_used = dataset + '_' + ud.id()
+dataset_used = dataset + '_' + ud.id() + '_warmup'
 
 
 def load_warmup():
     model = pickle.load(open(
-        "umdaa02fd_pretrained_models\warmup_umdaa02_fd_filtered_cropped_unique_3c_75.0mn_75.0mx_resnet56()_lr_0.001_e_2_b_24_acc_0.2889_loss_1.1095.pkl",
+        "umdaa02fd_pretrained_models\warmup_umdaa02_fd_filtered_cropped_unique_3c_75.0mn_75.0mx_resnet56()_lr_0.001_e_600_b_24_acc_0.6222_loss_0.9492.pkl",
         'rb'))
     return model
 
@@ -53,7 +53,7 @@ initial_models = {
 # runs = {}
 for model_name, gen_model in initial_models.items():
 
-    hyper_params = {'batch_size': [24], 'epochs': [1], 'num_rounds': [2]}
+    hyper_params = {'batch_size': [24], 'epochs': [1], 'num_rounds': [200]}
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 
     logger.info(calculate_max_rounds(hyper_params))
