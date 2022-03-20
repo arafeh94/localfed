@@ -26,7 +26,6 @@ def preload(dataset, distributor: Distributor = None, tag=None, transformer=None
     tag = tag or (dataset + '_' + distributor.id() if distributor else dataset)
     file_path = manifest.DATA_PATH + tag + ".pkl"
     logger.info(f'searching for {file_path}...')
-    data = None
     if os.path.exists(file_path):
         logger.info('distributed data file exists, loading...')
         data = pickle.load(open(file_path, 'rb'))

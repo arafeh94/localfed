@@ -29,7 +29,7 @@ class AVGAggregator(Aggregator):
         return averaged_params
 
 # extends aggregator
-class WazzehAggregator(Aggregator):
+class DraftAggregator(Aggregator):
     def aggregate(self, trainers_models_weight_dict: Dict[int, nn.ModuleDict], sample_size: Dict[int, int],
                   round_id: int) -> nn.ModuleDict:
         pass
