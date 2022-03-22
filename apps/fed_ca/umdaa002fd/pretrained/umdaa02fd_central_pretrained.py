@@ -103,3 +103,5 @@ for model_name, gen_model in initial_models.items():
 
         end_time = datetime.now()
         print('Total Duration: {}'.format(end_time - start_time))
+
+
