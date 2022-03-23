@@ -2,22 +2,23 @@ import logging
 import os.path
 import re
 import sqlite3
+from pathlib import Path
 from sqlite3 import OperationalError
 
 from src import manifest
-from src.federated.events import FederatedEventPlug
+from src.federated.events import FederatedSubscriber
 from src.federated.federated import FederatedLearning
 
 
 # noinspection SqlNoDataSourceInspection
-class SQLiteLogger(FederatedEventPlug):
-    def __init__(self, id, db_path=manifest.DB_PATH, tag=''):
+class SQLiteLogger(FederatedSubscriber):
+    def __init__(self, id, db_path=manifest.DB_PATH, config=''):
         super().__init__()
         self.id = id
-        self.con = sqlite3.connect(db_path)
+        self.con = sqlite3.connect(db_path, timeout=1000)
         self.check_table_creation = True
         self._logger = logging.getLogger('sqlite')
-        self.tag = str(tag)
+        self.tag = str(config)
         self._check_table_name()
 
     def on_federated_started(self, params):
@@ -82,7 +83,7 @@ class SQLiteLogger(FederatedEventPlug):
 
     def on_round_end(self, params):
         context: FederatedLearning.Context = params['context']
-        last_record: dict = context.history[list(context.history.keys())[-1]]
+        last_record: dict = context.history[context.round_id]
         self.log(context.round_id, **last_record)
 
     def _check_table_name(self):

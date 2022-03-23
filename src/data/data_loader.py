@@ -15,13 +15,13 @@ def get_dataset_path(dataset_name):
     # try to load dataset from our dropbox urls, if it not exists it might be either a name in dataset path or a hole
     # path. if it is a path we load it, otherwise we check if the dataset path contains such a dataset
     # if all fails we raise an exception
-    if dataset_name in manifest.datasets_urls:
-        return manifest.datasets_urls[dataset_name]
-    if os.path.exists(dataset_name):
-        return dataset_name
     file_path = manifest.DATA_PATH + dataset_name + ".pkl"
     if os.path.exists(file_path):
         return file_path
+    if os.path.exists(dataset_name):
+        return dataset_name
+    if dataset_name in manifest.datasets_urls:
+        return manifest.datasets_urls[dataset_name]
     raise Exception('unknown dataset is requested')
 
 

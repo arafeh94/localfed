@@ -1,10 +1,10 @@
 import logging
 import time
 from collections import defaultdict
-from src.federated.events import Events, FederatedEventPlug
+from src.federated.events import Events, FederatedSubscriber
 
 
-class Timer(FederatedEventPlug):
+class Timer(FederatedSubscriber):
     TRAINER = 'trainer'
     FEDERATED = 'federated'
     ROUND = 'round'

@@ -4,11 +4,8 @@ import math
 import time
 from collections import defaultdict
 from functools import reduce
-from typing import Dict
-import src.apis.extensions as extensions
-import src
-from src import tools
 from src.apis.broadcaster import Broadcaster
+from src.apis.extensions import Dict
 from src.data.data_container import DataContainer
 from src.federated.events import Events
 from src.federated.protocols import Aggregator, ClientSelector, ModelInfer, TrainerParams
@@ -43,8 +40,8 @@ class FederatedLearning(Broadcaster):
         self.zero_client_exception = zero_client_exception
         self.logger = logging.getLogger('FederatedLearning')
         if self.test_data is None:
-            self.test_data = {}
-            self.trainers_train = {}
+            self.test_data = Dict()
+            self.trainers_train = Dict()
             for trainer_id, data in trainers_data_dict.items():
                 data = data.shuffle().as_tensor()
                 train, test = data.split(train_ratio)
@@ -75,7 +72,7 @@ class FederatedLearning(Broadcaster):
         trainers_ids = self.client_selector.select(list(self.trainers_data_dict.keys()), self.context)
         if len(trainers_ids) > 0:
             self.broadcast(Events.ET_TRAINER_SELECTED, trainers_ids=trainers_ids)
-            trainers_train_data = tools.dict_select(trainers_ids, self.trainers_train)
+            trainers_train_data = self.trainers_train.select(trainers_ids)
             self.broadcast(Events.ET_TRAIN_START, trainers_data=trainers_train_data)
             trainers_weights, sample_size_dict = self.train(trainers_train_data)
             self.broadcast(Events.ET_TRAIN_END, trainers_weights=trainers_weights, sample_size=sample_size_dict)
@@ -186,7 +183,7 @@ class FederatedLearning(Broadcaster):
         def __init__(self):
             self.round_id = 0
             self.model = None
-            self.history = src.apis.extensions.Dict()
+            self.history = Dict()
             self.timestamp = time.time()
 
         def load_weights(self, weights):
@@ -202,9 +199,11 @@ class FederatedLearning(Broadcaster):
             self.round_id += 1
 
         def highest_accuracy(self):
-            if len(self.history) == 0:
-                return 0
-            return self.history[max(self.history, key=lambda k: self.history[k]['acc'])]['acc']
+            highest = 0
+            for rnd in self.history:
+                if 'acc' in self.history[rnd] and self.history[rnd]['acc'] > highest:
+                    highest = self.history[rnd]['acc']
+            return highest
 
         def latest_accuracy(self):
             if len(self.history) == 0:
@@ -228,9 +227,17 @@ class FederatedLearning(Broadcaster):
             self.history.clear()
 
         def store(self, **kwargs):
+            """
+
+            Args:
+                **kwargs: kwargs is used to pass any key value similar to function, use it like store(acc=0.79)
+
+            Returns:
+
+            """
             if self.round_id not in self.history:
-                self.history[self.round_id] = {}
-            self.history[self.round_id] = tools.Dict.concat(self.history[self.round_id], kwargs)
+                self.history[self.round_id] = Dict()
+            self.history[self.round_id].update(kwargs)
 
         def describe(self):
             return f"created at {self.timestamp}"

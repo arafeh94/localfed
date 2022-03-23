@@ -4,7 +4,7 @@ from abc import abstractmethod
 import psutil
 from matplotlib import pyplot as plt
 
-from src.federated.events import FederatedEventPlug
+from src.federated.events import FederatedSubscriber
 from src.federated.federated import FederatedLearning
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -38,7 +38,7 @@ class Tracker:
         plt.plot(self.tracks)
         plt.show()
 
-    class TrackSubscriber(FederatedEventPlug):
+    class TrackSubscriber(FederatedSubscriber):
         def __init__(self, tracker: 'Tracker'):
             super().__init__()
             self.tracker = tracker

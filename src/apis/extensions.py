@@ -3,8 +3,10 @@ import logging
 import os
 import pickle
 import typing
-from abc import abstractmethod
+from abc import abstractmethod, ABC
+from time import sleep
 
+import dill as dill
 import numpy as np
 import torch
 import tqdm
@@ -45,18 +47,13 @@ class Functional(typing.Generic[T]):
 
 class Dict(typing.Dict[K, V], Functional):
 
+    # noinspection PyDefaultArgument
     def __init__(self, iter_map: typing.Dict[K, V] = {}):
         super().__init__(iter_map)
 
     def for_each(self, func: typing.Callable) -> typing.NoReturn:
         for key, val in self.items():
             func(key, val)
-
-    def concat(self, other) -> 'Dict[K, V]':
-        new_dict = copy.deepcopy(self)
-        for item, val in other.items():
-            new_dict[item] = val
-        return new_dict
 
     def select(self, keys) -> 'Dict[K, V]':
         return Dict({key: self[key] for key in keys})
@@ -76,10 +73,20 @@ class Dict(typing.Dict[K, V], Functional):
         return new_dict
 
     def reduce(self, func: typing.Callable[[B, K, V], B]) -> 'B':
-        first = None
+        first_item = None
         for key, val in self.items():
-            first = func(first, key, val)
-        return first
+            first_item = func(first_item, key, val)
+        return first_item
+
+    def but(self, keys):
+        new_dict = {}
+        for item, val in self.items():
+            if item not in keys:
+                new_dict[item] = val
+        return new_dict
+
+    def concat(self, other):
+        self.update(other)
 
 
 class Array(typing.List[V], Functional):
@@ -124,6 +131,7 @@ class Array(typing.List[V], Functional):
 class Serializable:
     def __init__(self, file_path):
         self.file_path = file_path
+        self.logger = logging.getLogger('Serializable')
 
     def save(self):
         os.makedirs(os.path.dirname(self.file_path), exist_ok=True)
@@ -131,15 +139,28 @@ class Serializable:
         for key, item in self.__dict__.items():
             if not callable(item):
                 to_save[key] = item
-        pickle.dump(to_save, open(self.file_path, 'wb'))
+        self._flush(to_save)
+
+    def _flush(self, to_save):
+        try:
+            with open(self.file_path, 'wb') as fop:
+                dill.dump(to_save, fop)
+        except Exception as e:
+            self.logger.info(e)
+            sleep(1)
+            self._flush(to_save)
 
     def load(self):
         if self.exists():
             try:
-                for key, item in pickle.load(open(self.file_path, 'rb')).items():
-                    self.__dict__[key] = item
+                with open(self.file_path, 'rb') as fop:
+                    for key, item in dill.load(fop).items():
+                        self.__dict__[key] = item
+                return True
             except Exception as e:
-                print(e)
+                self.logger.info(e)
+                sleep(1)
+                self.load()
 
     def exists(self):
         return os.path.exists(self.file_path)
@@ -156,7 +177,7 @@ class TorchModel:
         self.model = model
         self.logger = logging.getLogger('TorchModel')
 
-    def train(self, batched: 'DataContainer', **kwargs):
+    def train(self, batched, **kwargs):
         r"""
         Args:
             batched:
@@ -171,19 +192,19 @@ class TorchModel:
 
         """
         model = self.model
-        epochs = kwargs.get('epochs', 10)
-        learn_rate = kwargs.get('lr', 0.003)
+        epochs = kwargs.get('epochs', 1)
+        learn_rate = kwargs.get('lr', 0.01)
         momentum = kwargs.get('momentum', 0)
         optimizer = kwargs.get('optimizer', torch.optim.SGD(model.parameters(), lr=learn_rate, momentum=momentum))
         criterion = kwargs.get('criterion', nn.CrossEntropyLoss())
-        device = torch.device(kwargs['device'] if 'device' in kwargs['device'] else
-                              'cuda' if torch.cuda.is_available() else 'cpu')
+        device = kwargs['device'] if 'device' in kwargs else ('cuda' if torch.cuda.is_available() else 'cpu')
         verbose = kwargs.get('verbose', 1)
         model.to(device)
         model.train()
-        iterator = tqdm.tqdm(range(epochs), 'training') if verbose else range(epochs)
-
+        data_size = len(batched) * len(batched[0][0])
+        iterator = tqdm.tqdm(range(epochs), 'training')
         for _ in iterator:
+            correct = 0
             for batch_idx, (x, labels) in enumerate(batched):
                 x = x.to(device)
                 labels = labels.to(device)
@@ -192,7 +213,9 @@ class TorchModel:
                 loss = criterion(log_probs, labels)
                 loss.backward()
                 optimizer.step()
-
+                correct += (log_probs.max(dim=1)[1] == labels).float().sum()
+            accuracy = round(100 * (float(correct) / data_size), 2)
+            iterator.set_postfix_str(f"accuracy: {accuracy}")
         weights = model.cpu().state_dict()
         return weights
 
@@ -255,6 +278,9 @@ class TorchModel:
 
     def extract(self):
         return self.model
+
+    def state(self):
+        return self.extract().state_dict()
 
 
 def first(items: list):

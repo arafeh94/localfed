@@ -18,7 +18,7 @@ class Events:
     ET_MODEL_STATUS = 'model_status'
 
 
-class FederatedEventPlug(Subscriber):
+class FederatedSubscriber(Subscriber):
 
     def __init__(self, only: None or [] = None):
         super().__init__(only)
@@ -120,6 +120,10 @@ class FederatedEventPlug(Subscriber):
 
     def force(self) -> []:
         return []
+
+    # noinspection PyUnresolvedReferences
+    def attach(self, federated_learning: 'FederatedLearning'):
+        federated_learning.add_subscriber(self)
 
     def map_events(self) -> typing.Dict[str, typing.Callable]:
         return {

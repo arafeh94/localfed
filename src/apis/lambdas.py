@@ -35,6 +35,10 @@ def as_numpy(_, val: DataContainer) -> np.array:
     return val.as_numpy()
 
 
+def as_list(_, val: DataContainer) -> np.array:
+    return val.as_list()
+
+
 def as_tensor(_, val: DataContainer) -> 'Tensor':
     if not isinstance(val, DataContainer):
         raise Exception(f'as tensor lambdas work only on dictionaries with DataContainer as value, '

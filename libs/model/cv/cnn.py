@@ -3,6 +3,38 @@ import torch.nn as nn
 from torch.autograd.grad_mode import F
 
 
+class Cnn1D(nn.Module):
+    def __init__(self, n_classes):
+        super(Cnn1D, self).__init__()
+        self.n_classes = n_classes
+
+        # Convolutional Layers
+        self.conv1 = nn.Conv1d(1, 64, kernel_size=3, stride=1)
+        self.conv2 = nn.Conv1d(64, 64, kernel_size=3, stride=1)
+        self.drop = nn.Dropout(p=0.6)
+        self.pool = nn.MaxPool1d(kernel_size=2, stride=2)
+
+        # Fully connected layers
+        self.lin3 = nn.Linear(256, 100)
+        self.lin4 = nn.Linear(100, self.n_classes)
+
+    def forward(self, x):
+        batch_size = x.size(0)
+        x = x.view(batch_size, 1, x.shape[1])
+
+        # Convolutional layers with ReLu activations
+        a = torch.relu(self.conv1(x))
+        a = torch.relu(self.conv2(a))
+        a = self.drop(a)
+        a = self.pool(a)
+        # Fully connected layers
+        a = a.view((batch_size, -1))
+        a = torch.relu(self.lin3(a))
+        a = torch.relu(self.lin4(a))
+
+        return a
+
+
 class CNN_OriginalFedAvg(torch.nn.Module):
     """The CNN model used in the original FedAvg paper:
     "Communication-Efficient Learning of Deep Networks from Decentralized Data"
@@ -91,6 +123,7 @@ class CNN32(torch.nn.Module):
         x = self.relu(self.linear_1(x))
         x = self.softmax(self.linear_2(x))
         return x
+
 
 class Cifar10Model(torch.nn.Module):
     def __init__(self):

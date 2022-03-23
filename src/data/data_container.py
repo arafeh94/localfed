@@ -1,5 +1,7 @@
 import copy
 import typing
+
+import numpy
 import numpy as np
 import torch
 from src.apis.extensions import Functional
@@ -88,6 +90,9 @@ class DataContainer(Functional):
                 new_y.append(y)
         return self._from_list(new_x, new_y)
 
+    def resize(self, lower_bound, upper_bound):
+        return DataContainer(self.x[lower_bound:upper_bound], self.y[lower_bound:upper_bound])
+
     def map(self, mapper: typing.Callable[[typing.List, int], typing.Tuple[typing.List, int]]) -> 'DataContainer':
         current = self.as_list()
         new_x = []
@@ -135,6 +140,26 @@ class DataContainer(Functional):
         new_x = other.x if self.is_empty() else np.concatenate((self.x, other.x))
         new_y = other.y if self.is_empty() else np.concatenate((self.y, other.y))
         return DataContainer(new_x, new_y)
+
+    def iter(self):
+        class Iterator:
+            def __init__(self, dc: DataContainer):
+                self.dc = dc
+                self.current = 0
+
+            def __iter__(self):
+                self.current = 0
+                return self
+
+            def __next__(self):
+                if self.current < len(self.dc):
+                    current_item = (self.dc.x[self.current], self.dc.y[self.current])
+                    self.current += 1
+                    return current_item
+                else:
+                    raise StopIteration
+
+        return Iterator(self)
 
     def __getitem__(self, key):
         return DataContainer(self.x[key], self.y[key])
