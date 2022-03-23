@@ -41,7 +41,7 @@ for learn_rate in learn_rates:
     # model = resnet56(labels_number, 3, 128)
     model_name = 'vggface2'
 
-    vggface2 = InceptionResnetV1(pretrained='vggface2', num_classes=labels_number, classify=True, device='cuda').eval()
+    vggface2 = InceptionResnetV1(pretrained='vggface2', num_classes=labels_number, classify=True, device='cuda')
 
     for param in list(vggface2.children()):
         param.requires_grad = False

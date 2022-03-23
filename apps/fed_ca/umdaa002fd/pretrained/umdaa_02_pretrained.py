@@ -28,7 +28,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 dataset = 'umdaa02_fd_filtered_cropped'
 # total number of clients from umdaa02-fd is 44
-labels_number = 10
+labels_number = 3
 ud = UniqueDistributor(labels_number, 100, 100)
 client_data = PickleDataProvider("../../../../datasets/pickles/umdaa02_fd_filtered_cropped.pkl").collect()
 # tools.detail(client_data)
@@ -44,12 +44,19 @@ client_data = client_data.map(lambdas.reshape((-1, 128, 128, 3))).map(lambdas.tr
 input_shape = 128 * 128
 percentage_nb_client = labels_number
 
-vggface2 = InceptionResnetV1(pretrained='vggface2', num_classes=labels_number, classify=True, device='cuda').eval()
+vggface2 = InceptionResnetV1(pretrained='vggface2', num_classes=labels_number, classify=True, device='cuda')
 
+#  vggface2 as fixed feature extractor: Here, we will freeze the weights for all of the network except that of
+#  the final fully connected layers. These last fully connected layers is replaced with a new ones with random weights
+#  and only these layers are trained.
 for param in list(vggface2.children()):
     param.requires_grad = False
 for param in list(vggface2.children())[-5:]:
     param.requires_grad = True
+
+
+
+
 
 # number of models that we are using
 initial_models = {
@@ -57,13 +64,13 @@ initial_models = {
     'vggface2': vggface2,
     # 'LR': LogisticRegression(input_shape, labels_number),
     # 'MLP': MLP(input_shape, labels_number)
-    'CNN_OriginalFedAvg': CNN_OriginalFedAvg()
+    # 'CNN_OriginalFedAvg': CNN_OriginalFedAvg()
     # 'CNN': CNN_DropOut(False)
 }
 for model_name, gen_model in initial_models.items():
 
     # hyper_params = {'batch_size': [10, 50, 1000], 'epochs': [1, 5, 20], 'num_rounds': [1200]}
-    hyper_params = {'batch_size': [10], 'epochs': [1], 'num_rounds': [100]}
+    hyper_params = {'batch_size': [24], 'epochs': [1], 'num_rounds': [100]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 

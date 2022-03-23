@@ -48,7 +48,7 @@ train, test = PickleDataProvider(generated_filename).collect().reduce(lambdas.di
 tools.detail(train)
 # tools.detail(test)
 
-vggface2 = InceptionResnetV1(pretrained='vggface2', num_classes=labels_number, classify=True, device='cuda').eval()
+vggface2 = InceptionResnetV1(pretrained='vggface2', num_classes=labels_number, classify=True, device='cuda')
 
 for param in list(vggface2.children()):
     param.requires_grad = False

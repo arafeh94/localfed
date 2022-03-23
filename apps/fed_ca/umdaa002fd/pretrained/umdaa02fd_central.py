@@ -52,7 +52,7 @@ train, test = PickleDataProvider(generated_filename).collect().reduce(lambdas.di
 initial_models = {
     # 'CNN_OriginalFedAvg': CNN_OriginalFedAvg(),
     # 'LogisticsRegression': LogisticRegression(28 * 28, 10),
-    'vggface2': InceptionResnetV1(pretrained='vggface2').eval()
+    'vggface2': InceptionResnetV1(pretrained='vggface2')
 
 }
 
