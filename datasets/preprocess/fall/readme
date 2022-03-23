@@ -1,0 +1,95 @@
+files
+==============
+fall_by_client: only fall labels' (0, 1, 2) data spread among the original data owner Ret: (Dict[int,DataContainer])
+
+fall_ar_by_client: only activity labels' (0 - 13) data spread among the original data owner Ret: (Dict[int,DataContainer])
+
+fall_all_merged: only fall labels (0, 1, 2) of all data owner combined Ret: DataContainer
+
+Structure of dataset
+==================================
+chestData = [ch_accel_x, ch_accel_y, ch_accel_z, ch_gyro_x, ch_gyro_y, ch_gyro_z];
+
+thighData = [th_accel_x, th_accel_y, th_accel_z, th_gyro_x, th_gyro_y, th_gyro_z];
+
+allData = [chestData, thighData, annotation_1, annotation_2];
+
+=============================================================
+ch_accel_x = Chest accelerometer data x-axis
+ch_accel_y = Chest accelerometer data y-axis
+ch_accel_z = Chest accelerometer data z-axis
+ch_gyro_x = Chest gyroscope data x-axis
+ch_gyro_y = Chest gyroscope data y-axis
+ch_gyro_z = Chest gyroscope data z-axis
+ch_accel_vector_mag = Chest accelerometer vector magnitude (x, y, z axis)
+ch_gyro_vector_mag = Chest gyroscope vector magnitude (x, y, z axis)
+th_accel_x = Thigh accelerometer data x-axis
+th_accel_y = Thigh accelerometer data y-axis
+th_accel_z = Thigh accelerometer data z-axis
+th_gyro_x = Thigh gyroscope data x-axis
+th_gyro_y = Thigh gyroscope data y-axis
+th_gyro_z = Thigh gyroscope data z-axis
+th_accel_vector_mag = Thigh accelerometer vector magnitude (x, y, z axis)
+th_gyro_vector_mag = Thigh gyroscope vector magnitude (x, y, z axis)
+annotation_1 = Annotation 1
+annotation_2 = Annotation 2
+
+======================================
+
+Annotation 1
+======================================
+Falls = 1
+
+Near falls = 2
+
+Activities fo Daily Living (ADL) = 0
+
+
+Annotation 2 (annoates every activities)
+========================================
+Unspecified activities (transition from one posture to another) = 0
+
+Standing = 1
+
+Fall forward = 2
+
+Lying = 3
+
+Sitting on a bed = 4
+
+Sitting on a chair = 5
+
+Fall backward = 6
+
+Near fall = 7
+
+Walking = 8
+
+Crouching = 9
+
+Fall right = 10
+
+Fall left = 11
+
+Real fall forward = 12
+
+Real fall backward = 13
+
+Ascending and Descending a staircase = 15
+
+=============================================
+
+
+Subjects' profile file provides the profile of the subjects used in the experiments
+
+
+
+=================================================
+
+The video folder contains videos of 5 experiments (subjects) who gave us the permission to publish their videos
+
+
+
+
+
+
