@@ -23,14 +23,19 @@ print('')
 clients_data = dict()
 user_map = dict()
 
+# index is the user index, and user_id is the username
 for index, user_id in enumerate(event_list_train):
     user_data = []
+    # map the user id with the user_data
     user_map[user_id] = index
+    # event_list_train contains all the users sessions
     for session in event_list_train[user_id]:
+        # each session contains records
         for records in event_list_train[user_id][session]:
             for record in records:
                 user_features = record[3:7]
                 user_data.append(user_features)
+
     dc = DataContainer(user_data, [index] * len(user_data))
     clients_data[index] = dc
 
@@ -41,12 +46,18 @@ for index, user_id in enumerate(event_list_test):
             for record in records:
                 user_features = record[3:7]
                 user_data.append(user_features)
+
+    dc_old = clients_data[user_map[user_id]].as_numpy()
     if len(user_data):
         dc_new = DataContainer(user_data, [user_map[user_id]] * len(user_data)).as_numpy()
-        dc_old = clients_data[user_map[user_id]].as_numpy()
+        if index == 17:
+            print(user_id)
         dc = DataContainer(np.append(dc_new.x, dc_old.x, axis=0), np.append(dc_new.y, dc_old.y, axis=0))
+        clients_data[user_map[user_id]] = dc
+    else:
+        dc = DataContainer(dc_old.x, dc_old.y)
         clients_data[user_map[user_id]] = dc
 
 clients_data = Dict(clients_data)
-pickle.dump(clients_data, open('umdaa02touch.pkl', 'wb'))
+pickle.dump(clients_data, open('../../../datasets/pickles/umdaa02touch.pkl', 'wb'))
 print("")

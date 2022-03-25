@@ -76,10 +76,10 @@ def get_client_aggregated_model(client_id, round_id):
         return clients_model[client_id]
 
 
-max_rounds = 50
+max_rounds = 5
 batch_size = 512
-epochs = 20
-lr = 0.0001
+epochs = 5
+lr = 0.001
 for round_id in range(max_rounds):
     for client_id, data in clients_data.items():
         client_model = get_client_aggregated_model(client_id, round_id)

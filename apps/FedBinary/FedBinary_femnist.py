@@ -45,7 +45,7 @@ def get_client_aggregated_model(cid, rdx):
 for round_id in range(1):
     for client_id, data in clients_data.items():
         client_model = get_client_aggregated_model(client_id, round_id)
-        tools.train(client_model, data.map(lambda x, y: (x, 0)).batch(50), epochs=500, lr=0.001)
+        tools.train(client_model, data.map(lambda x, y: (x, 0)).batch(50), epochs=5, lr=0.001)
         clients_model[client_id] = client_model
         clients_weights[client_id] = client_model.state_dict()
         client_samples[client_id] = 6000
