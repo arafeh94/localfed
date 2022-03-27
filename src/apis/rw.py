@@ -1,3 +1,5 @@
+from time import sleep
+
 from src.apis.extensions import Serializable
 
 
@@ -6,8 +8,10 @@ class IODict(Serializable):
         super().__init__(file_path)
         self.cached = {}
 
-    def read(self, key, default=None, absent_ok=False):
+    def read(self, key=None, default=None, absent_ok=False):
         self.load()
+        if key is None:
+            return self.cached
         if key in self.cached:
             return self.cached[key]
         if default is not None:

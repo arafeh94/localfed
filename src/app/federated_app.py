@@ -20,10 +20,12 @@ logging.basicConfig(level=logging.INFO)
 
 
 class FederatedApp:
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: Settings, **kwargs):
         self.settings = settings
         self.logger = logging.getLogger('main')
         self.log_level = settings.get('log_level', absent_ok=True) or logging.INFO
+        self.load_default_subscribers = kwargs.get('load_default_subscribers', True)
+        self.kwargs = kwargs
 
     def init_federated(self, session):
         distributor = self.settings.get('data.distributor', absent_ok=False)
@@ -31,18 +33,13 @@ class FederatedApp:
         transformer = self.settings.get('data.transformer', absent_ok=True)
         model = self.settings.get('model', absent_ok=False)
         desired_accuracy = self.settings.get('desired_accuracy', absent_ok=True) or 0.99
-        trainer_params = TrainerParams(
-            trainer_class=self.settings.get('trainer_class') or trainers.TorchTrainer,
-            batch_size=self.settings.get('batch_size', absent_ok=False),
-            epochs=self.settings.get('epochs', absent_ok=False),
-            optimizer=self.settings.get('optimizer') or 'sgd',
-            criterion=self.settings.get('criterion') or 'cel',
-            lr=self.settings.get('lr', absent_ok=False)
-        )
-        aggregator = self.settings.get('aggregator') or aggregators.AVGAggregator()
-        metric = metrics.AccLoss(batch_size=self.settings.get('batch_size', absent_ok=False),
-                                 criterion=nn.CrossEntropyLoss(), device=self.settings.get('device') or None)
-        selector = client_selectors.Random(self.settings.get('client_ratio', absent_ok=False))
+        trainer_params = self.settings.get("trainer_config")
+        aggregator = self.settings.get('aggregator', absent_ok=True) or aggregators.AVGAggregator()
+        metric = metrics.AccLoss(batch_size=self.settings.get('trainer_config.batch_size', absent_ok=False),
+                                 criterion=self.settings.get('trainer_config.criterion'),
+                                 device=self.settings.get('device') or None)
+        selector = self.settings.get('client_selector') or client_selectors.Random(
+            self.settings.get('client_ratio', absent_ok=False))
         distributed_data = preload(dataset_name, distributor, transformer=transformer)
         federated = FederatedLearning(
             trainer_manager=self._trainer_manager(),
@@ -64,22 +61,17 @@ class FederatedApp:
     def _start(self, subscribers=None):
         if subscribers and not isinstance(subscribers, list):
             subscribers = [subscribers]
-
         session = Session(self.settings)
         federated = self.init_federated(session)
-        configs_subscribers: list = session.settings.get('subscribers', absent_ok=True)
+        configs_subscribers: list = session.settings.get('subscribers', absent_ok=True) or []
         subscribers = configs_subscribers + subscribers if subscribers else configs_subscribers
         self._attach_subscribers(federated, subscribers, session)
-
         federated.start()
 
-    def start(self):
-        self._start(None)
-
-    def start_all(self, subscribers=None):
+    def start(self, *subscribers):
         for index, st in enumerate(self.settings):
             self.logger.info(f'starting config {index}: {str(st.get_config())}')
-            self._start(subscribers)
+            self._start([s for s in subscribers] if subscribers else None)
 
     def _attach_subscribers(self, federated: FederatedLearning, subscribers, session):
         self.logger.info('attaching subscribers...')
@@ -89,17 +81,12 @@ class FederatedApp:
             federated.add_subscriber(subs)
 
     def _check_subscribers(self, subscribers, session):
-        if subscribers is None:
-            subscribers = self._default_subscribers(session)
-        if len(subscribers) == 0:
-            return
-        if subscribers[0] == '..':
-            subscribers.pop(0)
-            subscribers = self._default_subscribers(session) + subscribers
-        for subscriber in subscribers:
+        attaching_subscribers = self._default_subscribers(session) if self.load_default_subscribers else []
+        attaching_subscribers = (subscribers or []) + attaching_subscribers
+        for subscriber in attaching_subscribers:
             if not isinstance(subscriber, Subscriber):
                 raise Exception(f'unsupported subscriber of type {type(subscriber)}')
-        return subscribers
+        return attaching_subscribers
 
     def _default_subscribers(self, session):
         return [

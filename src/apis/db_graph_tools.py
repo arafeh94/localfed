@@ -1,10 +1,11 @@
 import math
 import sqlite3
+import typing
 from collections import defaultdict
 from typing import Callable
 
 import numpy as np
-from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt, pyplot
 
 from src.apis import utils
 from src.apis.fed_sqlite import FedDB
@@ -33,13 +34,28 @@ class Graphs:
             res[key] = default_value(key)
         return res
 
-    def plot(self, configs: list, title='', animated=False):
+    def plot(self, configs: list, title='', animated=False, save_path='', xlabel='', ylabel='',
+             plt_func: Callable[[pyplot], typing.NoReturn] = None):
         """
         Args:
-            configs: a array of dictionaries containing session_id: the session id in the database, field: the field name in the table,
+            plt_func:
+            xlabel:
+            ylabel:
+            configs: a array of dictionaries containing session_id: the session id in the database,
+                field: the field name in the table,
                 config: the plot configurations, transform: a callable to transform the values to another
             title: the title of the plot
             animated: animate the image (require the original plot to be shown not the one in intellij
+            save_path: save location if needed
+            example:
+            graphs.plot([
+                {
+                    'session_id': 'dbs_table_name',
+                    'field': 'dbs_table_field_name',
+                    'config': {'color': 'b'},
+                    'transform': some_transformation_function
+                },
+            ])
         """
         tables = self._db.tables()
         sessions = [(item['session_id'], item['field'], item['config'] if 'config' in item else {},
@@ -51,7 +67,7 @@ class Graphs:
             print(values)
             session_values[f'{session_id}_{field}_{str(transform)}'] = values
         if animated:
-            pause = 0.05
+            pause = animated if isinstance(animated, (int, float)) else 0.05
             session_end = [False] * len(sessions)
             round_id = 0
             session_plot_values = defaultdict(list)
@@ -68,8 +84,12 @@ class Graphs:
         else:
             for session_id, field, config, transform in sessions:
                 plt.plot(session_values[f'{session_id}_{field}_{str(transform)}'], **config)
-        plt.xlabel('Rounds')
-        plt.ylabel('Accuracy')
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
         plt.title(title)
         plt.legend(loc='lower right')
+        if callable(plt_func):
+            plt_func(plt)
+        if save_path and not animated:
+            plt.savefig(save_path)
         plt.show()

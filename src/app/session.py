@@ -38,8 +38,9 @@ class Session:
         if self.cache.exists():
             self.cache.write('updated_at', f'{date.today()}')
         else:
+            session_id = self.settings.get("session_id", absent_ok=True) or self._generate_id()
             self.cache.write("created_at", str(date.today()))
             self.cache.write('updated_at', str(date.today()))
             self.cache.write('session_configs', self.settings.get_config())
-            self.cache.write('session_id', self._generate_id())
+            self.cache.write('session_id', session_id)
             self.cache.write('hash', self._hash())

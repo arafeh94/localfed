@@ -1,10 +1,10 @@
 import atexit
 
-from src.federated.events import FederatedEventPlug
+from src.federated.events import FederatedSubscriber
 from src.manifest import wandb_config
 
 
-class WandbLogger(FederatedEventPlug):
+class WandbLogger(FederatedSubscriber):
     def __init__(self, config=None, resume=False, id: str = None):
         super().__init__()
         import wandb

@@ -139,7 +139,7 @@ class Settings:
         if isinstance(obj, list):
             initializations = []
             for o in obj:
-                initialized = self._create(obj)
+                initialized = self._create(o)
                 initializations.append(initialized)
             return initializations
         return obj
