@@ -45,7 +45,8 @@ client_data = client_data.map(lambdas.reshape((-1, 128, 128, 3))).map(lambdas.tr
 input_shape = 128 * 128
 percentage_nb_client = labels_number
 
-vggface2 = InceptionResnetV1(pretrained='vggface2', num_classes=labels_number, classify=True, device='cuda')
+# vggface2 = InceptionResnetV1(pretrained='vggface2', num_classes=labels_number, classify=True, device='cuda')
+vggface2 = pickle.load(open('vggface2.pkl', 'rb'))
 
 #  vggface2 as fixed feature extractor: Here, we will freeze the weights for all of the network except that of
 #  the final fully connected layers. These last fully connected layers is replaced with a new ones with random weights
@@ -55,23 +56,17 @@ for param in list(vggface2.children()):
 for param in list(vggface2.children())[-5:]:
     param.requires_grad = True
 
-
-
-
-
 # number of models that we are using
 initial_models = {
-    # 'resnet56': resnet56(labels_number, 3, 128),
+
     'vggface2': vggface2,
-    # 'LR': LogisticRegression(input_shape, labels_number),
-    # 'MLP': MLP(input_shape, labels_number)
-    # 'CNN_OriginalFedAvg': CNN_OriginalFedAvg()
-    # 'CNN': CNN_DropOut(False)
+
 }
+
 for model_name, gen_model in initial_models.items():
 
     # hyper_params = {'batch_size': [10, 50, 1000], 'epochs': [1, 5, 20], 'num_rounds': [1200]}
-    hyper_params = {'batch_size': [48], 'epochs': [1], 'num_rounds': [35]}
+    hyper_params = {'batch_size': [128], 'epochs': [5]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 
@@ -79,63 +74,26 @@ for model_name, gen_model in initial_models.items():
     for config in configs:
         batch_size = config['batch_size']
         epochs = config['epochs']
-        num_rounds = config['num_rounds']
         initial_model = config['initial_model']
         learn_rate = 0.001
 
         print(
-            f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds}, '
+            f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs} '
             f'initial_model={initial_model} ')
 
-        trainer_manager = SeqTrainerManager()
-        trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=batch_size,
-                                       epochs=epochs,
-                                       optimizer='sgd', criterion='cel', lr=learn_rate)
+        # create a personalized model based on the global modal pretrained
+        for i in range(labels_number):
+            train, test = client_data[i].split(0.8)
 
-        federated = FederatedLearning(
-            trainer_manager=trainer_manager,
-            trainer_config=trainer_params,
-            aggregator=aggregators.AVGAggregator(),
-            metrics=metrics.AccLoss(batch_size=batch_size, criterion=nn.CrossEntropyLoss()),
-            client_selector=client_selectors.Random(percentage_nb_client),
-            trainers_data_dict=client_data,
-            initial_model=lambda: initial_model,
-            num_rounds=num_rounds,
-            desired_accuracy=1
-            # accepted_accuracy_margin=0.05
-        )
-        # filename is used for both the wandb id and for model resume at checkpoint
-        # filename_id = f'lr={learn_rate}_batch_size={batch_size}_epochs={epochs}_num_rounds={num_rounds}_data_file={dataset_used}_model_name={model_name}'
+            tools.train(gen_model, train_data=train.batch(batch_size), epochs=epochs, lr=learn_rate)
+            acc, loss = tools.infer(gen_model, test.batch(batch_size))
+            print(f'Printing Accuracy and Loss of client {i}')
+            print(acc, loss)
 
-        # use flush=True if you don't want to continue from the last round
-        # federated.add_subscriber(subscribers.Resumable(federated, tag='002', save_each=5))
 
-        federated.add_subscriber(FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
-
-        federated.add_subscriber(WandbLogger(config={
-            'lr': learn_rate, 'batch_size': batch_size,
-            'epochs': epochs,
-            'num_rounds': num_rounds, 'data_file': dataset_used,
-            'model': model_name,
-            'selected_clients': percentage_nb_client
-        }))
-
-        logger.info("----------------------")
-        logger.info("start federated")
-        logger.info("----------------------")
-        federated.start()
-
-        # saving the pickle model
-        pickle.dump(vggface2, open('vggface2.pkl', 'wb'))
 
         end_time = datetime.now()
         print('Total Duration: {}'.format(end_time - start_time))
-
-# for client in clients:
-#     new_model = copy(model_name)
-#     freez all layers except the last fc (linears)
-#     new_model.train(client, epochs = 100)
-#     model.infer(all_clients)
 
 end_time = datetime.now()
 print('Total Duration: {}'.format(end_time - start_time))
