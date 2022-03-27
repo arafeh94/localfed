@@ -19,7 +19,7 @@ from src.federated.components.trainer_manager import SeqTrainerManager
 from src.federated.events import Events
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
-from src.federated.subscribers.logger import FederatedLogger
+from src.federated.subscribers.logger import FederatedLogger, TqdmLogger
 from src.federated.subscribers.wandb_logger import WandbLogger
 from datetime import datetime
 
@@ -30,10 +30,8 @@ logger = logging.getLogger('main')
 dataset = 'umdaa02_fd_filtered_cropped'
 # total number of clients from umdaa02-fd is 44
 labels_number = 3
-ud = UniqueDistributor(labels_number, 500, 500)
-client_data = PickleDataProvider("../../../../datasets/pickles/umdaa02_fd_filtered_cropped.pkl").collect()
-# tools.detail(client_data)
-client_data = ud.distribute(client_data)
+ud = UniqueDistributor(labels_number, 10, 10)
+client_data = preload('umdaa02_fd_filtered_cropped', ud)
 dataset_used = dataset + '_' + ud.id()
 
 tools.detail(client_data)
@@ -55,10 +53,6 @@ for param in list(vggface2.children()):
 for param in list(vggface2.children())[-5:]:
     param.requires_grad = True
 
-
-
-
-
 # number of models that we are using
 initial_models = {
     # 'resnet56': resnet56(labels_number, 3, 128),
@@ -71,7 +65,7 @@ initial_models = {
 for model_name, gen_model in initial_models.items():
 
     # hyper_params = {'batch_size': [10, 50, 1000], 'epochs': [1, 5, 20], 'num_rounds': [1200]}
-    hyper_params = {'batch_size': [48], 'epochs': [1], 'num_rounds': [35]}
+    hyper_params = {'batch_size': [48], 'epochs': [1], 'num_rounds': [10]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 
@@ -111,6 +105,7 @@ for model_name, gen_model in initial_models.items():
         # federated.add_subscriber(subscribers.Resumable(federated, tag='002', save_each=5))
 
         federated.add_subscriber(FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
+        federated.add_subscriber(TqdmLogger())
 
         federated.add_subscriber(WandbLogger(config={
             'lr': learn_rate, 'batch_size': batch_size,
@@ -126,7 +121,7 @@ for model_name, gen_model in initial_models.items():
         federated.start()
 
         # saving the pickle model
-        pickle.dump(vggface2, open('vggface2.pkl', 'wb'))
+        # pickle.dump(vggface2, open('vggface2.pkl', 'wb'))
 
         end_time = datetime.now()
         print('Total Duration: {}'.format(end_time - start_time))

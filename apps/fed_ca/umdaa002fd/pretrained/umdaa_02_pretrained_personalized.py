@@ -11,6 +11,8 @@ from libs.model.cv.resnet import resnet56, ResNet
 from libs.model.linear.lr import LogisticRegression
 from src import tools
 from src.apis import lambdas
+from src.apis.extensions import TorchModel
+from src.data.data_container import DataContainer
 from src.data.data_distributor import UniqueDistributor
 from src.data.data_loader import preload
 from src.data.data_provider import PickleDataProvider
@@ -66,7 +68,7 @@ initial_models = {
 for model_name, gen_model in initial_models.items():
 
     # hyper_params = {'batch_size': [10, 50, 1000], 'epochs': [1, 5, 20], 'num_rounds': [1200]}
-    hyper_params = {'batch_size': [128], 'epochs': [5]}
+    hyper_params = {'batch_size': [128], 'epochs': [200]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 
@@ -81,16 +83,23 @@ for model_name, gen_model in initial_models.items():
             f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs} '
             f'initial_model={initial_model} ')
 
+        test = DataContainer([], [])
+        for i in range(labels_number):
+            tdc = client_data[i].split(0.8)[1].as_list()
+            test.x.extend(tdc.x)
+            test.y.extend(tdc.y)
+
+        test = test.as_tensor()
         # create a personalized model based on the global modal pretrained
         for i in range(labels_number):
-            train, test = client_data[i].split(0.8)
-
-            tools.train(gen_model, train_data=train.batch(batch_size), epochs=epochs, lr=learn_rate)
-            acc, loss = tools.infer(gen_model, test.batch(batch_size))
+            train, _ = client_data[i].split(0.8)
+            t_model = TorchModel(gen_model)
+            t_model.train(train.batch(batch_size), epochs=epochs, lr=learn_rate)
+            acc, loss = t_model.infer(test.batch(batch_size))
+            # tools.train(gen_model, train_data=train.batch(batch_size), epochs=epochs, lr=learn_rate)
+            # acc, loss = tools.infer(gen_model, test.batch(batch_size))
             print(f'Printing Accuracy and Loss of client {i}')
             print(acc, loss)
-
-
 
         end_time = datetime.now()
         print('Total Duration: {}'.format(end_time - start_time))

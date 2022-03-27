@@ -163,6 +163,38 @@ class CNN_DropOut(torch.nn.Module):
         return x
 
 
+class Cnn1D(nn.Module):
+    def __init__(self, n_classes):
+        super(Cnn1D, self).__init__()
+        self.n_classes = n_classes
+
+        # Convolutional Layers
+        self.conv1 = nn.Conv1d(1, 64, kernel_size=3, stride=1)
+        self.conv2 = nn.Conv1d(64, 64, kernel_size=3, stride=1)
+        self.drop = nn.Dropout(p=0.6)
+        self.pool = nn.MaxPool1d(kernel_size=2, stride=2)
+
+        # Fully connected layers
+        self.lin3 = nn.Linear(256, 100)
+        self.lin4 = nn.Linear(100, self.n_classes)
+
+    def forward(self, x):
+        batch_size = x.size(0)
+        x = x.view(batch_size, 1, x.shape[1])
+
+        # Convolutional layers with ReLu activations
+        a = torch.relu(self.conv1(x))
+        a = torch.relu(self.conv2(a))
+        a = self.drop(a)
+        a = self.pool(a)
+        # Fully connected layers
+        a = a.view((batch_size, -1))
+        a = torch.relu(self.lin3(a))
+        a = torch.relu(self.lin4(a))
+
+        return a
+
+
 class SimpleCNN(nn.Module):
     def __init__(self, input_dim, hidden_dims, output_dim=10):
         super(SimpleCNN, self).__init__()
@@ -349,9 +381,9 @@ class CNN_OriginalFedAvg_fall(torch.nn.Module):
         super(CNN_OriginalFedAvg_fall, self).__init__()
         self.conv2d_1 = torch.nn.Conv1d(3, features, kernel_size=(5, 5), padding=2)
         self.max_pooling = nn.MaxPool1d(2, stride=2)
-        self.conv2d_2 = torch.nn.Conv1d(features, features*2, kernel_size=5, padding=2)
+        self.conv2d_2 = torch.nn.Conv1d(features, features * 2, kernel_size=5, padding=2)
         self.flatten = nn.Flatten()
-        self.linear_1 = nn.Linear(features*2*5*5*2 - features, 128  )
+        self.linear_1 = nn.Linear(features * 2 * 5 * 5 * 2 - features, 128)
         # self.linear_1 = nn.Linear(49,152, 512)
         self.linear_2 = nn.Linear(128, classes)
         self.relu = nn.ReLU()
