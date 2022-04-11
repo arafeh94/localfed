@@ -5,10 +5,11 @@ from src.manifest import wandb_config
 
 
 class WandbLogger(FederatedSubscriber):
-    def __init__(self, config=None, resume=False, id: str = None):
+    def __init__(self, project='umdaa-02-fd-filtered-cropped' , config=None, resume=False, id: str = None):
         super().__init__()
         import wandb
         wandb.login(key=wandb_config['key'])
+        self.project = project
         self.wandb = wandb
         self.config = config
         self.id = id
@@ -17,10 +18,10 @@ class WandbLogger(FederatedSubscriber):
 
     def on_init(self, params):
         if self.resume:
-            self.wandb.init(project=wandb_config['project'], entity=wandb_config['entity'], config=self.config,
+            self.wandb.init(project=self.project, entity=wandb_config['entity'], config=self.config,
                             id=self.id, resume="allow")
         else:
-            self.wandb.init(project=wandb_config['project'], entity=wandb_config['entity'], config=self.config)
+            self.wandb.init(project=self.project, entity=wandb_config['entity'], config=self.config)
 
     def on_round_end(self, params):
         self.wandb.log({'acc': params['accuracy'], 'loss': params['loss']})

@@ -93,5 +93,5 @@ class FederatedApp:
             FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]),
             Timer([Timer.FEDERATED, Timer.ROUND]),
             Resumable(io=session.cache),
-            SQLiteLogger(session.session_id(), db_path='./cache/perf.db', tag=str(session.settings.get_config()))
+            SQLiteLogger(session.session_id(), db_path='./cache/perf.db', config=str(session.settings.get_config()))
         ]

@@ -31,7 +31,7 @@ percentage_nb_client = 10
 for model_name, gen_model in initial_models.items():
 
     # hyper_params = {'batch_size': [10, 50], 'epochs': [1, 5, 20], 'num_rounds': [800], 'learn_rate': [0.01, 0.001]}
-    hyper_params = {'batch_size': [10], 'epochs': [1], 'num_rounds': [800], 'learn_rate': [0.001]}
+    hyper_params = {'batch_size': [10], 'epochs': [1], 'num_rounds': [20], 'learn_rate': [0.001]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 

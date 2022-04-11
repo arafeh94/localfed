@@ -28,7 +28,7 @@ labels_number = 10
 input_shape = 128 * 128
 
 dataset_used = 'umdaa002fd_filtered'
-ud = UniqueDistributor(labels_number, 500, 500)
+ud = UniqueDistributor(labels_number, 5, 5)
 client_data = PickleDataProvider("../../../../datasets/pickles/umdaa02_fd_filtered.pkl").collect()
 client_data = ud.distribute(client_data)
 dataset_used = dataset_used + '_' + ud.id() + '_central'
