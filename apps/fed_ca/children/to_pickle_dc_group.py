@@ -10,6 +10,19 @@ from src.tools import Dict
 
 path = 'E:\Datasets\CA\children touch dataset\Dataset\Smartphone'
 
+excel_file_path = 'E:\Datasets\CA\children touch dataset\Dataset\id-gender-agegroup.csv'
+
+
+def read_excel(file_path):
+    import csv
+    result = []
+    with open(file_path, newline='') as csvfile:
+        rows = csv.reader(csvfile, delimiter=' ', quotechar='|')
+        next(rows)  # skips the header
+        for row in rows:
+            result.append(row[0].split(','))
+    return result
+
 
 def read_file(file_path):
     with open(file_path) as fp:
@@ -53,7 +66,26 @@ clients_data = dict()
 counter = 0
 user_data = []
 index = 0
+
+
+def get_age_group(user_id):
+    # user_group = -1
+    users_groups = read_excel(excel_file_path)
+    for user in users_groups:
+        if(user[0] == user_id):
+            if user[2] != 'adult':
+                return 0
+            else:
+                return 1
+
+
+    # if user_group == -1:
+    #     print(f'Could not find user {user_id} in the age_group database! ***')
+
+
+
 for data in all_data:
+
 
     for user in data:
         x_point = int(user[2])
@@ -66,10 +98,13 @@ for data in all_data:
     # pass by the 4 user files
     counter = counter + 1
     if counter == 4:
+        user_id = data[0][0]
+        age_group = get_age_group(user_id)
+
         counter = 0
         # ys.append(user_id - 1)
         # clients_data.append(user_data)
-        dc = DataContainer(user_data, [index] * len(user_data))
+        dc = DataContainer(user_data, [age_group] * len(user_data))
         clients_data[index] = dc
         user_data = []
         index = index + 1

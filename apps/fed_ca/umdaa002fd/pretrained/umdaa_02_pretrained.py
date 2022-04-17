@@ -29,8 +29,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 dataset = 'umdaa02_fd_filtered_cropped'
 # total number of clients from umdaa02-fd is 44
-labels_number = 3
-ud = UniqueDistributor(labels_number, 10, 10)
+labels_number = 10
+ud = UniqueDistributor(labels_number, 500, 500)
 client_data = preload('umdaa02_fd_filtered_cropped', ud)
 dataset_used = dataset + '_' + ud.id()
 
@@ -65,7 +65,7 @@ initial_models = {
 for model_name, gen_model in initial_models.items():
 
     # hyper_params = {'batch_size': [10, 50, 1000], 'epochs': [1, 5, 20], 'num_rounds': [1200]}
-    hyper_params = {'batch_size': [48], 'epochs': [1], 'num_rounds': [10]}
+    hyper_params = {'batch_size': [24], 'epochs': [1], 'num_rounds': [100]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 

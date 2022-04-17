@@ -32,5 +32,6 @@ datasets_urls = {
     "fall_by_client": "https://www.dropbox.com/s/y7glz4pnzflbha4/fall_by_client.zip?dl=1",
     "fall_ar_by_client": "https://www.dropbox.com/s/txo6e1noq6gbrvz/fall_ar_by_client.zip?dl=1",
     "mnist10k_mr1": "https://mega.nz/file/nxE32SDA#aKxvOQ_Aq2ypFpO8pNJdpte8ScuxjD8fNbdTCxfclbk",
-    "umdaa02touch": "https://mega.nz/file/6s9EnbJB#MbffkyAUW2PAvu7xqy8-Q0GSOQU-auoVlvBrw1fKI4o"
+    "umdaa02touch": "https://mega.nz/file/6s9EnbJB#MbffkyAUW2PAvu7xqy8-Q0GSOQU-auoVlvBrw1fKI4o",
+    "children_touch": "https://mega.nz/file/Ll8CnLpQ#KRhRmoMySC9WWgHXhOsK1i4yaRS0zY02Q4y2h4bjFb4"
 }
