@@ -66,3 +66,5 @@ cifar-10-batches-py
 /datasets/raw/cars/a8/
 /datasets/raw
 /checkpoints/
+
+/src/manifest.py
