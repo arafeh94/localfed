@@ -5,7 +5,7 @@ from src.manifest import wandb_config
 
 
 class WandbLogger(FederatedSubscriber):
-    def __init__(self, project='umdaa-02-fd-filtered-cropped' , config=None, resume=False, id: str = None):
+    def __init__(self, project='umdaa-02-fd-filtered-cropped', config=None, resume=False, id: str = None):
         super().__init__()
         import wandb
         wandb.login(key=wandb_config['key'])
