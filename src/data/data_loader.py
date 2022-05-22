@@ -128,3 +128,6 @@ def femnist_1shard_62c_2000min_2000max() -> Dict[int, DataContainer]:
 
 def femnist_1shard_62c_200min_2000max() -> Dict[int, DataContainer]:
     return preload('femnist', UniqueDistributor(62, 200, 2000))
+
+def umdaa02fd_1shard_10c_500min_500max() -> Dict[int, DataContainer]:
+    return preload('umdaa02_fd_filtered_cropped', UniqueDistributor(10, 500, 500))

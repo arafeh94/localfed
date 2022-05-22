@@ -27,7 +27,7 @@ logger = logging.getLogger('main')
 labels_number = 10
 input_shape = 128 * 128
 
-dataset_used = 'umdaa002fd_filtered'
+dataset_used = 'umdaa002_fd_filtered'
 ud = UniqueDistributor(labels_number, 5, 5)
 client_data = PickleDataProvider("../../../../datasets/pickles/umdaa02_fd_filtered.pkl").collect()
 client_data = ud.distribute(client_data)
@@ -62,6 +62,9 @@ percentage_nb_client = labels_number
 for model_name, gen_model in initial_models.items():
     # learn rate of 0.0001 is the best for umdaa02_filtered central
     hyper_params = {'batch_size': [24], 'epochs': [1], 'num_rounds': [5], 'learn_rate': [0.001]}
+
+
+
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 

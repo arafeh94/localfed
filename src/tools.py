@@ -8,6 +8,7 @@ import numpy as np
 import torch
 import tqdm
 from sklearn import decomposition
+from sklearn.metrics import balanced_accuracy_score
 from torch import nn, tensor
 import logging
 from src.data.data_container import DataContainer
@@ -152,10 +153,11 @@ def infer(model, test_data):
 
 def infer_detailed(model, test_data):
     model.eval()
+    y_true = []
+    y_pred = []
+
     test_loss = test_acc = test_total = 0.
     criterion = nn.CrossEntropyLoss()
-    targets = []
-    predicts = []
     with torch.no_grad():
         for batch_idx, (x, target) in enumerate(test_data):
             pred = model(x)
@@ -166,10 +168,12 @@ def infer_detailed(model, test_data):
             test_acc += correct.item()
             test_loss += loss.item() * target.size(0)
             test_total += target.size(0)
-            targets.extend(target.numpy())
-            predicts.extend(predicted.numpy())
 
-    return test_acc / test_total, test_loss / test_total, targets, predicts
+            y_true.extend(np.array(target))
+            y_pred.extend(np.array(predicted))
+
+    acc = balanced_accuracy_score(y_true, y_pred)
+    return acc, test_loss / test_total
 
 
 def load(model, stats):

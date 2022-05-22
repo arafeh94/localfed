@@ -84,14 +84,14 @@ for model_name, gen_model in initial_models.items():
         print(
             f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds}')
 
-        wandb.login(key=manifest.wandb_config['key'])
-        wandb.init(project='umdaa-02-fd-filtered-cropped', entity=manifest.wandb_config['entity'], config={
-            'lr': learn_rate, 'batch_size': batch_size,
-            'epochs': epochs,
-            'num_rounds': num_rounds, 'data_file': dataset_used,
-            'model': model_name,
-            'selected_clients': percentage_nb_client
-        })
+        # wandb.login(key=manifest.wandb_config['key'])
+        # wandb.init(project='umdaa-02-fd-filtered-cropped', entity=manifest.wandb_config['entity'], config={
+        #     'lr': learn_rate, 'batch_size': batch_size,
+        #     'epochs': epochs,
+        #     'num_rounds': num_rounds, 'data_file': dataset_used,
+        #     'model': model_name,
+        #     'selected_clients': percentage_nb_client
+        # })
 
         for i in range(num_rounds):
             tools.train(gen_model, train_data=train.batch(batch_size), epochs=epochs, lr=learn_rate)
