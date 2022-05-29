@@ -400,3 +400,27 @@ class CNN_OriginalFedAvg_fall(torch.nn.Module):
         x = self.relu(self.linear_1(x))
         x = self.softmax(self.linear_2(x))
         return x
+
+
+class ConvNet1D_test(nn.Module):
+    def __init__(self, n_features):
+        super().__init__()
+        self.layer1 = nn.Sequential(
+            nn.Conv1d(n_features, 64, kernel_size=3),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.MaxPool1d(10))
+        self.layer2 = nn.Flatten()
+        self.layer3 = nn.Sequential(
+            nn.Linear(768,100),
+            nn.ReLU())
+        self.layer4 = nn.Sequential(
+            nn.Linear(100,6),
+            nn.Softmax())
+
+    def forward(self, x):
+        out = self.layer1(x)
+        out = self.layer2(out)
+        out = self.layer3(out)
+        out = self.layer4(out)
+        return out

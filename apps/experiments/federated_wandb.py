@@ -43,7 +43,7 @@ federated = FederatedLearning(
 
 federated.add_subscriber(FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
-federated.add_subscriber(WandbLogger(config={'samira': '2'}))
+# federated.add_subscriber(WandbLogger(config={'samira': '2'}))
 logger.info("----------------------")
 logger.info("start federated 1")
 logger.info("----------------------")

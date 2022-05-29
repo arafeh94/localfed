@@ -8,7 +8,7 @@ import pickle
 from src.data.data_container import DataContainer
 from src.tools import Dict
 
-path = 'E:\Datasets\CA\children touch dataset\Dataset\Smartphone'
+path = 'F:\Datasets\CA\children touch dataset\Dataset\Smartphone'
 
 
 def read_file(file_path):
@@ -75,7 +75,7 @@ for data in all_data:
         user_data = []
         index = index + 1
 
-final_data = dict()
+final_data = Dict()
 data = sorted(clients_data.items(), key=itemgetter(0))
 for index, d_c in data:
     final_data[index] = d_c

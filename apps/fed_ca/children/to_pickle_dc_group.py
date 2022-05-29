@@ -8,9 +8,9 @@ import pickle
 from src.data.data_container import DataContainer
 from src.tools import Dict
 
-path = 'E:\Datasets\CA\children touch dataset\Dataset\Smartphone'
+path = 'F:\Datasets\CA\children touch dataset\Dataset\Smartphone'
 
-excel_file_path = 'E:\Datasets\CA\children touch dataset\Dataset\id-gender-agegroup.csv'
+excel_file_path = 'F:\Datasets\CA\children touch dataset\Dataset\id-gender-agegroup.csv'
 
 
 def read_excel(file_path):
@@ -69,7 +69,6 @@ index = 0
 
 
 def get_age_group(user_id):
-    # user_group = -1
     users_groups = read_excel(excel_file_path)
     for user in users_groups:
         if(user[0] == user_id):
@@ -100,7 +99,6 @@ for data in all_data:
     if counter == 4:
         user_id = data[0][0]
         age_group = get_age_group(user_id)
-
         counter = 0
         # ys.append(user_id - 1)
         # clients_data.append(user_data)
@@ -114,5 +112,8 @@ data = sorted(clients_data.items(), key=itemgetter(0))
 for index, d_c in data:
     final_data[index] = d_c
 
-with open('children_touch.pkl', 'wb') as handle:
+with open('../../../datasets/pickles/children_touch.pkl', 'wb') as handle:
     pickle.dump(final_data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+print("Pickle file created successfully!")
+
