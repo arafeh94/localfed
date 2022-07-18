@@ -16,7 +16,7 @@ from src.data.data_loader import preload
 # 5% of 1000 from mnist, that's 50 data sample, plus 10 for testing
 from src.data.data_provider import PickleDataProvider
 
-ratio = 0.15
+ratio = 0.05
 labels_number = 3
 ud = UniqueDistributor(labels_number, 500 * ratio, 500 * ratio)
 dataset_name = 'umdaa02_fd_filtered_cropped'

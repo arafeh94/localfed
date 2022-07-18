@@ -78,10 +78,6 @@ def get_age_group(user_id):
                 return 1
 
 
-    # if user_group == -1:
-    #     print(f'Could not find user {user_id} in the age_group database! ***')
-
-
 
 for data in all_data:
 

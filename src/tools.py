@@ -5,6 +5,8 @@ import typing
 from datetime import datetime, timedelta
 
 import numpy as np
+import pandas as pd
+import pygal
 import torch
 import tqdm
 from sklearn import decomposition
@@ -101,6 +103,7 @@ def aggregate(models_dict: dict, sample_dict: dict):
 
     return averaged_params
 
+
 def mode(models_dict: dict, sample_dict: dict):
     model_list = []
     training_num = 0
@@ -111,7 +114,7 @@ def mode(models_dict: dict, sample_dict: dict):
 
     # logging.info("################aggregate: %d" % len(model_list))
     (num0, averaged_params) = model_list[0]
-    all_layers_weights={}
+    all_layers_weights = {}
     for k in averaged_params.keys():
         new_array = []
         shape = averaged_params[k].numpy().shape
@@ -145,8 +148,6 @@ def infer(model, test_data):
             test_acc += correct.item()
             test_loss += loss.item() * target.size(0)
             test_total += target.size(0)
-
-
 
     return test_acc / test_total, test_loss / test_total
 
@@ -267,3 +268,9 @@ def compress(weights, output_dim, n_components):
     pca.fit(weights)
     weights = pca.transform(weights)
     return weights.flatten()
+
+
+
+
+
+

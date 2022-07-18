@@ -16,6 +16,8 @@ from src.federated.protocols import TrainerParams
 from src.federated.subscribers.logger import FederatedLogger
 from src.federated.subscribers.wandb_logger import WandbLogger
 
+import visualizations
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
@@ -26,19 +28,26 @@ client_data = preload(dataset_used)
 # dist = LabelDistributor(119, 3, 60, 60)
 # client_data = preload(dataset_used, dist)
 
+#test
+# client_data = preload('children_touch', UniqueDistributor(num_clients=10, min_size=600, max_size=600))
 
+visualizations.visualize(client_data)
+exit(0)
 tools.detail(client_data)
 
+
+
+
 # building Hyperparameters
-labels_number = 64
-percentage_nb_client = 0.2
+labels_number = 2
+percentage_nb_client = 0.5
 
 # number of models that we are using
 initial_models = {
-    # 'LR': LogisticRegression(input_shape, labels_number),
+    'LR': LogisticRegression(3, labels_number),
     # 'MLP': MLP(input_shape, labels_number)
     # 'CNN_OriginalFedAvg': CNN_OriginalFedAvg()
-    'ConvNet1D_test': ConvNet1D_test(labels_number)
+    # 'ConvNet1D_test': ConvNet1D_test(labels_number)
 
     # 'CNN': CNN_DropOut(False)
 }
@@ -46,7 +55,7 @@ initial_models = {
 for model_name, gen_model in initial_models.items():
 
     # hyper_params = {'batch_size': [10, 50, 1000], 'epochs': [1, 5, 20], 'num_rounds': [1200]}
-    hyper_params = {'batch_size': [64], 'epochs': [1], 'num_rounds': [800]}
+    hyper_params = {'batch_size': [1], 'epochs': [5], 'num_rounds': [3]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 
