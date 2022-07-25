@@ -1,11 +1,12 @@
 import logging
-
 from torch import nn
-
 from apps.fed_ca.utilities.hp_generator import generate_configs, calculate_max_rounds
-from libs.model.cv.cnn import CNN_OriginalFedAvg, Cnn1D, ConvNet1D_test
+from libs.model.collection import MLP
+from libs.model.cv.cnn import ConvNet1D_test
+from libs.model.cv.resnet import resnet56
 from libs.model.linear.lr import LogisticRegression
 from src import tools
+from src.apis import lambdas
 from src.data.data_distributor import UniqueDistributor, LabelDistributor
 from src.data.data_loader import preload
 from src.federated.components import metrics, client_selectors, aggregators, trainers
@@ -14,50 +15,45 @@ from src.federated.events import Events
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
 from src.federated.subscribers.logger import FederatedLogger
-from src.federated.subscribers.wandb_logger import WandbLogger
 
 import visualizations
+from src.federated.subscribers.wandb_logger import WandbLogger
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
-
-# client_data = PickleDataProvider(file_path).collect()
-dataset_used = 'children_touch'
+# total number of clients is 118
+dataset_used = 'children_touch_9f'
 client_data = preload(dataset_used)
-#
-# dist = LabelDistributor(119, 3, 60, 60)
-# client_data = preload(dataset_used, dist)
+# visualizations.visualize(client_data)
 
-#test
-# client_data = preload('children_touch', UniqueDistributor(num_clients=10, min_size=600, max_size=600))
+client_data = client_data.reduce(lambdas.dict2dc).as_tensor()
+labels_number = 10
+# client_data = client_data.x.reshape([128046,3])
+ud = LabelDistributor(labels_number, 1, 1000, 1000)
+client_data = ud.distribute(client_data)
 
 
 
 visualizations.visualize(client_data)
-# exit(0)
 tools.detail(client_data)
 
-
-
-
 # building Hyperparameters
-labels_number = 2
-percentage_nb_client = 0.5
+percentage_nb_client = 1
 
 # number of models that we are using
 initial_models = {
-    'LR': LogisticRegression(3, labels_number),
-    # 'MLP': MLP(input_shape, labels_number)
+    # 'LR': LogisticRegression(9, labels_number),
+    # 'MLP': MLP(9, 1000, labels_number)
     # 'CNN_OriginalFedAvg': CNN_OriginalFedAvg()
     # 'ConvNet1D_test': ConvNet1D_test(labels_number)
-
     # 'CNN': CNN_DropOut(False)
+    'ResNet':  resnet56(labels_number, 1, 3)
 }
 
 for model_name, gen_model in initial_models.items():
 
-    # hyper_params = {'batch_size': [10, 50, 1000], 'epochs': [1, 5, 20], 'num_rounds': [1200]}
-    hyper_params = {'batch_size': [1], 'epochs': [5], 'num_rounds': [3]}
+    hyper_params = {'batch_size': [4096], 'epochs': [20], 'num_rounds': [100],
+                    'learn_rate': [0.001]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 
@@ -67,7 +63,7 @@ for model_name, gen_model in initial_models.items():
         epochs = config['epochs']
         num_rounds = config['num_rounds']
         initial_model = config['initial_model']
-        learn_rate = 0.1
+        learn_rate = config['learn_rate']
 
         print(
             f'Applied search: lr={learn_rate}, batch_size={batch_size}, epochs={epochs}, num_rounds={num_rounds}, '
@@ -88,7 +84,6 @@ for model_name, gen_model in initial_models.items():
             initial_model=lambda: initial_model,
             num_rounds=num_rounds,
             desired_accuracy=1
-            # accepted_accuracy_margin=0.05
         )
         # filename is used for both the wandb id and for model resume at checkpoint
         filename_id = f'lr={learn_rate}_batch_size={batch_size}_epochs={epochs}_num_rounds={num_rounds}_data_file={dataset_used}_model_name={model_name}'
@@ -98,13 +93,13 @@ for model_name, gen_model in initial_models.items():
 
         federated.add_subscriber(FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
 
-        # federated.add_subscriber(WandbLogger(project='children', config={
-        #     'lr': learn_rate, 'batch_size': batch_size,
-        #     'epochs': epochs,
-        #     'num_rounds': num_rounds, 'data_file': dataset_used,
-        #     'model': model_name,
-        #     'selected_clients': percentage_nb_client
-        # }))
+        federated.add_subscriber(WandbLogger(project='children', config={
+            'lr': learn_rate, 'batch_size': batch_size,
+            'epochs': epochs,
+            'num_rounds': num_rounds, 'data_file': dataset_used,
+            'model': model_name,
+            'selected_clients': percentage_nb_client
+        }))
 
         logger.info("----------------------")
         logger.info("start federated")

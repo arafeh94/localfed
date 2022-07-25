@@ -8,7 +8,7 @@ import pickle
 from src.apis.extensions import Dict
 from src.data.data_container import DataContainer
 
-# creates a DataContainer contains unique labels of 0 or 1
+# creates a DataContainer contains clients with unique labels of 0 or 1
 
 path = 'F:\Datasets\CA\children touch dataset\Dataset\Smartphone'
 
@@ -73,14 +73,16 @@ index = 0
 def get_age_group(user_id):
     users_groups = read_excel(excel_file_path)
     for user in users_groups:
-        if (user[0] == user_id):
+        if(user[0] == user_id):
             if user[2] != 'adult':
                 return 0
             else:
                 return 1
 
 
+
 for data in all_data:
+
 
     for user in data:
         x_point = int(user[2])
@@ -108,24 +110,9 @@ data = sorted(clients_data.items(), key=itemgetter(0))
 for index, d_c in data:
     final_data[index] = d_c
 
-final_data_grp = dict()
-
-# 0 is child, and 1 is adult
-for i in range(len(final_data)):
-    dc_new = final_data[i]
-    if final_data[i].y[0] == 0 and len(final_data_grp) != 0:
-        final_data_grp[0] = DataContainer(np.append(dc_new.x, final_data_grp[0].x, axis=0),
-                                          np.append(dc_new.y, final_data_grp[0].y, axis=0))
-    elif final_data[i].y[0] == 0:
-        final_data_grp[0] = dc_new
-    elif final_data[i].y[1] == 1 and len(final_data_grp) != 1:
-        final_data_grp[1] = DataContainer(np.append(dc_new.x, final_data_grp[1].x, axis=0),
-                                          np.append(dc_new.y, final_data_grp[1].y, axis=0))
-    elif final_data[i].y[1] == 1:
-        final_data_grp[1] = dc_new
-
-final_data_grp = Dict(final_data_grp)
-with open('../../../datasets/pickles/children_touch_group.pkl', 'wb') as handle:
-    pickle.dump(final_data_grp, handle, protocol=pickle.HIGHEST_PROTOCOL)
+final_data = Dict(final_data)
+with open('../../../datasets/pickles/children_touch.pkl', 'wb') as handle:
+    pickle.dump(final_data, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 print("Pickle file created successfully!")
+

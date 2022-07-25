@@ -61,7 +61,7 @@ percentage_nb_client = labels_number
 
 for model_name, gen_model in initial_models.items():
     # learn rate of 0.0001 is the best for umdaa02_filtered central
-    hyper_params = {'batch_size': [24], 'epochs': [1], 'num_rounds': [5], 'learn_rate': [0.001]}
+    hyper_params = {'batch_size': [1], 'epochs': [1], 'num_rounds': [5], 'learn_rate': [0.001]}
 
 
 

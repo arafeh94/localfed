@@ -5,10 +5,25 @@ from bs4 import BeautifulSoup
 from operator import itemgetter
 import pickle
 
+from src.apis.extensions import Dict
 from src.data.data_container import DataContainer
-from src.tools import Dict
+
+# creates a DataContainer contains clients with unique labels of 0 or 1, with 2d instead of 1
 
 path = 'F:\Datasets\CA\children touch dataset\Dataset\Smartphone'
+
+excel_file_path = 'F:\Datasets\CA\children touch dataset\Dataset\id-gender-agegroup.csv'
+
+
+def read_excel(file_path):
+    import csv
+    result = []
+    with open(file_path, newline='') as csvfile:
+        rows = csv.reader(csvfile, delimiter=' ', quotechar='|')
+        next(rows)  # skips the header
+        for row in rows:
+            result.append(row[0].split(','))
+    return result
 
 
 def read_file(file_path):
@@ -53,7 +68,18 @@ clients_data = dict()
 counter = 0
 user_data = []
 index = 0
-all_data = []
+
+
+def get_age_group(user_id):
+    users_groups = read_excel(excel_file_path)
+    for user in users_groups:
+        if (user[0] == user_id):
+            if user[2] != 'adult':
+                return 0
+            else:
+                return 1
+
+
 for data in all_data:
 
     for user in data:
@@ -67,18 +93,35 @@ for data in all_data:
     # pass by the 4 user files
     counter = counter + 1
     if counter == 4:
+        user_id = data[0][0]
+        age_group = get_age_group(user_id)
         counter = 0
         # ys.append(user_id - 1)
         # clients_data.append(user_data)
-        dc = DataContainer(user_data, [index] * len(user_data))
+        dc = DataContainer(user_data, [age_group] * len(user_data))
         clients_data[index] = dc
         user_data = []
         index = index + 1
 
-final_data = Dict()
+final_data = dict()
 data = sorted(clients_data.items(), key=itemgetter(0))
 for index, d_c in data:
+    array_x = data[index][1].x
+
+    while len(array_x) * 3 / 9 % 9 != 0:
+        array_x.pop()
+
+    array_size = int((len(array_x) * 3) / 9)
+    # while (original_array_shape != array_shape):
+    #     array_x.pop()
+    #     original_array_shape = original_array_shape - 1
+
+    d_c.x = np.reshape(array_x, (array_size, 9))
+    d_c.y = [d_c.y[0]] * array_size
     final_data[index] = d_c
 
-with open('children_touch.pkl', 'wb') as handle:
+final_data = Dict(final_data)
+with open('../../../datasets/pickles/children_touch_9f.pkl', 'wb') as handle:
     pickle.dump(final_data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+print("Pickle file created successfully!")
