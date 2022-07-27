@@ -22,14 +22,14 @@ from src.federated.subscribers.wandb_logger import WandbLogger
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 # total number of clients is 118
-dataset_used = 'children_touch_9f'
+dataset_used = 'children_touch_3_3_f'
 client_data = preload(dataset_used)
 visualizations.visualize(client_data)
 
-client_data = client_data.reduce(lambdas.dict2dc).as_tensor()
+client_data = client_data.reduce(lambdas.dict2dc)
 labels_number = 10
 # client_data = client_data.x.reshape([128046,3])
-ud = LabelDistributor(labels_number, 1, 1000, 1000)
+ud = LabelDistributor(labels_number, 1, 50, 50)
 client_data = ud.distribute(client_data)
 
 
@@ -42,8 +42,8 @@ percentage_nb_client = 1
 
 # number of models that we are using
 initial_models = {
-    # 'LR': LogisticRegression(9, labels_number),
-    # 'MLP': MLP(9, 1000, labels_number)
+    # 'LR': LogisticRegression(3, labels_number),
+    # 'MLP': MLP(3, 100,labels_number)
     # 'CNN_OriginalFedAvg': CNN_OriginalFedAvg()
     # 'ConvNet1D_test': ConvNet1D_test(labels_number)
     # 'CNN': CNN_DropOut(False)
@@ -52,7 +52,7 @@ initial_models = {
 
 for model_name, gen_model in initial_models.items():
 
-    hyper_params = {'batch_size': [4096], 'epochs': [20], 'num_rounds': [100],
+    hyper_params = {'batch_size': [16], 'epochs': [1], 'num_rounds': [100],
                     'learn_rate': [0.001]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
