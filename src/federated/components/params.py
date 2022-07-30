@@ -17,7 +17,7 @@ def sgd(lr):
     """
     # print("*** SGD Modified momentum=0.9, weight_decay=1e-5 ****")
     # return lambda model: torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=1e-5)
-    return lambda model: torch.optim.SGD(model.parameters(), lr=lr)
+    return lambda model: torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
 
 
 def adam(lr, wd, amsgrad=True):
@@ -49,4 +49,6 @@ def optimizer(name, **kwargs):
 def criterion(name, **kwargs):
     if name in ['cross_entropy_loss', 'cel']:
         return nn.CrossEntropyLoss()
+    if name in ['mean_square_error_loss', 'mse']:
+        return  nn.MSELoss()
     raise Exception(f'unknown criterion {name}')

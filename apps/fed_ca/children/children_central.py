@@ -24,7 +24,8 @@ logger = logging.getLogger('main')
 
 labels_number = 118
 
-dataset_used = 'children_touch_3_3_f'
+# dataset_used = 'children_touch_3_3_f'
+dataset_used = 'children_touch_all_3_3_f'
 client_data = preload(dataset_used)
 # client_data = client_data.reduce(lambdas.dict2dc)
 # visualizations.visualize(client_data)
@@ -79,8 +80,7 @@ for model_name, gen_model in initial_models.items():
 
         for i in range(num_rounds):
             federated_tools.train(gen_model, train_data=train_data.batch(batch_size), epochs=epochs, lr=learn_rate)
-            tools.train(gen_model, train_data=train_data.batch(batch_size), epochs=epochs, lr=learn_rate)
-            acc, loss = tools.infer(gen_model, test_data.batch(batch_size))
+            acc, loss = federated_tools.infer(gen_model, test_data.batch(batch_size))
             print(acc, loss, i + 1)
             wandb.log({'acc': acc, 'loss': loss, 'last_round': i + 1})
             atexit.register(lambda: wandb.finish())

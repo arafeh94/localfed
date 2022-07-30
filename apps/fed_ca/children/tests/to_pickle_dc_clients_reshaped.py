@@ -8,7 +8,7 @@ import pickle
 from src.apis.extensions import Dict
 from src.data.data_container import DataContainer
 
-# creates a DataContainer contains clients with unique labels of 0 or 1, with 2d instead of 1
+# creates a DataContainer contains clients with unique labels of 0 or 1, with arrays of 9 features instead of 3
 
 path = 'F:\Datasets\CA\children touch dataset\Dataset\Smartphone'
 
@@ -108,41 +108,20 @@ data = sorted(clients_data.items(), key=itemgetter(0))
 for index, d_c in data:
     array_x = data[index][1].x
 
-    # while len(array_x) * 3 / 9 % 9 != 0:
+    while len(array_x) * 3 / 9 % 9 != 0:
+        array_x.pop()
+
+    array_size = int((len(array_x) * 3) / 9)
+    # while (original_array_shape != array_shape):
     #     array_x.pop()
-    #
-    # array_size = int((len(array_x) * 3) / 9)
+    #     original_array_shape = original_array_shape - 1
 
-    # reshaping to 2D array
-    # for i in range(array_size/3):
-    #     tmp_array.append(array_x[i:i+3])
-
-    tmp_array = []
-    counter_index = 0
-    new_array = []
-    for i in range(len(array_x)):
-        if counter_index != 3:
-            # if the last tmp is not filled it will be discarded from the new_array since it does not meet the condition
-            # of 7 sub arrays
-            tmp_array.append(array_x[i])
-            counter_index = counter_index + 1
-        else:
-            new_array.append(tmp_array)
-            counter_index = 0
-            tmp_array = []
-
-    d_c.x = new_array
-    d_c.y = [d_c.y[0]] * len(new_array)
-
-
-
-
-    # d_c.x = np.reshape(array_x, (array_size, 9))
-    # d_c.y = [d_c.y[0]] * array_size
+    d_c.x = np.reshape(array_x, (array_size, 9))
+    d_c.y = [d_c.y[0]] * array_size
     final_data[index] = d_c
 
 final_data = Dict(final_data)
-with open('../../../datasets/pickles/children_touch_3_3_f.pkl', 'wb') as handle:
+with open('../../../../datasets/pickles/children_touch_9f.pkl', 'wb') as handle:
     pickle.dump(final_data, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 print("Pickle file created successfully!")

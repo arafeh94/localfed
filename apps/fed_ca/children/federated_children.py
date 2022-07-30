@@ -2,8 +2,6 @@ import logging
 from torch import nn
 from apps.fed_ca.utilities.hp_generator import generate_configs, calculate_max_rounds
 from libs.model.collection import MLP
-from libs.model.cv.cnn import ConvNet1D_test
-from libs.model.linear.lr import LogisticRegression
 from src import tools
 from src.apis import lambdas
 from src.data.data_distributor import UniqueDistributor, LabelDistributor
@@ -29,9 +27,8 @@ client_data = client_data.reduce(lambdas.dict2dc).as_tensor()
 labels_number = 10
 
 ud = LabelDistributor(labels_number, 1, 1000, 1000)
+print(ud.id())
 client_data = ud.distribute(client_data)
-
-
 
 visualizations.visualize(client_data)
 tools.detail(client_data)
@@ -50,7 +47,7 @@ initial_models = {
 
 for model_name, gen_model in initial_models.items():
 
-    hyper_params = {'batch_size': [256, 512, 2048, 4096], 'epochs': [50], 'num_rounds': [100],
+    hyper_params = {'batch_size': [256], 'epochs': [1], 'num_rounds': [2],
                     'learn_rate': [0.001]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
@@ -94,9 +91,10 @@ for model_name, gen_model in initial_models.items():
         federated.add_subscriber(WandbLogger(project='children', config={
             'lr': learn_rate, 'batch_size': batch_size,
             'epochs': epochs,
-            'num_rounds': num_rounds, 'data_file': dataset_used,
+            'num_rounds': num_rounds, 'data_file': dataset_used + '_federated'+'_'+ud.id(),
             'model': model_name,
-            'selected_clients': percentage_nb_client
+            'selected_clients': percentage_nb_client,
+            'labels_number': labels_number
         }))
 
         logger.info("----------------------")

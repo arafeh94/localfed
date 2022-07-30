@@ -125,7 +125,7 @@ for i in range(len(final_data)):
         final_data_grp[1] = dc_new
 
 final_data_grp = Dict(final_data_grp)
-with open('../../../datasets/pickles/children_touch_group.pkl', 'wb') as handle:
+with open('../../../../datasets/pickles/children_touch_group.pkl', 'wb') as handle:
     pickle.dump(final_data_grp, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 print("Pickle file created successfully!")

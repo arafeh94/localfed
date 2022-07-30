@@ -29,3 +29,61 @@ class AccLoss(ModelInfer):
                 test_total += target.size(0)
 
         return test_acc / test_total, test_loss / test_total
+
+
+class CustomLoss(ModelInfer):
+    def __init__(self, batch_size: int, criterion, device=None):
+        super().__init__(batch_size, criterion)
+        # self.device = device or torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = device or torch.device('cpu')
+
+    def infer(self, model: nn.Module, test_data: DataContainer):
+        model.to(self.device)
+        model.eval()
+        test_loss = test_acc = test_total = 0.
+        criterion = self.criterion
+        with torch.no_grad():
+            for batch_idx, (x, target) in enumerate(test_data.batch(self.batch_size)):
+                x = x.to(self.device)
+                target = target.to(self.device)
+                pred = model(x)
+                loss = criterion(pred, target)
+                _, predicted = torch.max(pred, -1)
+                correct = predicted.eq(target).sum()
+
+                test_acc += correct.item()
+                test_loss += loss.item() * target.size(0)
+                test_total += target.size(0)
+
+        return test_acc / test_total, test_loss / test_total
+
+
+class CustomLoss_test(ModelInfer):
+    def __init__(self, batch_size: int, criterion, device=None):
+        super().__init__(batch_size, criterion)
+        # self.device = device or torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = device or torch.device('cpu')
+
+    def infer(self, model: nn.Module, test_data: DataContainer):
+        model.to(self.device)
+        model.eval()
+        test_loss = test_acc = test_total = 0.
+        criterion = self.criterion
+        with torch.no_grad():
+            for batch_idx, (x, target) in enumerate(test_data.batch(self.batch_size)):
+                x = x.to(self.device)
+                target = target.to(self.device)
+                target = target.unsqueeze(-1).repeat(1, 10)
+                pred = model(x)
+                loss = criterion(pred, target)
+                _, predicted = torch.max(pred, -1)
+                predicted = predicted.unsqueeze(-1).repeat(1, 10)
+                correct = predicted.eq(target)
+                correct = correct.sum()
+
+                #todo problem with loss calculation
+                test_acc += correct.item()/10
+                test_loss += loss.item() * target.size(0)
+                test_total += target.size(0)
+
+        return test_acc / test_total, test_loss / test_total

@@ -10,7 +10,8 @@ from src.data.data_container import DataContainer
 
 # creates a DataContainer contains clients with unique labels of 0 or 1, with 2d instead of 1
 
-path = 'F:\Datasets\CA\children touch dataset\Dataset\Smartphone'
+path_1 = 'F:\Datasets\CA\children touch dataset\Dataset\Smartphone'
+path_2 = 'F:\Datasets\CA\children touch dataset\Dataset\Tablet'
 
 excel_file_path = 'F:\Datasets\CA\children touch dataset\Dataset\id-gender-agegroup.csv'
 
@@ -53,10 +54,16 @@ def read_file(file_path):
 
 # we shall store all the file names in this list
 filelist = []
-for root, dirs, files in os.walk(path):
+for root, dirs, files in os.walk(path_1):
     for file in files:
         # append the file name to the list
         filelist.append(os.path.join(root, file))
+
+for root, dirs, files in os.walk(path_2):
+    for file in files:
+        # append the file name to the list
+        filelist.append(os.path.join(root, file))
+
 
 all_data = []
 # print all the file names
@@ -90,14 +97,12 @@ for data in all_data:
         user_point = np.array((x_point, y_point, t_point))
         user_data.append(user_point)
 
-    # pass by the 4 user files
+    # pass by the 4 user files of Smartphone and 4 for the Tablet
     counter = counter + 1
-    if counter == 4:
+    if counter == 8:
         user_id = data[0][0]
         age_group = get_age_group(user_id)
         counter = 0
-        # ys.append(user_id - 1)
-        # clients_data.append(user_data)
         dc = DataContainer(user_data, [age_group] * len(user_data))
         clients_data[index] = dc
         user_data = []
@@ -108,20 +113,27 @@ data = sorted(clients_data.items(), key=itemgetter(0))
 for index, d_c in data:
     array_x = data[index][1].x
 
-    while len(array_x) * 3 / 9 % 9 != 0:
-        array_x.pop()
+    # reshaping the data from 1d to 2d
+    tmp_array = []
+    counter_index = 0
+    new_array = []
+    for i in range(len(array_x)):
+        if counter_index != 3:
+            # if the last tmp is not filled it will be discarded from the new_array since it does not meet the condition
+            # of 7 sub arrays
+            tmp_array.append(array_x[i])
+            counter_index = counter_index + 1
+        else:
+            new_array.append(tmp_array)
+            counter_index = 0
+            tmp_array = []
 
-    array_size = int((len(array_x) * 3) / 9)
-    # while (original_array_shape != array_shape):
-    #     array_x.pop()
-    #     original_array_shape = original_array_shape - 1
-
-    d_c.x = np.reshape(array_x, (array_size, 9))
-    d_c.y = [d_c.y[0]] * array_size
+    d_c.x = new_array
+    d_c.y = [d_c.y[0]] * len(new_array)
     final_data[index] = d_c
 
 final_data = Dict(final_data)
-with open('../../../datasets/pickles/children_touch_9f.pkl', 'wb') as handle:
+with open('../../../datasets/pickles/children_touch_all_3_3_f.pkl', 'wb') as handle:
     pickle.dump(final_data, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 print("Pickle file created successfully!")

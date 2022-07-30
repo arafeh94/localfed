@@ -24,15 +24,17 @@ logger = logging.getLogger('main')
 # total number of clients is 118
 dataset_used = 'children_touch_3_3_f'
 client_data = preload(dataset_used)
-visualizations.visualize(client_data)
+# visualizations.visualize(client_data)
+
+client_data = client_data.select([0,2,33,37,27,80,7,21,6,11])
 
 client_data = client_data.reduce(lambdas.dict2dc)
+
+
 labels_number = 10
 # client_data = client_data.x.reshape([128046,3])
-ud = LabelDistributor(labels_number, 1, 50, 50)
+ud = LabelDistributor(labels_number, 1, 190, 190)
 client_data = ud.distribute(client_data)
-
-
 
 visualizations.visualize(client_data)
 tools.detail(client_data)
@@ -47,13 +49,13 @@ initial_models = {
     # 'CNN_OriginalFedAvg': CNN_OriginalFedAvg()
     # 'ConvNet1D_test': ConvNet1D_test(labels_number)
     # 'CNN': CNN_DropOut(False)
-    'ResNet':  resnet56(labels_number, 1, 3)
+    'ResNet': resnet56(labels_number, 1, 3)
 }
 
 for model_name, gen_model in initial_models.items():
 
-    hyper_params = {'batch_size': [16], 'epochs': [1], 'num_rounds': [100],
-                    'learn_rate': [0.001]}
+    hyper_params = {'batch_size': [64], 'epochs': [3], 'num_rounds': [100],
+                    'learn_rate': [0.01]}
 
     configs = generate_configs(model_param=gen_model, hyper_params=hyper_params)
 
@@ -70,7 +72,7 @@ for model_name, gen_model in initial_models.items():
             f'initial_model={initial_model} ')
 
         trainer_manager = SeqTrainerManager()
-        trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=batch_size,
+        trainer_params = TrainerParams(trainer_class=trainers.CustomTrainer, batch_size=batch_size,
                                        epochs=epochs,
                                        optimizer='sgd', criterion='cel', lr=learn_rate)
 
@@ -78,7 +80,8 @@ for model_name, gen_model in initial_models.items():
             trainer_manager=trainer_manager,
             trainer_config=trainer_params,
             aggregator=aggregators.AVGAggregator(),
-            metrics=metrics.AccLoss(batch_size=batch_size, criterion=nn.CrossEntropyLoss()),
+            metrics=metrics.CustomLoss(batch_size=batch_size, criterion=nn.MSELoss()),
+            # metrics=metrics.AccLoss(batch_size=batch_size, criterion=nn.CrossEntropyLoss()),
             client_selector=client_selectors.Random(percentage_nb_client),
             trainers_data_dict=client_data,
             initial_model=lambda: initial_model,
@@ -93,13 +96,13 @@ for model_name, gen_model in initial_models.items():
 
         federated.add_subscriber(FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
 
-        federated.add_subscriber(WandbLogger(project='children', config={
-            'lr': learn_rate, 'batch_size': batch_size,
-            'epochs': epochs,
-            'num_rounds': num_rounds, 'data_file': dataset_used,
-            'model': model_name,
-            'selected_clients': percentage_nb_client
-        }))
+        # federated.add_subscriber(WandbLogger(project='children', config={
+        #     'lr': learn_rate, 'batch_size': batch_size,
+        #     'epochs': epochs,
+        #     'num_rounds': num_rounds, 'data_file': dataset_used +'_federated_' + ud.id(),
+        #     'model': model_name,
+        #     'selected_clients': percentage_nb_client
+        # }))
 
         logger.info("----------------------")
         logger.info("start federated")

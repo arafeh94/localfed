@@ -8,7 +8,7 @@ import pickle
 from src.apis.extensions import Dict
 from src.data.data_container import DataContainer
 
-# creates a DataContainer contains clients with unique labels of 0 or 1
+# creates a DataContainer contains clients with unique labels of 0 or 1, with 2d instead of 1
 
 path = 'F:\Datasets\CA\children touch dataset\Dataset\Smartphone'
 
@@ -73,16 +73,14 @@ index = 0
 def get_age_group(user_id):
     users_groups = read_excel(excel_file_path)
     for user in users_groups:
-        if(user[0] == user_id):
+        if (user[0] == user_id):
             if user[2] != 'adult':
                 return 0
             else:
                 return 1
 
 
-
 for data in all_data:
-
 
     for user in data:
         x_point = int(user[2])
@@ -98,8 +96,6 @@ for data in all_data:
         user_id = data[0][0]
         age_group = get_age_group(user_id)
         counter = 0
-        # ys.append(user_id - 1)
-        # clients_data.append(user_data)
         dc = DataContainer(user_data, [age_group] * len(user_data))
         clients_data[index] = dc
         user_data = []
@@ -108,11 +104,29 @@ for data in all_data:
 final_data = dict()
 data = sorted(clients_data.items(), key=itemgetter(0))
 for index, d_c in data:
+    array_x = data[index][1].x
+
+    # reshaping the data from 1d to 2d
+    tmp_array = []
+    counter_index = 0
+    new_array = []
+    for i in range(len(array_x)):
+        if counter_index != 3:
+            # if the last tmp is not filled it will be discarded from the new_array since it does not meet the condition
+            # of 7 sub arrays
+            tmp_array.append(array_x[i])
+            counter_index = counter_index + 1
+        else:
+            new_array.append(tmp_array)
+            counter_index = 0
+            tmp_array = []
+
+    d_c.x = new_array
+    d_c.y = [d_c.y[0]] * len(new_array)
     final_data[index] = d_c
 
 final_data = Dict(final_data)
-with open('../../../datasets/pickles/children_touch.pkl', 'wb') as handle:
+with open('../../../datasets/pickles/children_touch_3_3_f.pkl', 'wb') as handle:
     pickle.dump(final_data, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 print("Pickle file created successfully!")
-
