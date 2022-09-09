@@ -1,7 +1,6 @@
 import logging
 import sys
 
-
 sys.path.append('../../')
 
 from src.federated.subscribers.analysis import ShowWeightDivergence
@@ -57,5 +56,3 @@ logger.info("----------------------")
 logger.info("start federated 1")
 logger.info("----------------------")
 federated.start()
-
-files.accuracies.save_accuracy(federated, tag)

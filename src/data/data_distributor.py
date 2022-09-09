@@ -4,12 +4,10 @@ from abc import abstractmethod
 from collections import defaultdict
 import numpy as np
 import typing
-from libs.data_distribute import non_iid_partition_with_dirichlet_distribution
+from libs.data_distribute import distribute
 from src.apis import lambdas
 from src.apis.extensions import Dict
 from src.data.data_container import DataContainer
-
-
 
 
 class Distributor:
@@ -37,9 +35,8 @@ class DirichletDistributor(Distributor):
         self.skewness = skewness
 
     def distribute(self, data: DataContainer) -> Dict[int, DataContainer]:
-        data = data.as_list()
-        client_rows = non_iid_partition_with_dirichlet_distribution(
-            data.y, self.num_clients, self.num_labels, self.skewness)
+        data = data.as_numpy()
+        client_rows = distribute(data.y, self.num_clients, self.num_labels, self.skewness)
         clients_data = {}
         for client in client_rows:
             client_x = []
@@ -251,7 +248,8 @@ class ShardDistributor(Distributor):
                 y = [label] * len(x)
                 client_x.extend(x)
                 client_y.extend(y)
-            clients_data[index] = DataContainer(client_x, client_y)
+            client_data = DataContainer(client_x, client_y)
+            clients_data[index] = client_data.as_numpy()
             index += 1
         return Dict(clients_data)
 

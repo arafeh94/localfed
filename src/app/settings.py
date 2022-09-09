@@ -31,10 +31,6 @@ class Clazz:
 
 
 class Settings:
-    MULTIVALUES_KEYS = ['epochs', 'lr', 'batch_size', 'client_ratio', 'optimizer', 'criterion', 'distributor',
-                        'dataset', 'model']
-    UNSUPPORTED_MULTIVALUES = ['rounds']
-
     def __init__(self, config):
         self.configs = self._init(config)
         self.cursor = 0
@@ -64,31 +60,7 @@ class Settings:
     def _init(self, config):
         if not isinstance(config, list):
             config = [config]
-        all_configs = []
-        for part in config:
-            all_configs.extend(self._decompile(part))
-        return all_configs
-
-    def _decompile(self, config):
-        immutable_multi_configs = [{}]
-        for key in config:
-            if key in Settings.UNSUPPORTED_MULTIVALUES and isinstance(config[key], list):
-                raise Exception(f'config [{key}] does not support multi_key, make sure it\'s not a list')
-            if key in Settings.MULTIVALUES_KEYS and isinstance(config[key], list):
-                num = len(config[key])
-                multi_configs = []
-                for cf in immutable_multi_configs:
-                    copies = [copy.deepcopy(cf) for i in range(num)]
-                    for index, cp in enumerate(copies):
-                        value = config[key][index]
-                        cp[key] = value
-                        multi_configs.append(cp)
-                immutable_multi_configs = copy.deepcopy(multi_configs)
-            else:
-                for cf in immutable_multi_configs:
-                    cf[key] = config[key]
-
-        return immutable_multi_configs
+        return config
 
     def get(self, key, absent_ok=True) -> typing.Any:
         try:
@@ -147,4 +119,9 @@ class Settings:
     @staticmethod
     def from_json_file(file_path):
         configs = json.load(open(file_path, 'r'))
+        return Settings(configs)
+
+    @staticmethod
+    def from_json(file_path):
+        configs = json.loads(file_path)
         return Settings(configs)

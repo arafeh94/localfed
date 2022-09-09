@@ -1,22 +1,23 @@
 import os
+import psutil
 import sys
 from abc import abstractmethod
+
 from matplotlib import pyplot as plt
 from scipy.stats import wasserstein_distance
+
+from src.apis import utils
 from src.federated.events import FederatedSubscriber
 from src.federated.federated import FederatedLearning
-import os, psutil
 
 
 class BasePlotter(FederatedSubscriber):
-    def __init__(self, plot_ratio=1, show_plot=True, save_dir=None, plot_title=None):
+    def __init__(self, plot_ratio=1, show_plot=True, save_prefix=None, plot_title=None):
         super().__init__()
         self.plot_ratio = plot_ratio if plot_ratio else sys.maxsize
         self.show_plot = show_plot
-        self.save_dir = save_dir
+        self.save_prefix = save_prefix
         self.plot_title = plot_title
-        if save_dir:
-            os.makedirs(save_dir, exist_ok=True)
 
     def on_round_end(self, params):
         context = params['context']
@@ -32,8 +33,8 @@ class BasePlotter(FederatedSubscriber):
     def execute(self, plot, context):
         if not plot:
             return
-        if self.save_dir:
-            file_name = f'{self.save_dir}{os.path.sep}{self.save_file_name(context)}'
+        if self.save_prefix:
+            file_name = f'{self.save_prefix}_{self.save_file_name(context)}.png'
             plot.savefig(file_name)
         if self.show_plot:
             plot.show()
@@ -94,6 +95,15 @@ class LocalLoss(BasePlotter):
         return None
 
 
+class FinalAccuracyPlot(RoundAccuracy):
+
+    def __init__(self):
+        super().__init__(0, True, None, 'Final Acc')
+
+    def final_plot(self, params):
+        return super().round_plot(params)
+
+
 class RoundLoss(BasePlotter):
     def round_plot(self, params):
         acc = []
@@ -131,8 +141,8 @@ class CPUUsage(BasePlotter):
 
 
 class EMDWeightDivergence(BasePlotter):
-    def __init__(self, plot_ratio=1, show_plot=True, save_dir=None):
-        super().__init__(plot_ratio=plot_ratio, show_plot=show_plot, save_dir=save_dir)
+    def __init__(self, plot_ratio=1, show_plot=True):
+        super().__init__(plot_ratio=plot_ratio, show_plot=show_plot)
         self.global_weights = None
         self.trainers_weights = None
 
@@ -169,7 +179,7 @@ class EMDWeightDivergence(BasePlotter):
         all_results = []
         flattened_global_weights = utils.flatten_weights(global_model_dict)
         for trained_id, trainers_weight in trainers_weights.items():
-            flattened_trainer_weights = tools.flatten_weights(trainers_weight)
+            flattened_trainer_weights = utils.flatten_weights(trainers_weight)
             result = wasserstein_distance(flattened_global_weights, flattened_trainer_weights)
             all_results.append(result)
         all_results = sum(all_results) / len(all_results)

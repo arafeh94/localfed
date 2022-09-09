@@ -145,6 +145,7 @@ class Cifar10Model(torch.nn.Module):
         return x
 
 
+
 class CNN_DropOut(torch.nn.Module):
     """
     Recommended model by "Adaptive Federated Optimization" (https://arxiv.org/pdf/2003.00295.pdf)

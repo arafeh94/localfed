@@ -3,11 +3,11 @@ import logging
 import numpy as np
 
 
-def non_iid_partition_with_dirichlet_distribution(label_list,
-                                                  client_num,
-                                                  classes,
-                                                  alpha,
-                                                  task='classification'):
+def distribute(label_list,
+               client_num,
+               classes,
+               alpha,
+               task='classification'):
     """
         Obtain sample index list for each client from the Dirichlet distribution.
         This LDA method is first proposed by :

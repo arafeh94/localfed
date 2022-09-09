@@ -29,5 +29,9 @@ datasets_urls = {
     "cifar10": "https://www.dropbox.com/s/2x8176jyrs6ydqi/cifar10.zip?dl=1",
     "fall_by_client": "https://www.dropbox.com/s/y7glz4pnzflbha4/fall_by_client.zip?dl=1",
     "fall_ar_by_client": "https://www.dropbox.com/s/txo6e1noq6gbrvz/fall_ar_by_client.zip?dl=1",
-    "mnist10k_mr1": "https://mega.nz/file/nxE32SDA#aKxvOQ_Aq2ypFpO8pNJdpte8ScuxjD8fNbdTCxfclbk"
+    "mnist10k_mr1": "https://mega.nz/file/nxE32SDA#aKxvOQ_Aq2ypFpO8pNJdpte8ScuxjD8fNbdTCxfclbk",
+    "cifar100_train": "https://mega.nz/file/GxlW1QoD#u__ZxIHmnfUy0d7USwhEJacDPilcO4pxLKy-RMmW0xo",
+    "cifar100_test": "https://mega.nz/file/O993xI7J#dh_VxcoBA0aPottobNd4gayv6bhh_kFay7aP_MES06c",
+    "cifar100": "https://mega.nz/file/yl9lAIKR#6NQveqduSO5J7AKuylXeM-Qc3qHxRnvYsB6DdhavEE8",
+
 }

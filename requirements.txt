@@ -1,19 +1,13 @@
-scikit-learn~=0.24.2
-numpy~=1.20.3
-h5py~=3.2.1
+scikit-learn
+h5py
 setproctitle
-networkx
+dill
+# networkx
 psutil
-mysql-connector-python~=8.0.25
-matplotlib~=3.4.2
--f https://download.pytorch.org/whl/torch_stable.html
-torch~=1.8.1
--f https://download.pytorch.org/whl/torch_stable.html
-torchvision
--f https://download.pytorch.org/whl/torch_stable.html
-torchaudio
-scipy~=1.6.3
-Pillow~=8.2.0
+mysql-connector-python
+matplotlib
+scipy
+Pillow
 validators
 wget
 zipfile-deflate64
@@ -21,3 +15,7 @@ tqdm
 schedule
 mega.py
 apscheduler
+-f https://download.pytorch.org/whl/cu113/torch_stable.html
+torch
+torchvision
+torchaudio

@@ -51,7 +51,20 @@ class ShowDataDistribution(FederatedSubscriber):
         self.plot(clients_data, self.label_count, self.save_dir)
 
     @staticmethod
-    def plot(clients_data: Dict[int, DataContainer], label_count: int, save_dir=None):
+    def plot(clients_data: Dict[int, DataContainer], label_count: int, save_dir=None, text_color=None,
+             sub_title=None, title='Clients Data Distribution'):
+        """
+        Args:
+            clients_data:
+            label_count:
+            save_dir:
+            text_color:
+            sub_title:
+            title:
+
+        Returns: an image with x:client - y:class
+
+        """
         tick = time.time()
         logger = logging.getLogger('data_distribution')
         logger.info('building data distribution...')
@@ -64,7 +77,7 @@ class ShowDataDistribution(FederatedSubscriber):
                 client_label_count[id_mapper(client_id)][int(y)] += 1
         save_dir = f"{save_dir}/data_distribution.png" if save_dir is not None else None
         client_label_count = np.transpose(client_label_count)
-        plots.heatmap(client_label_count, 'Clients Data Distribution', 'x:Client - y:Class', save_dir)
+        plots.heatmap(client_label_count, title, sub_title, save_dir, text_color=text_color)
         logger.info(f'building data distribution finished {time.time() - tick}')
 
 
@@ -126,7 +139,8 @@ class ShowWeightDivergence(FederatedSubscriber):
             weight_dict = defaultdict(lambda: [])
             for trainer_id, weights in trainers_weights.items():
                 weights = utils.flatten_weights(weights)
-                weights = utils.compress(weights, 10)
+                weights = np.reshape(weights, (5, -1))
+                weights = utils.compress(weights, 5)
                 weight_dict[trainer_id] = weights.tolist()
             context.store(pca=json.dumps(weight_dict)) if self.caching else None
             plots.linear(weight_dict, "Model's Weights", f'R: {self.round_id}', save_dir)

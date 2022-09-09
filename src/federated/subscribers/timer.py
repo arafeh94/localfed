@@ -2,6 +2,7 @@ import logging
 import time
 from collections import defaultdict
 from src.federated.events import Events, FederatedSubscriber
+from src.federated.federated import FederatedLearning
 
 
 class Timer(FederatedSubscriber):
@@ -53,6 +54,10 @@ class Timer(FederatedSubscriber):
 
     def on_round_end(self, params):
         self.tick(self.ROUND, True)
+        context: 'FederatedLearning.Context' = params['context']
+        context.store(round_time=self.ticks[Timer.ROUND])
+        context.store(aggregation_time=self.ticks[Timer.AGGREGATION])
+        context.store(training_time=self.ticks[Timer.TRAINING])
 
     def on_aggregation_end(self, params):
         self.tick(self.AGGREGATION, True)

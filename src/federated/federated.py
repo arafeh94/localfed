@@ -205,6 +205,11 @@ class FederatedLearning(Broadcaster):
                     highest = self.history[rnd]['acc']
             return highest
 
+        def last_entry(self):
+            if len(self.history) == 0:
+                return Dict()
+            return self.history[list(self.history)[-1]]
+
         def latest_accuracy(self):
             if len(self.history) == 0:
                 return 0
@@ -249,3 +254,6 @@ class FederatedLearning(Broadcaster):
             if is_model_accepted:
                 self.model = temporary_model
             return is_model_accepted
+
+        def get_field(self, field_name):
+            return [items[field_name] for rnd, items in self.history.items()]

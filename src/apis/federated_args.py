@@ -17,8 +17,8 @@ class FederatedArgs:
                             default=defaults['batch'] if defaults else 50)
         parser.add_argument('-r', '--round', type=int, help='number of rounds',
                             default=defaults['round'] if defaults else 10)
-        parser.add_argument('-s', '--shard', type=int, help='shard count max 10',
-                            default=defaults['shard'] if defaults else 10)
+        parser.add_argument('-s', '--distributor', type=str, help='shard count max 10',
+                            default=defaults['distributor'] if defaults else 'none')
         parser.add_argument('-d', '--dataset', type=str, help='dataset mnist or cifar10',
                             default=defaults['dataset'] if defaults else 'mnist')
         parser.add_argument('-cr', '--clients_ratio', type=float, help='selected client percentage for fl',
@@ -38,7 +38,7 @@ class FederatedArgs:
         self.epoch = args.epoch
         self.batch = args.batch
         self.round = args.round
-        self.shard = args.shard
+        self.distributor = args.distributor
         self.dataset = args.dataset
         self.clients_ratio = args.clients_ratio
         self.min = args.min
@@ -47,6 +47,7 @@ class FederatedArgs:
         self.learn_rate = args.learn_rate
         self.tag = args.tag
         self.timestamp = defaults['timestamp'] if 'timestamp' in defaults else ''
+        self.model = defaults['mode'] if 'model' in defaults else ''
 
     def _validate(self, args):
         for key, item in args.__dict__.items():
@@ -54,6 +55,6 @@ class FederatedArgs:
                 Exception(key + ' value is missing')
 
     def __repr__(self):
-        return f'{self.tag}_e{self.epoch}_b{self.batch}_r{self.round}_s{self.shard}' \
+        return f'{self.tag}_e{self.epoch}_b{self.batch}_r{self.round}_dis#{self.distributor}' \
                f'_{self.dataset}_cr{str(self.clients_ratio).replace(".", "")}' \
                f'_lr{str(self.learn_rate)}{self.timestamp}'.replace('cr1', 'cr10')

@@ -9,6 +9,14 @@ from src.apis.extensions import Dict
 from src.data.data_container import DataContainer
 
 
+def norm_mean(values):
+    max_val = max(values)
+    if max_val == 0:
+        return 0
+    norm = [i / max(values) for i in values]
+    return statistics.mean(norm)
+
+
 def iidness(data: Dict[int, DataContainer], labels, aggregation_method=statistics.mean, by_label=False):
     client_label_sizes = {}
     if not isinstance(labels, list):

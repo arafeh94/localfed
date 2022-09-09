@@ -2,6 +2,8 @@ from typing import Tuple, Dict
 
 import torch
 from torch import nn
+from tqdm import tqdm
+
 from src.data.data_container import DataContainer
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import Trainer, TrainerParams
@@ -19,7 +21,10 @@ class TorchTrainer(Trainer):
         criterion = config.get_criterion()
 
         epoch_loss = []
-        for epoch in range(config.epochs):
+        epochs = range(config.epochs)
+        if 'verbose' in config.args and config.args['verbose']:
+            epochs = tqdm(epochs)
+        for epoch in epochs:
             batch_loss = []
             for batch_idx, (x, labels) in enumerate(train_data.batch(config.batch_size)):
                 x = x.to(self.device)

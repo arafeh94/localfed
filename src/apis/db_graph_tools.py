@@ -35,7 +35,7 @@ class Graphs:
         return res
 
     def plot(self, configs: list, title='', animated=False, save_path='', xlabel='', ylabel='',
-             plt_func: Callable[[pyplot], typing.NoReturn] = None):
+             plt_func: Callable[[pyplot], typing.NoReturn] = None, show=True):
         """
         Args:
             plt_func:
@@ -57,6 +57,7 @@ class Graphs:
                 },
             ])
         """
+        plt.clf()
         tables = self._db.tables()
         sessions = [(item['session_id'], item['field'], item['config'] if 'config' in item else {},
                      item['transform'] if 'transform' in item else None) for item in configs]
@@ -91,5 +92,9 @@ class Graphs:
         if callable(plt_func):
             plt_func(plt)
         if save_path and not animated:
-            plt.savefig(save_path)
-        plt.show()
+            fig = plt.gcf()
+            fig.set_size_inches(18.5, 10.5)
+            fig.savefig(save_path, bbox_inches='tight', dpi=100)
+        if show:
+            plt.show()
+        return plt

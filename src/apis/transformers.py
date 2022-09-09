@@ -8,3 +8,4 @@ def cifar10_rgb(data):
         return data.map(lambdas.reshape((-1, 32, 32, 3))).map(lambdas.transpose((0, 3, 1, 2)))
     if isinstance(data, DataContainer):
         return data.map(lambdas.reshape((32, 32, 3))).map(lambdas.transpose((2, 0, 1)))
+

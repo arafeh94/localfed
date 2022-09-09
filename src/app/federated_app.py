@@ -27,10 +27,17 @@ class FederatedApp:
         self.load_default_subscribers = kwargs.get('load_default_subscribers', True)
         self.kwargs = kwargs
 
+    def _get_distributed_data(self):
+        if 'data' in self.kwargs:
+            distributed_data = self.kwargs['data']
+        else:
+            dataset_name = self.settings.get('data.dataset', absent_ok=False)
+            distributor = self.settings.get('data.distributor', absent_ok=False)
+            transformer = self.settings.get('data.transformer', absent_ok=True)
+            distributed_data = preload(dataset_name, distributor, transformer=transformer)
+        return distributed_data
+
     def init_federated(self, session):
-        distributor = self.settings.get('data.distributor', absent_ok=False)
-        dataset_name = self.settings.get('data.dataset', absent_ok=False)
-        transformer = self.settings.get('data.transformer', absent_ok=True)
         model = self.settings.get('model', absent_ok=False)
         desired_accuracy = self.settings.get('desired_accuracy', absent_ok=True) or 0.99
         trainer_params = self.settings.get("trainer_config")
@@ -40,7 +47,8 @@ class FederatedApp:
                                  device=self.settings.get('device') or None)
         selector = self.settings.get('client_selector') or client_selectors.Random(
             self.settings.get('client_ratio', absent_ok=False))
-        distributed_data = preload(dataset_name, distributor, transformer=transformer)
+        distributed_data = self._get_distributed_data()
+        rounds = self.kwargs['rounds'] if 'rounds' in self.kwargs else self.settings.get('rounds')
         federated = FederatedLearning(
             trainer_manager=self._trainer_manager(),
             trainer_config=trainer_params,
@@ -49,7 +57,7 @@ class FederatedApp:
             client_selector=selector,
             trainers_data_dict=distributed_data,
             initial_model=lambda: model,
-            num_rounds=self.settings.get('rounds'),
+            num_rounds=rounds,
             desired_accuracy=desired_accuracy,
             accepted_accuracy_margin=self.settings.get('accepted_accuracy_margin') or -1,
         )
@@ -67,11 +75,12 @@ class FederatedApp:
         subscribers = configs_subscribers + subscribers if subscribers else configs_subscribers
         self._attach_subscribers(federated, subscribers, session)
         federated.start()
+        return federated
 
     def start(self, *subscribers):
         for index, st in enumerate(self.settings):
             self.logger.info(f'starting config {index}: {str(st.get_config())}')
-            self._start([s for s in subscribers] if subscribers else None)
+            return self._start([s for s in subscribers] if subscribers else None)
 
     def _attach_subscribers(self, federated: FederatedLearning, subscribers, session):
         self.logger.info('attaching subscribers...')
@@ -92,6 +101,6 @@ class FederatedApp:
         return [
             FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]),
             Timer([Timer.FEDERATED, Timer.ROUND]),
-            Resumable(io=session.cache),
-            SQLiteLogger(session.session_id(), db_path='./cache/perf.db', tag=str(session.settings.get_config()))
+            # Resumable(io=session.cache),
+            # SQLiteLogger(session.session_id(), db_path='./cache/perf.db', config=str(session.settings.get_config()))
         ]

@@ -37,10 +37,10 @@ class DataContainer(Functional):
         return len(self.x)
 
     def is_tensor(self):
-        return torch.is_tensor(self.x)
+        return torch.is_tensor(self.x) and torch.is_tensor(self.y)
 
     def is_numpy(self):
-        return type(self.x) == np.ndarray
+        return type(self.x) == np.ndarray and type(self.y) == np.ndarray
 
     def as_tensor(self) -> 'DataContainer':
         if self.is_tensor():

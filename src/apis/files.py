@@ -51,17 +51,15 @@ class AccuracyCompare(Serializable):
 
     def show_saved_accuracy_plot_acc(self, accs, title=None, smooth=True):
         colors = {'cluster': '#AA4499', 'basic': '#DDCC77', 'genetic': 'blue', 'warmup': '#117733'}
-        line = {'cluster': ':', 'basic': '--', 'genetic': '', 'warmup': '-,'}
+        line = {'cluster': ':', 'basic': '-*', 'genetic': '-.', 'warmup': '-'}
         if len(accs) < 1:
             return
         last_tag: str = None
         for tag, vals in accs.items():
-            if 'cluster' in tag:
-                continue
             tag: str
             label = tag.split('_')[0].capitalize()
             vals = gaussian_filter1d(vals, sigma=2) if smooth else vals
-            plt.plot(vals, line[label.lower()], label=label, color=colors[label.lower()])
+            plt.plot(vals, line[label.lower()], label=label, color=colors[label.lower()], linewidth=5)
             plt.xlabel("Round")
             plt.ylabel("Accuracy")
             plt.legend()
@@ -70,13 +68,16 @@ class AccuracyCompare(Serializable):
         last_tag = last_tag.replace("- LR01", "").replace("E", "E: ").replace("B", "B: ") \
             .replace('- R', '- R: ').replace('- S', "- Ψ: ").replace('CR', 'CR: ') \
             .replace('01', '0.1').replace('05', '0.5').replace('02', '0.2').replace('CR: 10', 'CR: 1') \
-            .replace('1000', '500').replace('9999', '∞').replace('999', '∞').replace('0.2', '0.1').replace('0.00.1',
-                                                                                                           '0.001')
+            .replace('1000', '500').replace('9999', '∞').replace('999', '∞').replace('0.2', '0.1') \
+            .replace('0.00.1', '0.001').replace('0.0.1', '0.001')\
+            # .replace('E: 25', 'E: 1')\
+            # .replace('B: 50', 'B: ∞')\
+            # .replace('Ψ: 2', 'Ψ: 10')
         title = last_tag if title is None else title
         plt.ylim()
         plt.title(title)
         plt.savefig('./pics/' + title.replace(':', '').replace('-', '').replace(' ', '').replace('.', '') + '.png',
-                    bbox_inches='tight')
+                    bbox_inches='tight', dpi=100)
         plt.show()
 
 
@@ -136,6 +137,5 @@ class DivergenceCompare(Serializable):
         plt.savefig('./pics/' + title.replace(':', '').replace('-', '').replace(' ', '') + '.png', bbox_inches='tight')
         plt.show()
 
-
-accuracies = AccuracyCompare()
-divergences = DivergenceCompare()
+# accuracies = AccuracyCompare()
+# divergences = DivergenceCompare()

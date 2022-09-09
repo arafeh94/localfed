@@ -155,6 +155,8 @@ class Serializable:
             try:
                 with open(self.file_path, 'rb') as fop:
                     for key, item in dill.load(fop).items():
+                        if 'file_path' in key:
+                            continue
                         self.__dict__[key] = item
                 return True
             except Exception as e:

@@ -22,8 +22,10 @@ class Resumable(FederatedSubscriber):
         self.key = key or 'context'
 
     def on_init(self, params):
+        self.log(f'searching for checkpoint {self.key}...')
         loaded_context: FederatedLearning.Context = self.io.read(self.key, absent_ok=True)
         if loaded_context:
+            self.log(f'checkpoint [{self.key}] exists, loading...')
             context: FederatedLearning.Context = params['context']
             context.__dict__.update(loaded_context.__dict__)
 

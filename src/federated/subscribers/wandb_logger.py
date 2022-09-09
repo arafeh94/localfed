@@ -23,7 +23,7 @@ class WandbLogger(FederatedSubscriber):
             self.wandb.init(project=wandb_config['project'], entity=wandb_config['entity'], config=self.config)
 
     def on_round_end(self, params):
-        self.wandb.log({'acc': params['accuracy'], 'loss': params['loss']})
+        self.wandb.log(params['context'])
 
     def on_federated_ended(self, params):
         self.wandb.finish()
