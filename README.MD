@@ -256,8 +256,9 @@ mpiexec -n 11 python distributed_averaging.py
 
 
 ## Docker Containers
+Enable parallel distributed training through docker containers. 
 
-### build
+### Build
 ```bash
 docker build -t mpi .
 ```
@@ -281,10 +282,17 @@ docker exec -it -u mpirun head /bin/bash
 
 ###  Check if all is working
 ```bash
+# check if SSH connection is established and working correctly
 ssh 172.17.0.3 hostname
+# should return the docker container host name
 cd ~
-mpirun -np 2 --host localhost,172.17.0.3 python3 ${HOME}/mpi4py_benchmarks/check.py
-mpirun -np 2 --host localhost,172.17.0.3 python3 ${HOME}/mpi4py_benchmarks/com.py
+# check if MPI can initialize without issues
+mpirun -np 3 --host localhost,172.17.0.3 python3 ${HOME}/mpi4py_benchmarks/check.py
+# nothing appear => everything is working
+
+# check if containers can send and receives messages without any issues 
+mpirun -np 3 --host localhost,172.17.0.3 python3 ${HOME}/mpi4py_benchmarks/com.py
+# nothing appear => everything is working
 ```
 
 
