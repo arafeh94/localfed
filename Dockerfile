@@ -83,7 +83,7 @@ RUN pip3 install -r ${FedLib}/requirements.txt
 USER root
 
 RUN rm -fr ${HOME}/.openmpi && mkdir -p ${HOME}/.openmpi
-ADD default-mca-params.conf ${HOME}/.openmpi/mca-params.conf
+ADD  utilities/mpi/default-mca-params.conf ${HOME}/.openmpi/mca-params.conf
 RUN chown -R ${USER}:${USER} ${HOME}/.openmpi
 
 
