@@ -253,3 +253,43 @@ script at the top of the script
 # as clients, make sure client selector select 10 clients each round to benefits from all instances
 mpiexec -n 11 python distributed_averaging.py
 ```
+
+
+## Docker Containers
+
+### build
+```bash
+docker build -t mpi .
+```
+
+### Create one container for server and two for clients
+```bash
+docker run -d --name head -p 20:20 mpi
+docker run -d --name node1 mpi
+docker run -d --name node2 mpi
+```
+
+### Check containers IP
+```bash
+docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -q)
+```
+
+### Connect to a node
+```bash
+docker exec -it -u mpirun head /bin/bash
+```
+
+###  Check if all is working
+```bash
+ssh 172.17.0.3 hostname
+cd ~
+mpirun -np 2 --host localhost,172.17.0.3 python3 ${HOME}/mpi4py_benchmarks/check.py
+mpirun -np 2 --host localhost,172.17.0.3 python3 ${HOME}/mpi4py_benchmarks/com.py
+```
+
+
+### Run distributed federated learning
+```bash
+docker exec -it -u mpirun head /bin/bash
+mpirun -np 3 --host localhost,172.17.0.3,172.17.0.4 python3 ${HOME}/localfed/apps/experiments/distributed_averaging.py
+```
