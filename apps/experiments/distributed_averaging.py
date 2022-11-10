@@ -2,7 +2,7 @@
 import sys
 from os.path import dirname
 
-sys.path.append(dirname(__file__) + '../../../')
+sys.path.append(dirname(__file__) + '../../')
 
 from src.data.data_distributor import ShardDistributor
 from src.data.data_loader import preload
