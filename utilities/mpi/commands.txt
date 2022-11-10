@@ -1,0 +1,31 @@
+# clean
+docker kill $(docker ps -q)
+docker rm $(docker ps -a -q)
+docker rmi $(docker images -q)
+
+
+# build
+docker build -t mpi .
+
+# run
+docker run -d --name head -p 20:20 mpi
+docker run -d --name node mpi
+
+#check ips
+docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' head
+docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' node
+
+
+# connect to the server node and check if all is working
+docker exec -it -u mpirun head /bin/bash
+ssh 172.17.0.3 hostname
+cd ~
+mpirun -np 2 --host localhost,172.17.0.3 python3 mpi4py_benchmarks/test.py
+mpirun -np 2 --host localhost,172.17.0.3 python3 mpi4py_benchmarks/test2.py
+
+# connect to a client node
+docker exec -it -u mpirun node /bin/bash
+
+
+# run distributed federated learning
+mpirun -np 3 --host localhost,172.17.0.3,172.17.0.4 python3 distributed_averaging.py
