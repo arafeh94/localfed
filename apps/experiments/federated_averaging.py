@@ -1,10 +1,10 @@
 import logging
 import sys
 
-from src.federated.events import Events
 
 sys.path.append('../../')
 
+from src.federated.events import Events
 from torch import nn
 from src.federated.subscribers.fed_plots import RoundAccuracy, RoundLoss
 from src.federated.subscribers.logger import FederatedLogger, TqdmLogger
