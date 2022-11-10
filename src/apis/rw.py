@@ -8,6 +8,18 @@ class IODict(Serializable):
         super().__init__(file_path)
         self.cached = {}
 
+    def get(self, key, default: None):
+        if key in self.cached:
+            return self.cached[key]
+        return default
+
+    def all(self, *keys):
+        ret = {}
+        for k in keys:
+            if k in self.cached:
+                ret[k] = self.cached[k]
+        return ret
+
     def read(self, key=None, default=None, absent_ok=False):
         self.load()
         if key is None:

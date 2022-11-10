@@ -13,6 +13,9 @@ class FedDB:
         else:
             return cur.execute(query)
 
+    def session_id(self, **tags):
+        tables = self.get('session', '*')
+
     def get(self, table_name, field):
         query = f'select {field} from {table_name}'
         records = self.execute(query)

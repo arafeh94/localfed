@@ -1,9 +1,11 @@
 # mpiexec -n 2 python distributed_averaging.py
 import sys
 from os.path import dirname
-sys.path.append(dirname(__file__) + '../../')
 
+sys.path.append(dirname(__file__) + '../../../')
 
+from src.data.data_distributor import ShardDistributor
+from src.data.data_loader import preload
 from src.federated.subscribers.logger import FederatedLogger
 from src.federated.subscribers.timer import Timer
 from src.data import data_loader
@@ -15,7 +17,7 @@ from src.federated.components import metrics, client_selectors, aggregators, tra
 from libs.model.linear.lr import LogisticRegression
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
-from src.federated.components.trainer_manager import MPITrainerManager
+from src.federated.components.trainer_manager import MPITrainerManager, StrictMPITrainerManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
@@ -24,9 +26,10 @@ comm = Comm()
 
 if comm.pid() == 0:
     logger.info('Generating Data --Started')
-    client_data = data_loader.mnist_10shards_100c_400min_400max()
+    client_data = preload('mnist', ShardDistributor(300, 5)).select(range(40))
     logger.info('Generating Data --Ended')
 
+    # trainer_manager = StrictMPITrainerManager(StrictMPITrainerManager.default_map(3))
     trainer_manager = MPITrainerManager()
     trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=50, epochs=20, optimizer='sgd',
                                    criterion='cel', lr=0.1)
@@ -35,7 +38,7 @@ if comm.pid() == 0:
         trainer_config=trainer_params,
         aggregator=aggregators.AVGAggregator(),
         metrics=metrics.AccLoss(50, criterion=nn.CrossEntropyLoss()),
-        client_selector=client_selectors.Random(5),
+        client_selector=client_selectors.Random(2),
         trainers_data_dict=client_data,
         initial_model=lambda: LogisticRegression(28 * 28, 10),
         num_rounds=0,

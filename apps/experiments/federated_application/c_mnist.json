@@ -1,0 +1,39 @@
+{
+  "session_id": "warmup",
+  "cache": {
+    "class": "src.app.cache.Cache"
+  },
+  "data": {
+    "dataset": "mnist",
+    "distributor": {
+      "class": "src.data.data_distributor.LabelDistributor",
+      "num_clients": 10,
+      "min_size": 1200,
+      "max_size": 1200,
+      "label_per_client": 2
+    }
+  },
+  "model": {
+    "class": "libs.model.linear.lr.LogisticRegression",
+    "input_dim": 784,
+    "output_dim": 10
+  },
+  "trainer_config": {
+    "class": "src.federated.protocols.TrainerParams",
+    "trainer_class": {
+      "refer": "src.federated.components.trainers.TorchTrainer"
+    },
+    "epochs": 25,
+    "lr": 0.1,
+    "batch_size": 50,
+    "optimizer": "sgd",
+    "criterion": "cel"
+  },
+  "aggregator": {
+    "class": "src.federated.components.aggregators.AVGAggregator"
+  },
+  "rounds": 50,
+  "client_ratio": 1,
+  "desired_accuracy": 2,
+  "device": "cuda"
+}

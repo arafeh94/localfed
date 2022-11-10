@@ -35,3 +35,7 @@ def normalize(arr, z1=False):
     if z1:
         return (arr - min(arr)) / (max(arr) - min(arr))
     return np.array(arr) / math.fsum(arr)
+
+def smooth(vals, sigma=2):
+    from scipy.ndimage import gaussian_filter1d
+    return list(gaussian_filter1d(vals, sigma=sigma))

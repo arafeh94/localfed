@@ -64,7 +64,10 @@ class Graphs:
         session_values = {}
         for session_id, field, config, transform in sessions:
             values = self._db.get(session_id, field)
-            values = transform(values) if transform else values
+            if transform:
+                transformers = transform if isinstance(transform, list) else [transform]
+                for trans in transformers:
+                    values = trans(values)
             print(values)
             session_values[f'{session_id}_{field}_{str(transform)}'] = values
         if animated:

@@ -62,7 +62,9 @@ class Settings:
             config = [config]
         return config
 
-    def get(self, key, absent_ok=True) -> typing.Any:
+    def get(self, key, force_args=None, absent_ok=True) -> typing.Any:
+        if force_args and key in force_args:
+            return force_args[key]
         try:
             val = self._extract(key)
             return self._create(val)

@@ -123,3 +123,33 @@ class MPITrainerManager(TrainerManager):
             trainer = trainer or config.trainer_class()
             trained_weights, sample_size = trainer.train(model, train_data, context, config)
             comm.send(0, (trained_weights, sample_size), 2)
+
+
+class StrictMPITrainerManager(MPITrainerManager):
+
+    def __init__(self, client_rank_mapping, skip_on_running=True):
+        super().__init__()
+        self.select_trainer_id = None
+        self.client_rank_mapping = client_rank_mapping
+        self.skip_on_running = skip_on_running
+
+    def train_req(self, trainer_id, model, train_data, context, config):
+        self.select_trainer_id = trainer_id
+        super().train_req(trainer_id, model, train_data, context, config)
+
+    def get_proc(self):
+        if self.select_trainer_id not in self.client_rank_mapping:
+            raise Exception(f"Requested trainer [{self.select_trainer_id}] is not mapped to an MPI process, "
+                            "make sure client_rank_mapping are properly defined")
+        if self.client_rank_mapping[self.select_trainer_id] in self.used_procs and not self.skip_on_running:
+            raise Exception(f"Requested trainer {self.select_trainer_id} is already working on a task,"
+                            "make sure you not selecting the same client twice for the same round,"
+                            "use skip_on_running=True to bypass this error")
+        return self.client_rank_mapping[self.select_trainer_id]
+
+    @staticmethod
+    def default_map(size):
+        res = {}
+        for i in range(1, size + 1):
+            res[i - 1] = i
+        return res
