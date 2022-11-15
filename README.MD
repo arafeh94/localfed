@@ -260,19 +260,24 @@ Enable parallel distributed training through docker containers.
 
 ### Build
 ```bash
-docker build -t mpi .
+docker build -t arafeh94/localfed .
 ```
+
+```bash
+docker pull arafeh94/localfed
+```
+
 
 ### Create one container for server and two for clients
 ```bash
-docker run -d --name head -p 20:20 mpi
-docker run -d --name node1 mpi
-docker run -d --name node2 mpi
+docker run -d --name head -p 20:20 arafeh94/localfed
+docker run -d --name node1 arafeh94/localfed
+docker run -d --name node2 arafeh94/localfed
 ```
 
 ### Check containers IP
 ```bash
-docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -q)
+docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' head
 ```
 
 ### Connect to a node
@@ -299,5 +304,6 @@ mpirun -np 3 --host localhost,172.17.0.3 python3 ${HOME}/mpi4py_benchmarks/com.p
 ### Run distributed federated learning
 ```bash
 docker exec -it -u mpirun head /bin/bash
-mpirun -np 3 --host localhost,172.17.0.3,172.17.0.4 python3 ${HOME}/localfed/apps/experiments/distributed_averaging.py
+cd ${HOME}/localfed/apps/experiments/
+mpirun -np 3 --host localhost,172.17.0.3,172.17.0.4 python3 distributed_averaging.py
 ```
