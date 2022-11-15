@@ -29,3 +29,13 @@ docker exec -it -u mpirun node /bin/bash
 
 # run distributed federated learning
 mpirun -np 3 --host localhost,172.17.0.3,172.17.0.4 python3 ${HOME}/localfed/apps/experiments/distributed_averaging.py
+
+# run acros containers that exists on different hosts
+sudo docker run -d --name master-node -p 12345:22 --network host -e CONTAINER2_HOST=worker01 -e CONTAINER2_PORT=24680 arafeh94/localfed
+sudo docker run -d --name worker01 -p 24680:22 --network host -e CONTAINER1_HOST=master-node -e CONTAINER1_PORT=12345 arafeh94/localfed
+
+# debug mpi
+mpirun -np 2 --mca btl tcp --mca btl_base_verbose 100 --mca orte_base_help_aggregate 0 ls
+
+#run with different network interface (if by default eth0 does not exists and replaced by something else)
+mpirun -np 2 --mca btl tcp,self --mca btl_tcp_if_include enp0s3 --host localhost,10.0.2.15 python3 check.py
