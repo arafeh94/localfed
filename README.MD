@@ -1,6 +1,6 @@
 # localfed - A Federated Learning Framework
 
-This library is influenced by FedML. localfed is a federated learning framework that allows researchers to easily build
+localfed is a federated learning framework that allows researchers to easily build
 their theories and run them in a federated learning context. <br>
 
 Different from others, localfed considers federated learning as a composition of different components that should be
