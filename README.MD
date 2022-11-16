@@ -23,10 +23,15 @@ FederatedLearning class requires different parameters to control its behaviour. 
 
 ### trainer_manager:
 
-An instance of the TrainerManager interface defines how trainers are running. TrainerManager is followed by TrainerParams, which define the clients' training parameters, such as epochs, loss, and so on. It exists, for now, three builtin trainer managers:
+An instance of the TrainerManager interface defines how trainers are running. TrainerManager is followed by
+TrainerParams, which define the clients' training parameters, such as epochs, loss, and so on. It exists, for now, three
+builtin trainer managers:
 
 - SeqTrainerManager that runs trainers sequentially on a single thread
-- MPITrainerManager runs trainers on a different instance, so it would be possible to run multiple trainers simultaneously. Using this manager would also allow us to control the trainers' behaviour regarding allocated resources for their runs since they run on different processes (or different devices). Such control is given because we are using MPI to complete this task. Refer to MPI Section to see examples.
+- MPITrainerManager runs trainers on a different instance, so it would be possible to run multiple trainers
+  simultaneously. Using this manager would also allow us to control the trainers' behaviour regarding allocated
+  resources for their runs since they run on different processes (or different devices). Such control is given because
+  we are using MPI to complete this task. Refer to MPI Section to see examples.
 
 ```python
 trainer_manager = SeqTrainerManager()
@@ -36,7 +41,8 @@ trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=5
 
 ### aggregator:
 
-An instance of an Aggregator interface defines how the collected models are merged into one global model. AVGAggregator is the
+An instance of an Aggregator interface defines how the collected models are merged into one global model. AVGAggregator
+is the
 widely used aggregator that takes the average of the models' weights to generate the global model
 
 ```python
@@ -45,7 +51,8 @@ aggregator = aggregators.AVGAggregator()
 
 ### client_selector
 
-An instance of a ClientSelector interface controls the selected clients to train in each round. Available client selectors:
+An instance of a ClientSelector interface controls the selected clients to train in each round. Available client
+selectors:
 
 - Random(nb): select [nb] a number of clients randomly to train in each round
 - All(): select all the clients to train in each round
@@ -73,8 +80,8 @@ acc_loss_metric = metrics.AccLoss(batch_size=8, criterion=nn.CrossEntropyLoss())
 
 ### trainers_data_dict
 
-A dictionary of <b>[client_id:int,DataContainer]</b> that defines each client what data they have. DataContainer is a class
-that controls holds (x,y), the features and labels. Example:
+A dictionary of <b>[client_id:int,DataContainer]</b> that defines each client what data they have. DataContainer is a
+class that holds (x,y), the features and labels. Example:
 
 ```python
 from src.data.data_container import DataContainer
@@ -83,16 +90,14 @@ from src.data.data_container import DataContainer
 # A record is labelled 1 when all the features have the same value and 0 otherwise
 # A sample of data
 client_data = {
-    0: DataContainer([
-        [1, 1, 1],
-        [2, 2, 3],
-        [2, 1, 2]
-    ], [1, 0, 0]),
-    1: DataContainer([
-        [1, 2, 1],
-        [2, 2, 2],
-        [2, 2, 2]
-    ], [0, 1, 1])
+    0: DataContainer(x=[[1, 1, 1],
+                        [2, 2, 3],
+                        [2, 1, 2]],
+                     y=[1, 0, 0]),
+    1: DataContainer(x=[[1, 2, 1],
+                        [2, 2, 2],
+                        [2, 2, 2]],
+                     y=[0, 1, 1])
 }
 ```
 
@@ -249,11 +254,12 @@ script at the top of the script.
 mpiexec -n 11 python distributed_averaging.py
 ```
 
-
 ## Docker Containers
-Enable parallel distributed training through docker containers. 
+
+Enable parallel distributed training through docker containers.
 
 ### Build
+
 ```bash
 docker build -t arafeh94/localfed .
 ```
@@ -262,8 +268,8 @@ docker build -t arafeh94/localfed .
 docker pull arafeh94/localfed
 ```
 
-
 ### Create one container for the server and two for the clients
+
 ```bash
 docker run -d --name head -p 20:20 arafeh94/localfed
 docker run -d --name node1 arafeh94/localfed
@@ -271,16 +277,19 @@ docker run -d --name node2 arafeh94/localfed
 ```
 
 ### Check containers' IP
+
 ```bash
 docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' head
 ```
 
 ### Connect to a node
+
 ```bash
 docker exec -it -u mpirun head /bin/bash
 ```
 
-###  Check if all is working
+### Check if all is working
+
 ```bash
 # check if SSH connection is established and working correctly
 ssh 172.17.0.3 hostname
@@ -295,8 +304,8 @@ mpirun -np 3 --host localhost,172.17.0.3 python3 ${HOME}/mpi4py_benchmarks/com.p
 # nothing appear => everything is working
 ```
 
-
 ### Run distributed federated learning
+
 ```bash
 docker exec -it -u mpirun head /bin/bash
 cd ${HOME}/localfed/apps/experiments/
