@@ -26,7 +26,7 @@ comm = Comm()
 
 if comm.pid() == 0:
     logger.info('Generating Data --Started')
-    client_data = preload('mnist', ShardDistributor(300, 5)).select(range(40))
+    client_data = preload('kdd', ShardDistributor(300, 2)).select(range(40))
     logger.info('Generating Data --Ended')
 
     # trainer_manager = StrictMPITrainerManager(StrictMPITrainerManager.default_map(3))
@@ -40,8 +40,8 @@ if comm.pid() == 0:
         metrics=metrics.AccLoss(50, criterion=nn.CrossEntropyLoss()),
         client_selector=client_selectors.Random(2),
         trainers_data_dict=client_data,
-        initial_model=lambda: LogisticRegression(28 * 28, 10),
-        num_rounds=0,
+        initial_model=lambda: LogisticRegression(41, 2),
+        num_rounds=15,
         desired_accuracy=0.99
     )
 

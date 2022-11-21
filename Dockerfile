@@ -71,6 +71,7 @@ RUN  pip3 install --user -U setuptools \
 # Add localfed  lib
 # ------------------------------------------------------------
 ENV FedLib=${HOME}/localfed
+ENV PYTHONPATH "${PYTHONPATH}:${FedLib}"
 
 ADD . ${FedLib}
 
