@@ -19,3 +19,6 @@ apscheduler
 torch
 torchvision
 torchaudio
+falcon
+urllib3
+requests_futures

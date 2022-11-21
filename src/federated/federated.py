@@ -7,8 +7,9 @@ from functools import reduce
 from src.apis.broadcaster import Broadcaster
 from src.apis.extensions import Dict
 from src.data.data_container import DataContainer
+from src.federated.components.client_scanners import DefaultScanner
 from src.federated.events import Events
-from src.federated.protocols import Aggregator, ClientSelector, ModelInfer, TrainerParams
+from src.federated.protocols import Aggregator, ClientSelector, ModelInfer, TrainerParams, ClientScanner
 from src.federated.components.trainer_manager import TrainerManager
 
 
@@ -47,6 +48,8 @@ class FederatedLearning(Broadcaster):
                 train, test = data.split(train_ratio)
                 self.trainers_train[trainer_id] = train
                 self.test_data[trainer_id] = test
+        if self.trainer_manager.scanner is None:
+            self.trainer_manager.scanner = DefaultScanner(self.trainers_data_dict)
         self.trainer_manager.trainer_started = lambda trainer_id: \
             self.broadcast(Events.ET_TRAINER_STARTED, trainer_id=trainer_id)
         self.trainer_manager.trainer_finished = lambda trainer_id, weights, sample_size: \
@@ -69,7 +72,8 @@ class FederatedLearning(Broadcaster):
         if self.is_finished:
             return self.is_finished
         self.broadcast(Events.ET_ROUND_START, round=self.context.round_id)
-        trainers_ids = self.client_selector.select(list(self.trainers_data_dict.keys()), self.context)
+        available_clients = list(self.trainer_manager.scanner.scan().keys())
+        trainers_ids = self.client_selector.select(available_clients, self.context)
         if len(trainers_ids) > 0:
             self.broadcast(Events.ET_TRAINER_SELECTED, trainers_ids=trainers_ids)
             trainers_train_data = self.trainers_train.select(trainers_ids)

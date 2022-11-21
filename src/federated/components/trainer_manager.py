@@ -1,10 +1,15 @@
 from abc import ABC, abstractmethod
+from typing import Union
+
+from src.apis.broadcaster import Subscriber
 from src.apis.mpi import Comm
+from src.federated.events import FederatedSubscriber
 from src.federated.protocols import Trainer, TrainerParams
 
 
 class TrainerManager:
-    def __init__(self):
+    def __init__(self, scanner):
+        self.scanner = scanner
         self.trainer_started = None
         self.trainer_finished = None
 
@@ -32,7 +37,7 @@ class SeqTrainerManager(TrainerManager):
             pass
 
     def __init__(self, trainer_provider: TrainerProvider = None):
-        super().__init__()
+        super().__init__(None)
         self.train_requests = {}
         self.trainer_provider = trainer_provider
         if trainer_provider is None:
@@ -79,7 +84,7 @@ class SharedTrainerProvider(SeqTrainerManager.TrainerProvider):
 class MPITrainerManager(TrainerManager):
 
     def __init__(self):
-        super().__init__()
+        super().__init__(None)
         self.comm = Comm()
         self.procs = [i + 1 for i in range(self.comm.size() - 1)]
         self.used_procs = []
@@ -117,7 +122,7 @@ class MPITrainerManager(TrainerManager):
 
     @staticmethod
     def mpi_trainer_listener(comm: Comm):
-        trainer: Trainer = None
+        trainer: Union[Trainer, None] = None
         while True:
             model, train_data, context, config = comm.recv(0, 1)
             trainer = trainer or config.trainer_class()

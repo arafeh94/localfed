@@ -1,15 +1,15 @@
 import logging
 import sys
 
-import torch.cuda
-
-from libs.model.linear.lr import LogisticRegression
-from src.federated.components.client_scanners import DefaultScanner
 from src.federated.events import Events
 
 sys.path.append('../../')
 
+from libs.model.linear.mnist_net import MnistNet
+from src.federated.subscribers.trackers import BandwidthTracker
+from src.federated.subscribers.fed_plots import RoundAccuracy, RoundLoss
 from src.federated.subscribers.logger import FederatedLogger, TqdmLogger
+from src.federated.subscribers.sqlite_logger import SQLiteLogger
 from src.federated.subscribers.timer import Timer
 from src.data.data_distributor import ShardDistributor
 from src.data.data_loader import preload
@@ -22,6 +22,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
 client_data = preload('mnist', ShardDistributor(300, 2)).select(range(20))
+
 # trainers configuration
 trainer_params = TrainerParams(
     trainer_class=trainers.TorchTrainer,
@@ -34,20 +35,25 @@ federated = FederatedLearning(
     trainer_config=trainer_params,
     aggregator=aggregators.AVGAggregator(),
     metrics=metrics.AccLoss(batch_size=50, criterion='cel'),
-    client_scanner=DefaultScanner(client_data),
-    client_selector=client_selectors.Random(2),
+    client_selector=client_selectors.Random(1),
     trainers_data_dict=client_data,
-    initial_model=lambda: LogisticRegression(28 * 28, 10),
-    num_rounds=50,
+    initial_model=lambda: MnistNet(28 * 28, 32, 10),
+    num_rounds=100,
     desired_accuracy=0.99
 )
+
+federated.start()
 
 # (subscribers)
 federated.add_subscriber(TqdmLogger())
 federated.add_subscriber(FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
+# federated.add_subscriber(RoundAccuracy(plot_ratio=5))
+# federated.add_subscriber(RoundLoss(plot_ratio=5))
+# federated.add_subscriber(SQLiteLogger('exp', 'res.db'))
+# federated.add_subscriber(BandwidthTracker())
 
-logger.info("------------------------")
+logger.info("----------------------")
 logger.info("start federated learning")
-logger.info("------------------------")
+logger.info("----------------------")
 federated.start()

@@ -92,3 +92,9 @@ class ModelBasedClientSelector(ClientSelector, ABC):
         def on_training_end(self, params):
             weights, sample_size, fed_context = params['trainers_weights'], params['sample_size'], params['context']
             self.parent_ref._update(weights, sample_size)
+
+
+class ClientScanner(ABC):
+    @abstractmethod
+    def scan(self) -> dict[int, typing.Any]:
+        pass
