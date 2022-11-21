@@ -96,5 +96,5 @@ class ModelBasedClientSelector(ClientSelector, ABC):
 
 class ClientScanner(ABC):
     @abstractmethod
-    def scan(self) -> dict[int, typing.Any]:
+    def scan(self) -> typing.Dict[int, typing.Any]:
         pass
