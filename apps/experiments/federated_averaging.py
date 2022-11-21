@@ -2,12 +2,12 @@ import logging
 import sys
 
 import torch.cuda
+sys.path.append('../../')
+
 
 from libs.model.linear.lr import LogisticRegression
 from src.federated.components.client_scanners import DefaultScanner
 from src.federated.events import Events
-
-sys.path.append('../../')
 
 from src.federated.subscribers.logger import FederatedLogger, TqdmLogger
 from src.federated.subscribers.timer import Timer

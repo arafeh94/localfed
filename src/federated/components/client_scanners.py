@@ -7,4 +7,4 @@ class DefaultScanner(ClientScanner):
         self.client_data = client_data
 
     def scan(self):
-        return list(self.client_data.keys())
+        return self.client_data
