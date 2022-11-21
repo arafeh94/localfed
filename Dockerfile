@@ -85,6 +85,7 @@ USER root
 RUN rm -fr ${HOME}/.openmpi && mkdir -p ${HOME}/.openmpi
 ADD  utilities/mpi/default-mca-params.conf ${HOME}/.openmpi/mca-params.conf
 RUN chown -R ${USER}:${USER} ${HOME}/.openmpi
+RUN chown -R ${USER}:${USER} ${FedLib}
 
 
 # ------------------------------------------------------------
