@@ -6,14 +6,13 @@ sys.path.append('../../')
 
 
 from libs.model.linear.lr import LogisticRegression
-from src.federated.components.client_scanners import DefaultScanner
 from src.federated.events import Events
 
 from src.federated.subscribers.logger import FederatedLogger, TqdmLogger
 from src.federated.subscribers.timer import Timer
 from src.data.data_distributor import ShardDistributor
 from src.data.data_loader import preload
-from src.federated.components import metrics, client_selectors, aggregators, trainers
+from src.federated.components import metrics, client_selectors, aggregators, trainers, client_scanners
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
 from src.federated.components.trainer_manager import SeqTrainerManager
@@ -34,7 +33,7 @@ federated = FederatedLearning(
     trainer_config=trainer_params,
     aggregator=aggregators.AVGAggregator(),
     metrics=metrics.AccLoss(batch_size=50, criterion='cel'),
-    client_scanner=DefaultScanner(client_data),
+    client_scanner=client_scanners.DefaultScanner(client_data),
     client_selector=client_selectors.Random(2),
     trainers_data_dict=client_data,
     initial_model=lambda: LogisticRegression(28 * 28, 10),
