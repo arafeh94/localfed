@@ -21,7 +21,7 @@ RUN apt-get install -y software-properties-common gcc && \
 RUN apt-get update
 
 RUN apt-get update && apt-get install -y python3.9 python3-distutils \
-    python3-pip python3-apt git wget vim
+    python3-pip python3-apt git wget vim nano
 
 RUN apt-get install -y --no-install-recommends openssh-server \
     gfortran libopenmpi-dev openmpi-bin openmpi-common openmpi-doc binutils
