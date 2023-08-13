@@ -33,5 +33,5 @@ datasets_urls = {
     "cifar100_train": "https://mega.nz/file/GxlW1QoD#u__ZxIHmnfUy0d7USwhEJacDPilcO4pxLKy-RMmW0xo",
     "cifar100_test": "https://mega.nz/file/O993xI7J#dh_VxcoBA0aPottobNd4gayv6bhh_kFay7aP_MES06c",
     "cifar100": "https://mega.nz/file/yl9lAIKR#6NQveqduSO5J7AKuylXeM-Qc3qHxRnvYsB6DdhavEE8",
-
+    "salary": "https://www.dropbox.com/scl/fi/2vumx10kculs3yod1ofcc/salary.zip?rlkey=smkqspsswuyhv9nwyc2yxlasz&dl=1",
 }
