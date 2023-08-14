@@ -1,8 +1,11 @@
 # ModularFed - A Federated Learning Framework
 
+## Requirement
+Python <=3.10
+
 ## Preample
 
-ModularFed is a federated learning framework that allows researchers and Federated Learning enthusiasts to build their theories easily and run them in a Federated Learning context withount the need to reinvent the wheel.
+ModularFed is a federated learning framework that allows researchers and Federated Learning enthusiasts to build their theories easily and run them in a Federated Learning context without reinventing the wheel.
 
 Different from others, ModularFed considers Federated Learning as a composition of different components that can be easily modified or replaced with as minimum changes as possible. The goal is to provide ML enthusiasts and researchers with a robust tool to start with Federated Learning in no time. You can start a Federated Learning process as easy as calling couple of lines of code as ModularFed performs the heavy lifting for you behind the scenes.
 
