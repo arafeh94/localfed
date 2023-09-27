@@ -1,4 +1,4 @@
-# ModularFed - A Federated Learning Framework
+# Federated Learning Framework
 
 ## Requirement
 Python <=3.10
